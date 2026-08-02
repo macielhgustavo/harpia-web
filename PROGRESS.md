@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-02 — Tela de Empresas/SPEs:** lista, filtros, indicadores, detalhe e CRUD completos, com relacionamentos de empreendimentos e contas bancárias, tratamento do bloqueio 409 e responsividade. Model e fluxos reconciliados e validados contra a API real.
+
 - **2026-07-11 — Tela de Pessoas (lista, detalhe, gestão de papéis):** primeira tela real da nova arquitetura. `person.service.ts` (list/getById/create/update/remove/addRole/removeRole) + lista com filtro por papel, busca e múltiplos badges de papel, modal de criação com seleção de papéis e tratamento de 409 (documento duplicado); detalhe com dados, gestão de papéis (adicionar/remover), investimentos e timeline de interações, e modal de edição. Todos os fluxos validados contra a API real. **`person.model.ts` reconciliado com o backend:** `type`→`personType` (`FISICA`/`JURIDICA`), `PersonRole.type`→`role`, enum de papéis real (LEAD/CLIENTE/CORRETOR/FUNCIONARIO/FORNECEDOR/PARCEIRO/INVESTIDOR), campo `address` adicionado.
 
 - **2026-07-11 — Dourado como acento de navegação ativa:** adicionadas `gold`/`gold-light`/`gold-dark` à paleta; item ativo da sidebar trocado de verde translúcido (`bg-primary/10`, tom "sujo" sobre o fundo quente) para dourado sólido (`bg-gold-light` + `text-gold-dark` + `border-gold`). Verde segue para ações/marca. Badge "em construção" do placeholder simplificado (`bg-surface-warm`/`text-muted`, sem sombra).

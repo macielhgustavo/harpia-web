@@ -1,0 +1,180 @@
+<div class="space-y-6">
+  <a
+    routerLink="/companies"
+    class="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary"
+  >
+    <lucide-icon [img]="ArrowLeftIcon" [size]="17"></lucide-icon>
+    Voltar para Empresas / SPEs
+  </a>
+
+  @if (loading()) {
+    <div class="rounded-xl border border-border bg-card p-6 text-sm text-muted shadow-card">
+      Carregando empresa...
+    </div>
+  } @else if (error()) {
+    <div class="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
+      <p class="text-sm">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="loadCompany()"
+        class="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium transition-colors hover:bg-card"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>
+        Tentar novamente
+      </button>
+    </div>
+  } @else {
+    @if (company(); as company) {
+      <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl font-bold text-ink">{{ company.name }}</h1>
+            <span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="typeBadge(company.type)">
+              {{ typeLabel(company.type) }}
+            </span>
+          </div>
+          <p class="mt-2 text-sm text-muted">{{ formatCnpj(company.cnpj) }}</p>
+        </div>
+        <button
+          type="button"
+          (click)="openEdit()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-warm"
+        >
+          <lucide-icon [img]="PencilIcon" [size]="16"></lucide-icon>
+          Editar
+        </button>
+      </header>
+
+      @if (feedback()) {
+        <div class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary" role="status">
+          {{ feedback() }}
+        </div>
+      }
+
+      <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <section class="rounded-xl border border-border bg-card p-5 shadow-card xl:col-span-1">
+          <div class="mb-4 flex items-center gap-2 text-primary">
+            <lucide-icon [img]="LandmarkIcon" [size]="19"></lucide-icon>
+            <h2 class="font-semibold text-ink">Dados cadastrais</h2>
+          </div>
+          <dl class="space-y-4 text-sm">
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Nome</dt>
+              <dd class="mt-1 font-medium text-ink">{{ company.name }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">CNPJ</dt>
+              <dd class="mt-1 font-medium text-ink">{{ formatCnpj(company.cnpj) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Tipo</dt>
+              <dd class="mt-1 text-ink">{{ typeLabel(company.type) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Cadastrada em</dt>
+              <dd class="mt-1 inline-flex items-center gap-2 text-ink">
+                <lucide-icon [img]="CalendarIcon" [size]="15" class="text-muted"></lucide-icon>
+                {{ formatDate(company.createdAt) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Observações</dt>
+              <dd class="mt-1 whitespace-pre-line text-ink">{{ company.notes || 'Nenhuma observação' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <div class="space-y-6 xl:col-span-2">
+          @if (company.developments.length > 0) {
+            <div class="flex items-start gap-3 rounded-xl border border-border bg-surface-warm p-4 text-sm text-ink">
+              <lucide-icon [img]="WarningIcon" [size]="19" class="mt-0.5 shrink-0 text-primary"></lucide-icon>
+              <p>
+                Esta empresa possui empreendimentos vinculados e não pode ser removida enquanto os vínculos existirem.
+              </p>
+            </div>
+          }
+
+          <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <div class="flex items-center justify-between border-b border-border bg-surface-warm px-5 py-4">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="BuildingIcon" [size]="19" class="text-primary"></lucide-icon>
+                <h2 class="font-semibold text-ink">Empreendimentos vinculados</h2>
+              </div>
+              <span class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted">
+                {{ company.developments.length }}
+              </span>
+            </div>
+
+            @if (company.developments.length === 0) {
+              <p class="p-5 text-sm text-muted">Nenhum empreendimento vinculado.</p>
+            } @else {
+              <div class="divide-y divide-border">
+                @for (development of company.developments; track development.id) {
+                  <article class="p-5">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 class="font-medium text-ink">{{ development.name }}</h3>
+                        @if (development.address || development.city) {
+                          <p class="mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
+                            <lucide-icon [img]="MapPinIcon" [size]="14"></lucide-icon>
+                            {{ development.address || '' }}{{ development.address && development.city ? ' — ' : '' }}{{ development.city || '' }}
+                          </p>
+                        }
+                      </div>
+                      <span class="self-start rounded-full bg-surface-warm px-2.5 py-1 text-xs font-medium text-ink">
+                        {{ developmentStatusLabel(development.status) }}
+                      </span>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+
+          <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <div class="flex items-center justify-between border-b border-border bg-surface-warm px-5 py-4">
+              <div class="flex items-center gap-2">
+                <lucide-icon [img]="CreditCardIcon" [size]="19" class="text-primary"></lucide-icon>
+                <h2 class="font-semibold text-ink">Contas bancárias</h2>
+              </div>
+              <span class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted">
+                {{ company.bankAccounts.length }}
+              </span>
+            </div>
+
+            @if (company.bankAccounts.length === 0) {
+              <p class="p-5 text-sm text-muted">Nenhuma conta bancária vinculada.</p>
+            } @else {
+              <div class="divide-y divide-border">
+                @for (account of company.bankAccounts; track account.id) {
+                  <article class="grid grid-cols-1 gap-3 p-5 sm:grid-cols-3">
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-muted">Banco</p>
+                      <p class="mt-1 font-medium text-ink">{{ account.bank }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-muted">Agência</p>
+                      <p class="mt-1 text-ink">{{ account.agency }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide text-muted">Conta</p>
+                      <p class="mt-1 text-ink">{{ account.account }}</p>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+        </div>
+      </div>
+
+      @if (editOpen()) {
+        <app-company-form-modal
+          [company]="company"
+          (closed)="closeEdit()"
+          (saved)="onSaved($event)"
+        />
+      }
+    }
+  }
+</div>

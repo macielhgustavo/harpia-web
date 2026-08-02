@@ -31,7 +31,20 @@ export const routes: Routes = [
   { path: 'developments', ...placeholder('Empreendimentos') },
   { path: 'investments', ...placeholder('Investimentos') },
   { path: 'returns', ...placeholder('Retornos') },
-  { path: 'companies', ...placeholder('Empresas / SPEs') },
+  {
+    path: 'companies',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/companies/companies.component').then((m) => m.CompaniesComponent),
+  },
+  {
+    path: 'companies/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/companies/company-detail.component').then(
+        (m) => m.CompanyDetailComponent,
+      ),
+  },
   { path: 'bank-accounts', ...placeholder('Contas Bancárias') },
   { path: '**', redirectTo: 'dashboard' },
 ];

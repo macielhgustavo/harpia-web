@@ -1,0 +1,120 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    class="w-full max-w-xl rounded-2xl border border-border bg-card p-6 shadow-xl"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="isEditing ? 'Editar empresa' : 'Nova empresa'"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="mb-5 flex items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold text-ink">
+          {{ isEditing ? 'Editar empresa' : 'Nova empresa' }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">Informe os dados cadastrais da empresa ou SPE.</p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+        aria-label="Fechar modal"
+      >
+        <lucide-icon [img]="XIcon" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <form (ngSubmit)="save()" class="space-y-4">
+      <div>
+        <label for="company-name" class="mb-1 block text-sm font-medium text-ink">Nome *</label>
+        <input
+          id="company-name"
+          name="name"
+          type="text"
+          [(ngModel)]="form.name"
+          autocomplete="organization"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+          [class.border-red-400]="submitted() && nameInvalid()"
+        />
+        @if (submitted() && nameInvalid()) {
+          <p class="mt-1 text-xs text-red-700">Informe o nome da empresa.</p>
+        }
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="company-cnpj" class="mb-1 block text-sm font-medium text-ink">CNPJ *</label>
+          <input
+            id="company-cnpj"
+            name="cnpj"
+            type="text"
+            inputmode="numeric"
+            [ngModel]="form.cnpj"
+            (ngModelChange)="onCnpjChange($event)"
+            maxlength="18"
+            placeholder="00.000.000/0000-00"
+            autocomplete="off"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+            [class.border-red-400]="submitted() && cnpjInvalid()"
+          />
+          @if (submitted() && cnpjInvalid()) {
+            <p class="mt-1 text-xs text-red-700">Informe um CNPJ com 14 dígitos.</p>
+          }
+        </div>
+
+        <div>
+          <label for="company-type" class="mb-1 block text-sm font-medium text-ink">Tipo *</label>
+          <select
+            id="company-type"
+            name="type"
+            [(ngModel)]="form.type"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+          >
+            <option value="INCORPORADORA">Incorporadora</option>
+            <option value="SPE">SPE</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="company-notes" class="mb-1 block text-sm font-medium text-ink">Observações</label>
+        <textarea
+          id="company-notes"
+          name="notes"
+          [(ngModel)]="form.notes"
+          rows="4"
+          class="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+        ></textarea>
+      </div>
+
+      @if (error()) {
+        <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+          {{ error() }}
+        </div>
+      }
+
+      <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-warm disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="saving()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <lucide-icon [img]="SaveIcon" [size]="17"></lucide-icon>
+          {{ saving() ? 'Salvando...' : 'Salvar empresa' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

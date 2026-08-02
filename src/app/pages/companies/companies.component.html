@@ -1,0 +1,320 @@
+<div class="space-y-6">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Empresas / SPEs</h1>
+      <p class="mt-1 max-w-2xl text-sm text-muted">
+        Gerencie a incorporadora e as sociedades de propósito específico vinculadas aos empreendimentos.
+      </p>
+    </div>
+    <button
+      type="button"
+      (click)="openCreate()"
+      class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+    >
+      <lucide-icon [img]="PlusIcon" [size]="18"></lucide-icon>
+      Nova empresa
+    </button>
+  </header>
+
+  @if (feedback()) {
+    <div class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary" role="status">
+      {{ feedback() }}
+    </div>
+  }
+  @if (actionError()) {
+    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      {{ actionError() }}
+    </div>
+  }
+
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Indicadores de empresas">
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Total de empresas</p>
+          <p class="mt-2 text-2xl font-bold text-ink">{{ totalCompanies() }}</p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary">
+          <lucide-icon [img]="LandmarkIcon" [size]="20"></lucide-icon>
+        </span>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Incorporadoras</p>
+          <p class="mt-2 text-2xl font-bold text-ink">{{ totalDevelopers() }}</p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary">
+          <lucide-icon [img]="BuildingIcon" [size]="20"></lucide-icon>
+        </span>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">SPEs</p>
+          <p class="mt-2 text-2xl font-bold text-ink">{{ totalSpes() }}</p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary">
+          <lucide-icon [img]="WalletIcon" [size]="20"></lucide-icon>
+        </span>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Empreendimentos vinculados</p>
+          <p class="mt-2 text-2xl font-bold text-ink">{{ totalDevelopments() }}</p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary">
+          <lucide-icon [img]="BuildingIcon" [size]="20"></lucide-icon>
+        </span>
+      </div>
+    </article>
+  </section>
+
+  <section class="rounded-xl border border-border bg-card p-4 shadow-card" aria-label="Filtros">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center">
+      <div class="relative flex-1">
+        <lucide-icon
+          [img]="SearchIcon"
+          [size]="17"
+          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+        ></lucide-icon>
+        <input
+          type="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          placeholder="Buscar por nome ou CNPJ"
+          class="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-primary"
+        />
+      </div>
+      <select
+        [ngModel]="typeFilter()"
+        (ngModelChange)="typeFilter.set($event)"
+        class="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary md:w-52"
+        aria-label="Filtrar por tipo"
+      >
+        <option value="">Todos os tipos</option>
+        <option value="INCORPORADORA">Incorporadora</option>
+        <option value="SPE">SPE</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card" aria-label="Lista de empresas">
+    @if (loading()) {
+      <div class="flex min-h-48 items-center justify-center p-6 text-sm text-muted">
+        Carregando empresas...
+      </div>
+    } @else if (loadError()) {
+      <div class="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center">
+        <p class="text-sm text-red-800">{{ loadError() }}</p>
+        <button
+          type="button"
+          (click)="loadCompanies()"
+          class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-warm"
+        >
+          <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (companies().length === 0) {
+      <div class="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center">
+        <lucide-icon [img]="LandmarkIcon" [size]="30" class="text-muted"></lucide-icon>
+        <p class="font-medium text-ink">Nenhuma empresa cadastrada</p>
+        <p class="text-sm text-muted">Cadastre a primeira empresa para começar.</p>
+      </div>
+    } @else if (filteredCompanies().length === 0) {
+      <div class="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center">
+        <p class="font-medium text-ink">Nenhuma empresa encontrada</p>
+        <p class="text-sm text-muted">Ajuste a busca ou o filtro de tipo.</p>
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-warm"
+        >
+          Limpar filtros
+        </button>
+      </div>
+    } @else {
+      <div class="hidden overflow-x-auto md:block">
+        <table class="w-full min-w-[900px] text-left text-sm">
+          <thead class="border-b border-border bg-surface-warm text-xs uppercase tracking-wide text-muted">
+            <tr>
+              <th class="px-4 py-3 font-medium">Empresa</th>
+              <th class="px-4 py-3 font-medium">CNPJ</th>
+              <th class="px-4 py-3 font-medium">Tipo</th>
+              <th class="px-4 py-3 text-center font-medium">Empreendimentos</th>
+              <th class="px-4 py-3 text-center font-medium">Contas</th>
+              <th class="px-4 py-3 font-medium">Cadastro</th>
+              <th class="px-4 py-3 text-right font-medium">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (company of filteredCompanies(); track company.id) {
+              <tr
+                tabindex="0"
+                (click)="openDetail(company.id)"
+                (keydown.enter)="openDetail(company.id)"
+                class="cursor-pointer transition-colors hover:bg-surface-warm focus:bg-surface-warm focus:outline-none"
+              >
+                <td class="px-4 py-3 font-medium text-ink">{{ company.name }}</td>
+                <td class="px-4 py-3 text-muted">{{ formatCnpj(company.cnpj) }}</td>
+                <td class="px-4 py-3">
+                  <span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="typeBadge(company.type)">
+                    {{ typeLabel(company.type) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-center text-ink">{{ company._count.developments }}</td>
+                <td class="px-4 py-3 text-center text-ink">{{ company._count.bankAccounts }}</td>
+                <td class="px-4 py-3 text-muted">{{ formatDate(company.createdAt) }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      (click)="openEdit(company, $event)"
+                      class="rounded-lg p-2 text-muted transition-colors hover:bg-card hover:text-primary"
+                      [attr.aria-label]="'Editar ' + company.name"
+                    >
+                      <lucide-icon [img]="PencilIcon" [size]="16"></lucide-icon>
+                    </button>
+                    <button
+                      type="button"
+                      (click)="requestDelete(company, $event)"
+                      class="rounded-lg p-2 text-muted transition-colors hover:bg-red-50 hover:text-red-700"
+                      [attr.aria-label]="'Remover ' + company.name"
+                    >
+                      <lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>
+                    </button>
+                    <lucide-icon [img]="ChevronIcon" [size]="17" class="ml-1 text-muted"></lucide-icon>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="divide-y divide-border md:hidden">
+        @for (company of filteredCompanies(); track company.id) {
+          <article class="p-4 transition-colors hover:bg-surface-warm">
+            <button type="button" (click)="openDetail(company.id)" class="w-full text-left">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h2 class="truncate font-semibold text-ink">{{ company.name }}</h2>
+                  <p class="mt-1 text-sm text-muted">{{ formatCnpj(company.cnpj) }}</p>
+                </div>
+                <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="typeBadge(company.type)">
+                  {{ typeLabel(company.type) }}
+                </span>
+              </div>
+              <dl class="mt-4 grid grid-cols-3 gap-3 text-sm">
+                <div>
+                  <dt class="text-xs text-muted">Empreendimentos</dt>
+                  <dd class="mt-1 font-medium text-ink">{{ company._count.developments }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">Contas</dt>
+                  <dd class="mt-1 font-medium text-ink">{{ company._count.bankAccounts }}</dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">Cadastro</dt>
+                  <dd class="mt-1 font-medium text-ink">{{ formatDate(company.createdAt) }}</dd>
+                </div>
+              </dl>
+            </button>
+            <div class="mt-4 flex justify-end gap-2 border-t border-border pt-3">
+              <button
+                type="button"
+                (click)="openEdit(company)"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-ink transition-colors hover:bg-surface-warm"
+              >
+                <lucide-icon [img]="PencilIcon" [size]="15"></lucide-icon>
+                Editar
+              </button>
+              <button
+                type="button"
+                (click)="requestDelete(company)"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 transition-colors hover:bg-red-50"
+              >
+                <lucide-icon [img]="TrashIcon" [size]="15"></lucide-icon>
+                Remover
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>
+
+@if (formOpen()) {
+  <app-company-form-modal
+    [company]="editingCompany()"
+    (closed)="closeForm()"
+    (saved)="onSaved($event)"
+  />
+}
+
+@if (deleteTarget(); as company) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation" (click)="closeDelete()">
+    <section
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirmar exclusão"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-ink">Remover empresa</h2>
+          <p class="mt-2 text-sm leading-relaxed text-muted">
+            Confirma a remoção de <strong class="font-semibold text-ink">{{ company.name }}</strong>?
+          </p>
+          @if (company._count.developments > 0) {
+            <p class="mt-3 rounded-lg border border-border bg-surface-warm px-3 py-2 text-sm text-ink">
+              Esta empresa possui {{ company._count.developments }} empreendimento(s) vinculado(s). A API poderá bloquear a exclusão.
+            </p>
+          }
+        </div>
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+          aria-label="Fechar confirmação"
+        >
+          <lucide-icon [img]="XIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      @if (actionError()) {
+        <div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+          {{ actionError() }}
+        </div>
+      }
+
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>
+          {{ deleting() ? 'Removendo...' : 'Remover empresa' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
