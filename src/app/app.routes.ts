@@ -28,7 +28,22 @@ export const routes: Routes = [
       import('./pages/people/person-detail.component').then((m) => m.PersonDetailComponent),
   },
   { path: 'interactions', ...placeholder('Interações') },
-  { path: 'developments', ...placeholder('Empreendimentos') },
+  {
+    path: 'developments',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/developments/developments.component').then(
+        (m) => m.DevelopmentsComponent,
+      ),
+  },
+  {
+    path: 'developments/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/developments/development-detail.component').then(
+        (m) => m.DevelopmentDetailComponent,
+      ),
+  },
   { path: 'investments', ...placeholder('Investimentos') },
   { path: 'returns', ...placeholder('Retornos') },
   {

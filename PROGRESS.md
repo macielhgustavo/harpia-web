@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-02 — Empreendimentos — listagem, CRUD e visão geral:** model reconciliado; listagem, filtros, CRUD e detalhe com resumos de tipologias, unidades e tabelas de preço, tratamento de 409 e validação contra a API real.
+
 - **2026-08-02 — Tela de Empresas/SPEs:** lista, filtros, indicadores, detalhe e CRUD completos, com relacionamentos de empreendimentos e contas bancárias, tratamento do bloqueio 409 e responsividade. Model e fluxos reconciliados e validados contra a API real.
 
 - **2026-07-11 — Tela de Pessoas (lista, detalhe, gestão de papéis):** primeira tela real da nova arquitetura. `person.service.ts` (list/getById/create/update/remove/addRole/removeRole) + lista com filtro por papel, busca e múltiplos badges de papel, modal de criação com seleção de papéis e tratamento de 409 (documento duplicado); detalhe com dados, gestão de papéis (adicionar/remover), investimentos e timeline de interações, e modal de edição. Todos os fluxos validados contra a API real. **`person.model.ts` reconciliado com o backend:** `type`→`personType` (`FISICA`/`JURIDICA`), `PersonRole.type`→`role`, enum de papéis real (LEAD/CLIENTE/CORRETOR/FUNCIONARIO/FORNECEDOR/PARCEIRO/INVESTIDOR), campo `address` adicionado.

@@ -1,0 +1,127 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    class="my-auto max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-6"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="isEditing ? 'Editar empreendimento' : 'Novo empreendimento'"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="mb-5 flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-xl font-semibold text-ink">
+          {{ isEditing ? 'Editar empreendimento' : 'Novo empreendimento' }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">Informe os dados gerais e o vínculo empresarial.</p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted transition-colors hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+        aria-label="Fechar modal"
+      >
+        <lucide-icon [img]="XIcon" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <form (ngSubmit)="save()" class="space-y-4">
+      <div>
+        <label for="development-name" class="mb-1 block text-sm font-medium text-ink">Nome *</label>
+        <input
+          id="development-name"
+          name="name"
+          type="text"
+          [(ngModel)]="form.name"
+          autofocus
+          autocomplete="off"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+          [class.border-red-400]="submitted() && nameInvalid()"
+        />
+        @if (submitted() && nameInvalid()) {
+          <p class="mt-1 text-xs text-red-700">Informe o nome do empreendimento.</p>
+        }
+      </div>
+
+      <div>
+        <label for="development-description" class="mb-1 block text-sm font-medium text-ink">Descrição</label>
+        <textarea
+          id="development-description"
+          name="description"
+          [(ngModel)]="form.description"
+          rows="3"
+          class="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-primary"
+        ></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="development-type" class="mb-1 block text-sm font-medium text-ink">Tipo *</label>
+          <select id="development-type" name="type" [(ngModel)]="form.type" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary">
+            @for (option of typeOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label for="development-status" class="mb-1 block text-sm font-medium text-ink">Status *</label>
+          <select id="development-status" name="status" [(ngModel)]="form.status" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary">
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="development-company" class="mb-1 block text-sm font-medium text-ink">Empresa / SPE</label>
+        <select id="development-company" name="companyId" [(ngModel)]="form.companyId" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary">
+          <option value="">Sem empresa/SPE vinculada</option>
+          @for (company of sortedCompanies; track company.id) {
+            <option [value]="company.id">{{ companyLabel(company) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="development-address" class="mb-1 block text-sm font-medium text-ink">Endereço</label>
+          <input id="development-address" name="address" type="text" [(ngModel)]="form.address" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label for="development-city" class="mb-1 block text-sm font-medium text-ink">Cidade</label>
+          <input id="development-city" name="city" type="text" [(ngModel)]="form.city" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary" />
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="development-launch-date" class="mb-1 block text-sm font-medium text-ink">Lançamento previsto</label>
+          <input id="development-launch-date" name="expectedLaunchDate" type="date" [(ngModel)]="form.expectedLaunchDate" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label for="development-delivery-date" class="mb-1 block text-sm font-medium text-ink">Entrega prevista</label>
+          <input id="development-delivery-date" name="expectedDeliveryDate" type="date" [(ngModel)]="form.expectedDeliveryDate" class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary" [class.border-red-400]="datesInvalid()" />
+        </div>
+      </div>
+      @if (datesInvalid()) {
+        <p class="text-xs text-red-700">A entrega prevista não pode ser anterior ao lançamento.</p>
+      }
+
+      @if (error()) {
+        <div class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ error() }}</div>
+      }
+
+      <div class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+        <button type="button" (click)="requestClose()" [disabled]="saving()" class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-warm disabled:opacity-60">Cancelar</button>
+        <button type="submit" [disabled]="saving()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60">
+          <lucide-icon [img]="SaveIcon" [size]="17"></lucide-icon>
+          {{ saving() ? 'Salvando...' : 'Salvar empreendimento' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

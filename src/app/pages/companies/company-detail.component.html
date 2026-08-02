@@ -110,7 +110,10 @@
             } @else {
               <div class="divide-y divide-border">
                 @for (development of company.developments; track development.id) {
-                  <article class="p-5">
+                  <a
+                    [routerLink]="['/developments', development.id]"
+                    class="block p-5 transition-colors hover:bg-surface-warm focus:bg-surface-warm focus:outline-none"
+                  >
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <h3 class="font-medium text-ink">{{ development.name }}</h3>
@@ -125,7 +128,7 @@
                         {{ developmentStatusLabel(development.status) }}
                       </span>
                     </div>
-                  </article>
+                  </a>
                 }
               </div>
             }

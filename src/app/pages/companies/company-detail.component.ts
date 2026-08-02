@@ -18,6 +18,7 @@ import { Company, CompanyDetail, CompanyType } from '../../core/models/company.m
 import { CompanyService } from '../../core/services/company.service';
 import { formatCnpj } from '../../shared/utils/cnpj';
 import { extractError } from '../../shared/utils/http-error';
+import { developmentStatusLabel } from '../../shared/utils/development';
 import { CompanyFormModalComponent } from './company-form-modal.component';
 
 @Component({
@@ -107,17 +108,7 @@ export class CompanyDetailComponent implements OnInit {
       : 'bg-blue-100 text-blue-800';
   }
 
-  developmentStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      PLANEJAMENTO: 'Planejamento',
-      EM_CAPTACAO: 'Em captação',
-      LANCAMENTO: 'Lançamento',
-      EM_OBRA: 'Em obra',
-      ENTREGUE: 'Entregue',
-      CANCELADO: 'Cancelado',
-    };
-    return labels[status] ?? status.replaceAll('_', ' ');
-  }
+  readonly developmentStatusLabel = developmentStatusLabel;
 
   formatCnpj(value?: string | null): string {
     return formatCnpj(value);

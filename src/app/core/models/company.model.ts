@@ -1,3 +1,5 @@
+import type { DevelopmentStatus, DevelopmentType } from './development.model';
+
 export type CompanyType = 'SPE' | 'INCORPORADORA';
 
 export interface Company {
@@ -14,7 +16,7 @@ export interface Company {
 export interface CompanyDevelopmentSummary {
   id: string;
   name: string;
-  status: string;
+  status: DevelopmentStatus;
 }
 
 export interface CompanyCount {
@@ -30,7 +32,7 @@ export interface CompanyListItem extends Company {
 export interface CompanyDevelopment extends CompanyDevelopmentSummary {
   organizationId: string;
   description: string | null;
-  type: string;
+  type: DevelopmentType;
   companyId: string;
   address: string | null;
   city: string | null;

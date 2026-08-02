@@ -1,13 +1,11 @@
 export interface UnitType {
   id: string;
-  name: string;
-  description?: string;
-  area?: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  parkingSpots?: number;
-  developmentId: string;
   organizationId: string;
+  developmentId: string;
+  name: string;
+  bedrooms: number | null;
+  suites: number | null;
+  standardArea: number | null;
   createdAt: string;
   updatedAt: string;
 }
