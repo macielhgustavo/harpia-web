@@ -1,0 +1,98 @@
+import {
+  ACCESS_DENIED_ROUTE,
+  ALL_APP_PERMISSIONS,
+  APP_PERMISSIONS,
+  ROLE_PERMISSIONS,
+  firstAccessibleRouteForRole,
+  isAppPermission,
+} from './rbac.config';
+
+describe('RBAC configuration', () => {
+  it('mirrors the backend permission vocabulary without duplicates', () => {
+    expect(ALL_APP_PERMISSIONS.length).toBe(30);
+    expect(new Set(ALL_APP_PERMISSIONS).size).toBe(30);
+    expect(isAppPermission(APP_PERMISSIONS.USERS_MANAGE)).toBeTrue();
+    expect(isAppPermission('USERS_READ')).toBeFalse();
+  });
+
+  it('gives OWNER and ADMIN every permission, including users and audit', () => {
+    expect(ROLE_PERMISSIONS.OWNER).toEqual(ALL_APP_PERMISSIONS);
+    expect(ROLE_PERMISSIONS.ADMIN).toEqual(ALL_APP_PERMISSIONS);
+    expect(ROLE_PERMISSIONS.OWNER).toContain(APP_PERMISSIONS.USERS_MANAGE);
+    expect(ROLE_PERMISSIONS.ADMIN).toContain(APP_PERMISSIONS.AUDIT_READ);
+  });
+
+  it('mirrors the backend FINANCEIRO permissions', () => {
+    expect(ROLE_PERMISSIONS.FINANCEIRO).toEqual([
+      APP_PERMISSIONS.PEOPLE_READ,
+      APP_PERMISSIONS.COMPANIES_READ,
+      APP_PERMISSIONS.BANK_ACCOUNTS_READ,
+      APP_PERMISSIONS.BANK_ACCOUNTS_WRITE,
+      APP_PERMISSIONS.DEVELOPMENTS_READ,
+      APP_PERMISSIONS.UNITS_READ,
+      APP_PERMISSIONS.PRICES_READ,
+      APP_PERMISSIONS.INVESTMENTS_READ,
+      APP_PERMISSIONS.INVESTMENTS_WRITE,
+      APP_PERMISSIONS.RETURNS_READ,
+      APP_PERMISSIONS.RETURNS_WRITE,
+      APP_PERMISSIONS.DOCUMENTS_READ,
+      APP_PERMISSIONS.INTERACTIONS_READ,
+      APP_PERMISSIONS.DASHBOARD_READ,
+      APP_PERMISSIONS.REPORTS_EXPORT,
+      APP_PERMISSIONS.FINANCE_READ,
+      APP_PERMISSIONS.FINANCE_WRITE,
+    ]);
+  });
+
+  it('mirrors the backend COMERCIAL, OPERACIONAL and LEITURA permissions', () => {
+    expect(ROLE_PERMISSIONS.COMERCIAL).toEqual([
+      APP_PERMISSIONS.PEOPLE_READ,
+      APP_PERMISSIONS.PEOPLE_WRITE,
+      APP_PERMISSIONS.COMPANIES_READ,
+      APP_PERMISSIONS.DEVELOPMENTS_READ,
+      APP_PERMISSIONS.UNITS_READ,
+      APP_PERMISSIONS.PRICES_READ,
+      APP_PERMISSIONS.DOCUMENTS_READ,
+      APP_PERMISSIONS.DOCUMENTS_WRITE,
+      APP_PERMISSIONS.INTERACTIONS_READ,
+      APP_PERMISSIONS.INTERACTIONS_WRITE,
+      APP_PERMISSIONS.CRM_READ,
+      APP_PERMISSIONS.CRM_WRITE,
+      APP_PERMISSIONS.SALES_READ,
+      APP_PERMISSIONS.SALES_WRITE,
+    ]);
+    expect(ROLE_PERMISSIONS.OPERACIONAL).toEqual([
+      APP_PERMISSIONS.PEOPLE_READ,
+      APP_PERMISSIONS.COMPANIES_READ,
+      APP_PERMISSIONS.DEVELOPMENTS_READ,
+      APP_PERMISSIONS.DEVELOPMENTS_WRITE,
+      APP_PERMISSIONS.UNITS_READ,
+      APP_PERMISSIONS.UNITS_WRITE,
+      APP_PERMISSIONS.PRICES_READ,
+      APP_PERMISSIONS.PRICES_WRITE,
+      APP_PERMISSIONS.DOCUMENTS_READ,
+      APP_PERMISSIONS.DOCUMENTS_WRITE,
+      APP_PERMISSIONS.INTERACTIONS_READ,
+      APP_PERMISSIONS.INTERACTIONS_WRITE,
+    ]);
+    expect(ROLE_PERMISSIONS.LEITURA).toEqual([
+      APP_PERMISSIONS.PEOPLE_READ,
+      APP_PERMISSIONS.COMPANIES_READ,
+      APP_PERMISSIONS.DEVELOPMENTS_READ,
+      APP_PERMISSIONS.UNITS_READ,
+      APP_PERMISSIONS.PRICES_READ,
+      APP_PERMISSIONS.DOCUMENTS_READ,
+      APP_PERMISSIONS.INTERACTIONS_READ,
+    ]);
+  });
+
+  it('selects an accessible post-login route for every role', () => {
+    expect(firstAccessibleRouteForRole('OWNER')).toBe('/dashboard');
+    expect(firstAccessibleRouteForRole('ADMIN')).toBe('/dashboard');
+    expect(firstAccessibleRouteForRole('FINANCEIRO')).toBe('/dashboard');
+    expect(firstAccessibleRouteForRole('COMERCIAL')).toBe('/people');
+    expect(firstAccessibleRouteForRole('OPERACIONAL')).toBe('/people');
+    expect(firstAccessibleRouteForRole('LEITURA')).toBe('/people');
+    expect(firstAccessibleRouteForRole(null)).toBe(ACCESS_DENIED_ROUTE);
+  });
+});

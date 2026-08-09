@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AuthService } from '../../core/services/auth.service';
+import { AuthorizationService } from '../../core/services/authorization.service';
 import { LoginComponent } from './login.component';
 
 @Component({
@@ -19,16 +20,23 @@ describe('LoginComponent', () => {
   let authService: {
     login: jasmine.Spy;
   };
+  let authorization: {
+    firstAccessibleRoute: jasmine.Spy;
+  };
 
   beforeEach(async () => {
     authService = {
       login: jasmine.createSpy().and.returnValue(of({ access_token: 'jwt' })),
+    };
+    authorization = {
+      firstAccessibleRoute: jasmine.createSpy().and.returnValue('/dashboard'),
     };
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [
         { provide: AuthService, useValue: authService },
+        { provide: AuthorizationService, useValue: authorization },
         provideRouter([
           { path: 'login', component: TestPageComponent },
           { path: 'dashboard', component: TestPageComponent },
@@ -89,6 +97,22 @@ describe('LoginComponent', () => {
     component.onSubmit();
 
     expect(navigateByUrl).toHaveBeenCalledWith('/dashboard', {
+      replaceUrl: true,
+    });
+  });
+
+  it('usa a primeira rota permitida quando o perfil não acessa o dashboard', async () => {
+    authorization.firstAccessibleRoute.and.returnValue('/people');
+    await renderAt('/login');
+    const navigateByUrl = spyOn(router, 'navigateByUrl').and.resolveTo(true);
+    component.form.setValue({
+      email: 'comercial@harpia.com',
+      password: 'senha',
+    });
+
+    component.onSubmit();
+
+    expect(navigateByUrl).toHaveBeenCalledWith('/people', {
       replaceUrl: true,
     });
   });

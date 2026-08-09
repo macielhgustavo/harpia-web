@@ -5,6 +5,7 @@ import { filter, map, startWith, tap } from 'rxjs';
 import { LucideAngularModule, X } from 'lucide-angular';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from './shared/components/header/header.component';
+import { DialogFocusDirective } from './shared/directives/dialog-focus.directive';
 
 const PUBLIC_AUTH_PATHS = new Set([
   '/login',
@@ -20,6 +21,7 @@ const PUBLIC_AUTH_PATHS = new Set([
     SidebarComponent,
     HeaderComponent,
     LucideAngularModule,
+    DialogFocusDirective,
   ],
   template: `
     @if (isPublicAuthPage()) {
@@ -37,13 +39,20 @@ const PUBLIC_AUTH_PATHS = new Set([
             (click)="closeMobileMenu()"
           >
             <div
+              id="mobile-navigation-dialog"
               class="relative h-full w-64"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navegação principal"
+              appDialogFocus
+              (dialogEscape)="closeMobileMenu()"
               (click)="$event.stopPropagation()"
             >
               <app-sidebar />
               <button
                 type="button"
                 (click)="closeMobileMenu()"
+                data-dialog-initial-focus
                 class="absolute right-3 top-3 rounded-lg border border-border bg-card p-2 text-ink shadow-card"
                 aria-label="Fechar navegação"
               >
@@ -53,8 +62,14 @@ const PUBLIC_AUTH_PATHS = new Set([
           </div>
         }
 
-        <div class="flex flex-1 flex-col overflow-hidden">
-          <app-header (menuToggle)="openMobileMenu()" />
+        <div
+          class="flex flex-1 flex-col overflow-hidden"
+          [attr.inert]="mobileMenuOpen() ? '' : null"
+        >
+          <app-header
+            [menuOpen]="mobileMenuOpen()"
+            (menuToggle)="openMobileMenu()"
+          />
           <main class="flex-1 overflow-y-auto bg-surface p-4 sm:p-6 lg:p-8">
             <router-outlet />
           </main>

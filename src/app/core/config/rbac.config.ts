@@ -1,0 +1,160 @@
+import { UserRole } from '../models/user-role.model';
+
+/**
+ * UX mirror of the backend permission vocabulary. It must never be used as a
+ * security boundary: the API reloads the current role and enforces RBAC.
+ */
+export const APP_PERMISSIONS = {
+  PEOPLE_READ: 'PEOPLE_READ',
+  PEOPLE_WRITE: 'PEOPLE_WRITE',
+  COMPANIES_READ: 'COMPANIES_READ',
+  COMPANIES_WRITE: 'COMPANIES_WRITE',
+  BANK_ACCOUNTS_READ: 'BANK_ACCOUNTS_READ',
+  BANK_ACCOUNTS_WRITE: 'BANK_ACCOUNTS_WRITE',
+  DEVELOPMENTS_READ: 'DEVELOPMENTS_READ',
+  DEVELOPMENTS_WRITE: 'DEVELOPMENTS_WRITE',
+  UNITS_READ: 'UNITS_READ',
+  UNITS_WRITE: 'UNITS_WRITE',
+  PRICES_READ: 'PRICES_READ',
+  PRICES_WRITE: 'PRICES_WRITE',
+  INVESTMENTS_READ: 'INVESTMENTS_READ',
+  INVESTMENTS_WRITE: 'INVESTMENTS_WRITE',
+  RETURNS_READ: 'RETURNS_READ',
+  RETURNS_WRITE: 'RETURNS_WRITE',
+  DOCUMENTS_READ: 'DOCUMENTS_READ',
+  DOCUMENTS_WRITE: 'DOCUMENTS_WRITE',
+  INTERACTIONS_READ: 'INTERACTIONS_READ',
+  INTERACTIONS_WRITE: 'INTERACTIONS_WRITE',
+  DASHBOARD_READ: 'DASHBOARD_READ',
+  REPORTS_EXPORT: 'REPORTS_EXPORT',
+  USERS_MANAGE: 'USERS_MANAGE',
+  AUDIT_READ: 'AUDIT_READ',
+  CRM_READ: 'CRM_READ',
+  CRM_WRITE: 'CRM_WRITE',
+  SALES_READ: 'SALES_READ',
+  SALES_WRITE: 'SALES_WRITE',
+  FINANCE_READ: 'FINANCE_READ',
+  FINANCE_WRITE: 'FINANCE_WRITE',
+} as const;
+
+export type AppPermission =
+  (typeof APP_PERMISSIONS)[keyof typeof APP_PERMISSIONS];
+
+export const ALL_APP_PERMISSIONS: readonly AppPermission[] = Object.freeze(
+  Object.values(APP_PERMISSIONS),
+);
+
+export const ROLE_PERMISSIONS = {
+  OWNER: ALL_APP_PERMISSIONS,
+  ADMIN: ALL_APP_PERMISSIONS,
+  FINANCEIRO: [
+    APP_PERMISSIONS.PEOPLE_READ,
+    APP_PERMISSIONS.COMPANIES_READ,
+    APP_PERMISSIONS.BANK_ACCOUNTS_READ,
+    APP_PERMISSIONS.BANK_ACCOUNTS_WRITE,
+    APP_PERMISSIONS.DEVELOPMENTS_READ,
+    APP_PERMISSIONS.UNITS_READ,
+    APP_PERMISSIONS.PRICES_READ,
+    APP_PERMISSIONS.INVESTMENTS_READ,
+    APP_PERMISSIONS.INVESTMENTS_WRITE,
+    APP_PERMISSIONS.RETURNS_READ,
+    APP_PERMISSIONS.RETURNS_WRITE,
+    APP_PERMISSIONS.DOCUMENTS_READ,
+    APP_PERMISSIONS.INTERACTIONS_READ,
+    APP_PERMISSIONS.DASHBOARD_READ,
+    APP_PERMISSIONS.REPORTS_EXPORT,
+    APP_PERMISSIONS.FINANCE_READ,
+    APP_PERMISSIONS.FINANCE_WRITE,
+  ],
+  COMERCIAL: [
+    APP_PERMISSIONS.PEOPLE_READ,
+    APP_PERMISSIONS.PEOPLE_WRITE,
+    APP_PERMISSIONS.COMPANIES_READ,
+    APP_PERMISSIONS.DEVELOPMENTS_READ,
+    APP_PERMISSIONS.UNITS_READ,
+    APP_PERMISSIONS.PRICES_READ,
+    APP_PERMISSIONS.DOCUMENTS_READ,
+    APP_PERMISSIONS.DOCUMENTS_WRITE,
+    APP_PERMISSIONS.INTERACTIONS_READ,
+    APP_PERMISSIONS.INTERACTIONS_WRITE,
+    APP_PERMISSIONS.CRM_READ,
+    APP_PERMISSIONS.CRM_WRITE,
+    APP_PERMISSIONS.SALES_READ,
+    APP_PERMISSIONS.SALES_WRITE,
+  ],
+  OPERACIONAL: [
+    APP_PERMISSIONS.PEOPLE_READ,
+    APP_PERMISSIONS.COMPANIES_READ,
+    APP_PERMISSIONS.DEVELOPMENTS_READ,
+    APP_PERMISSIONS.DEVELOPMENTS_WRITE,
+    APP_PERMISSIONS.UNITS_READ,
+    APP_PERMISSIONS.UNITS_WRITE,
+    APP_PERMISSIONS.PRICES_READ,
+    APP_PERMISSIONS.PRICES_WRITE,
+    APP_PERMISSIONS.DOCUMENTS_READ,
+    APP_PERMISSIONS.DOCUMENTS_WRITE,
+    APP_PERMISSIONS.INTERACTIONS_READ,
+    APP_PERMISSIONS.INTERACTIONS_WRITE,
+  ],
+  LEITURA: [
+    APP_PERMISSIONS.PEOPLE_READ,
+    APP_PERMISSIONS.COMPANIES_READ,
+    APP_PERMISSIONS.DEVELOPMENTS_READ,
+    APP_PERMISSIONS.UNITS_READ,
+    APP_PERMISSIONS.PRICES_READ,
+    APP_PERMISSIONS.DOCUMENTS_READ,
+    APP_PERMISSIONS.INTERACTIONS_READ,
+  ],
+} as const satisfies Readonly<Record<UserRole, readonly AppPermission[]>>;
+
+export interface PermissionRoute {
+  route: string;
+  permission: AppPermission;
+}
+
+/** Ordered fallbacks used after login and when a role cannot see Dashboard. */
+export const PERMISSION_ROUTES = [
+  { route: '/dashboard', permission: APP_PERMISSIONS.DASHBOARD_READ },
+  { route: '/people', permission: APP_PERMISSIONS.PEOPLE_READ },
+  { route: '/developments', permission: APP_PERMISSIONS.DEVELOPMENTS_READ },
+  { route: '/companies', permission: APP_PERMISSIONS.COMPANIES_READ },
+  { route: '/interactions', permission: APP_PERMISSIONS.INTERACTIONS_READ },
+  { route: '/investments', permission: APP_PERMISSIONS.INVESTMENTS_READ },
+  { route: '/returns', permission: APP_PERMISSIONS.RETURNS_READ },
+  { route: '/bank-accounts', permission: APP_PERMISSIONS.BANK_ACCOUNTS_READ },
+  { route: '/users', permission: APP_PERMISSIONS.USERS_MANAGE },
+  { route: '/audit-logs', permission: APP_PERMISSIONS.AUDIT_READ },
+] as const satisfies readonly PermissionRoute[];
+
+export const ACCESS_DENIED_ROUTE = '/access-denied';
+export const PERMISSION_ROUTE_DATA_KEY = 'permission';
+
+export function isAppPermission(value: unknown): value is AppPermission {
+  return (
+    typeof value === 'string' &&
+    (ALL_APP_PERMISSIONS as readonly string[]).includes(value)
+  );
+}
+
+export function roleHasPermission(
+  role: UserRole,
+  permission: AppPermission,
+): boolean {
+  return (ROLE_PERMISSIONS[role] as readonly AppPermission[]).includes(
+    permission,
+  );
+}
+
+export function firstAccessibleRouteForRole(
+  role: UserRole | null | undefined,
+): string {
+  if (!role) {
+    return ACCESS_DENIED_ROUTE;
+  }
+
+  return (
+    PERMISSION_ROUTES.find(({ permission }) =>
+      roleHasPermission(role, permission),
+    )?.route ?? ACCESS_DENIED_ROUTE
+  );
+}

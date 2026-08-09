@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LogOut, LucideAngularModule, Menu } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthSessionService } from '../../../core/services/auth-session.service';
 
 @Component({
   selector: 'app-header',
@@ -14,6 +15,8 @@ import { AuthService } from '../../../core/services/auth.service';
       <button
         type="button"
         (click)="menuToggle.emit()"
+        [attr.aria-expanded]="menuOpen"
+        aria-controls="mobile-navigation-dialog"
         class="rounded-lg border border-border p-2 text-ink transition-colors hover:bg-surface-warm md:hidden"
         aria-label="Abrir navegação"
       >
@@ -27,10 +30,10 @@ import { AuthService } from '../../../core/services/auth.service';
         <div
           class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white"
         >
-          A
+          {{ initials }}
         </div>
         <span class="hidden text-sm font-medium text-ink sm:inline">{{
-          userName
+          userEmail
         }}</span>
       </a>
       <button
@@ -46,9 +49,12 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class HeaderComponent {
   private readonly authService = inject(AuthService);
+  private readonly session = inject(AuthSessionService);
   @Output() readonly menuToggle = new EventEmitter<void>();
+  @Input() menuOpen = false;
 
-  readonly userName = 'Admin Harpia';
+  readonly userEmail = this.session.getClaims()?.email ?? 'Conta Harpia';
+  readonly initials = this.userEmail.slice(0, 2).toUpperCase();
   readonly LogOutIcon = LogOut;
   readonly MenuIcon = Menu;
 

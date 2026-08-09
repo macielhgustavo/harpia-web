@@ -1,0 +1,334 @@
+<div class="mx-auto max-w-5xl space-y-6">
+  <div class="contents" [attr.inert]="pendingAction() ? '' : null">
+    <a
+      routerLink="/users"
+      class="inline-flex min-h-10 items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+    >
+      <lucide-icon [img]="BackIcon" [size]="17"></lucide-icon>
+      Voltar para usuários
+    </a>
+
+    @if (loading()) {
+      <section
+        class="rounded-2xl border border-border bg-card px-5 py-14 text-center shadow-card"
+        aria-live="polite"
+      >
+        <p class="text-sm text-muted">Carregando usuário...</p>
+      </section>
+    } @else if (error()) {
+      <section
+        class="rounded-2xl border border-red-200 bg-red-50 px-5 py-10 text-center"
+        role="alert"
+      >
+        <p class="text-sm text-red-800">{{ error() }}</p>
+        <button
+          type="button"
+          (click)="reload()"
+          class="mt-4 inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100"
+        >
+          <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>
+          Tentar novamente
+        </button>
+      </section>
+    } @else {
+      @if (user(); as currentUser) {
+        <header
+          class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+        >
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <h1
+                class="break-words text-2xl font-semibold text-ink sm:text-3xl"
+              >
+                {{ currentUser.name }}
+              </h1>
+              @if (isCurrentUser()) {
+                <span
+                  class="rounded-full bg-gold-light px-2.5 py-1 text-xs font-medium text-gold-dark"
+                  >Você</span
+                >
+              }
+            </div>
+            <p class="mt-1 break-all text-sm text-muted">
+              {{ currentUser.email }}
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span
+              class="rounded-full px-3 py-1.5 text-xs font-medium"
+              [class]="roleBadge(currentUser.role)"
+            >
+              {{ roleLabel(currentUser.role) }}
+            </span>
+            <span
+              class="rounded-full px-3 py-1.5 text-xs font-medium"
+              [class]="statusBadge(currentUser.isActive)"
+            >
+              {{ statusLabel(currentUser.isActive) }}
+            </span>
+          </div>
+        </header>
+
+        @if (feedback()) {
+          <div
+            class="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary"
+            role="status"
+          >
+            {{ feedback() }}
+          </div>
+        }
+
+        <div
+          class="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)]"
+        >
+          <section
+            class="rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6"
+            aria-labelledby="user-data-title"
+          >
+            <h2 id="user-data-title" class="font-semibold text-ink">
+              Dados do acesso
+            </h2>
+            <dl class="mt-5 grid gap-5 sm:grid-cols-2">
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Nome
+                </dt>
+                <dd class="mt-1 break-words text-sm font-medium text-ink">
+                  {{ currentUser.name }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  E-mail
+                </dt>
+                <dd class="mt-1 break-all text-sm font-medium text-ink">
+                  {{ currentUser.email }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Pessoa vinculada
+                </dt>
+                <dd class="mt-1 text-sm font-medium text-ink">
+                  {{ currentUser.personId || "Não vinculada" }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Último acesso
+                </dt>
+                <dd class="mt-1 text-sm font-medium text-ink">
+                  {{ formatDate(currentUser.lastLoginAt) }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Convidado em
+                </dt>
+                <dd class="mt-1 text-sm font-medium text-ink">
+                  {{ formatDate(currentUser.invitedAt) }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Convite aceito em
+                </dt>
+                <dd class="mt-1 text-sm font-medium text-ink">
+                  {{ formatDate(currentUser.acceptedAt) }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Criado em
+                </dt>
+                <dd class="mt-1 text-sm font-medium text-ink">
+                  {{ formatDate(currentUser.createdAt) }}
+                </dd>
+              </div>
+              <div>
+                <dt
+                  class="text-xs font-medium uppercase tracking-wide text-muted"
+                >
+                  Atualizado em
+                </dt>
+                <dd class="mt-1 text-sm font-medium text-ink">
+                  {{ formatDate(currentUser.updatedAt) }}
+                </dd>
+              </div>
+            </dl>
+          </section>
+
+          <section
+            class="rounded-2xl border border-border bg-card p-5 shadow-card sm:p-6"
+            aria-labelledby="access-management-title"
+          >
+            <div class="flex items-start gap-3">
+              <span
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gold-light text-gold-dark"
+                aria-hidden="true"
+              >
+                <lucide-icon [img]="ShieldIcon" [size]="18"></lucide-icon>
+              </span>
+              <div>
+                <h2 id="access-management-title" class="font-semibold text-ink">
+                  Permissões e acesso
+                </h2>
+                <p class="mt-1 text-xs leading-5 text-muted">
+                  As regras também são validadas pelo servidor.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 space-y-5">
+              <div>
+                <label
+                  for="managed-user-role"
+                  class="mb-1 block text-sm font-medium text-ink"
+                  >Papel</label
+                >
+                <select
+                  id="managed-user-role"
+                  [value]="selectedRole()"
+                  (change)="onRoleChange($any($event.target).value)"
+                  [disabled]="!canChangeRole() || actionLoading()"
+                  class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  @if (!roleOptions.includes(currentUser.role)) {
+                    <option [value]="currentUser.role">
+                      {{ roleLabel(currentUser.role) }}
+                    </option>
+                  }
+                  @for (role of roleOptions; track role) {
+                    <option [value]="role">{{ roleLabel(role) }}</option>
+                  }
+                </select>
+                @if (!canChangeRole()) {
+                  <p class="mt-1 text-xs text-muted">
+                    Seu papel não permite alterar este usuário.
+                  </p>
+                }
+                <button
+                  type="button"
+                  (click)="requestRoleChange()"
+                  [disabled]="roleChangeDisabled()"
+                  class="mt-3 w-full rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Salvar novo papel
+                </button>
+              </div>
+
+              <div class="border-t border-border pt-5">
+                <p class="text-sm font-medium text-ink">Situação do acesso</p>
+                <p class="mt-1 text-xs leading-5 text-muted">
+                  {{
+                    currentUser.isActive
+                      ? "Desativar revoga as sessões existentes."
+                      : "Ativar permite que o usuário volte a entrar."
+                  }}
+                </p>
+                @if (isCurrentUser() && currentUser.isActive) {
+                  <p
+                    class="mt-2 rounded-lg bg-surface-warm px-3 py-2 text-xs text-muted"
+                  >
+                    Você não pode desativar o próprio usuário.
+                  </p>
+                }
+                <button
+                  type="button"
+                  (click)="requestStatusChange()"
+                  [disabled]="!canToggleStatus() || actionLoading()"
+                  class="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                  [class]="
+                    currentUser.isActive
+                      ? 'bg-red-700 hover:bg-red-800'
+                      : 'bg-primary hover:bg-primary-dark'
+                  "
+                >
+                  <lucide-icon
+                    [img]="currentUser.isActive ? DeactivateIcon : ActivateIcon"
+                    [size]="17"
+                  ></lucide-icon>
+                  {{
+                    currentUser.isActive
+                      ? "Desativar usuário"
+                      : "Ativar usuário"
+                  }}
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      }
+    }
+  </div>
+
+  @if (pendingAction()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="presentation"
+      (click)="closeConfirmation()"
+    >
+      <section
+        class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="user-confirmation-title"
+        appDialogFocus
+        (dialogEscape)="closeConfirmation()"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="user-confirmation-title" class="text-lg font-semibold text-ink">
+          {{ confirmationTitle() }}
+        </h2>
+        <p class="mt-3 text-sm leading-6 text-muted">
+          {{ confirmationText() }}
+        </p>
+
+        @if (actionError()) {
+          <div
+            class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            role="alert"
+          >
+            {{ actionError() }}
+          </div>
+        }
+
+        <div
+          class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
+        >
+          <button
+            type="button"
+            (click)="closeConfirmation()"
+            data-dialog-initial-focus
+            [disabled]="actionLoading()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="confirmAction()"
+            [disabled]="actionLoading()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ actionLoading() ? "Salvando..." : confirmationButtonLabel() }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</div>

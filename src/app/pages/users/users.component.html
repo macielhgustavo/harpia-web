@@ -1,0 +1,225 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <p class="text-sm font-medium text-primary">Administração</p>
+      <h1 class="mt-1 text-2xl font-semibold text-ink sm:text-3xl">Usuários</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">
+        Consulte acessos, papéis e situação das pessoas da organização.
+      </p>
+    </div>
+    <a
+      routerLink="/users/invitations"
+      class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark"
+    >
+      <lucide-icon [img]="InvitationsIcon" [size]="17"></lucide-icon>
+      Gerenciar convites
+    </a>
+  </header>
+
+  <section
+    class="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5"
+    aria-label="Filtros de usuários"
+  >
+    <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_12rem_12rem]">
+      <div class="relative">
+        <lucide-icon
+          [img]="SearchIcon"
+          [size]="17"
+          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+          aria-hidden="true"
+        ></lucide-icon>
+        <label for="user-search" class="sr-only">Buscar usuário</label>
+        <input
+          id="user-search"
+          type="search"
+          [value]="search()"
+          (input)="onSearch($any($event.target).value)"
+          class="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-primary"
+          placeholder="Buscar por nome ou e-mail"
+        />
+      </div>
+
+      <div>
+        <label for="user-role-filter" class="sr-only">Filtrar por papel</label>
+        <select
+          id="user-role-filter"
+          [value]="roleFilter()"
+          (change)="onRoleChange($any($event.target).value)"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="">Todos os papéis</option>
+          @for (role of roleOptions; track role) {
+            <option [value]="role">{{ roleLabel(role) }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label for="user-status-filter" class="sr-only"
+          >Filtrar por status</label
+        >
+        <select
+          id="user-status-filter"
+          [value]="statusFilter()"
+          (change)="onStatusChange($any($event.target).value)"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="ALL">Todos os status</option>
+          <option value="ACTIVE">Ativos</option>
+          <option value="INACTIVE">Inativos</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <section
+      class="rounded-2xl border border-border bg-card px-5 py-12 text-center shadow-card"
+      aria-live="polite"
+    >
+      <p class="text-sm text-muted">Carregando usuários...</p>
+    </section>
+  } @else if (error()) {
+    <section
+      class="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center"
+      role="alert"
+    >
+      <p class="text-sm text-red-800">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="reload()"
+        class="mt-4 inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>
+        Tentar novamente
+      </button>
+    </section>
+  } @else if (users().length === 0) {
+    <section
+      class="rounded-2xl border border-border bg-card px-5 py-12 text-center shadow-card"
+    >
+      <span
+        class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-warm text-muted"
+        aria-hidden="true"
+      >
+        <lucide-icon [img]="UsersIcon" [size]="22"></lucide-icon>
+      </span>
+      <h2 class="mt-4 font-semibold text-ink">Nenhum usuário encontrado</h2>
+      <p class="mt-1 text-sm text-muted">
+        Ajuste a busca ou os filtros para ver outros resultados.
+      </p>
+    </section>
+  } @else {
+    <section
+      class="overflow-hidden rounded-2xl border border-border bg-card shadow-card"
+    >
+      <div
+        class="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5"
+      >
+        <h2 class="font-semibold text-ink">Pessoas com acesso</h2>
+        <span class="text-sm text-muted"
+          >{{ users().length }} resultado(s)</span
+        >
+      </div>
+
+      <div class="hidden overflow-x-auto xl:block">
+        <table class="w-full min-w-[760px] text-left text-sm">
+          <caption class="sr-only">
+            Lista de usuários da organização
+          </caption>
+          <thead
+            class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+          >
+            <tr>
+              <th scope="col" class="px-5 py-3 font-semibold">Usuário</th>
+              <th scope="col" class="px-5 py-3 font-semibold">Papel</th>
+              <th scope="col" class="px-5 py-3 font-semibold">Status</th>
+              <th scope="col" class="px-5 py-3 font-semibold">Último acesso</th>
+              <th scope="col" class="px-5 py-3 text-right font-semibold">
+                Ação
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (user of users(); track user.id) {
+              <tr class="transition-colors hover:bg-surface-warm/60">
+                <td class="px-5 py-4">
+                  <p class="font-medium text-ink">{{ user.name }}</p>
+                  <p class="mt-0.5 text-xs text-muted">{{ user.email }}</p>
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-medium"
+                    [class]="roleBadge(user.role)"
+                  >
+                    {{ roleLabel(user.role) }}
+                  </span>
+                </td>
+                <td class="px-5 py-4">
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-medium"
+                    [class]="statusBadge(user.isActive)"
+                  >
+                    {{ statusLabel(user.isActive) }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-muted">
+                  {{ formatDate(user.lastLoginAt) }}
+                </td>
+                <td class="px-5 py-4 text-right">
+                  <a
+                    [routerLink]="['/users', user.id]"
+                    class="font-medium text-primary underline-offset-4 hover:underline"
+                    [attr.aria-label]="'Ver detalhes de ' + user.name"
+                  >
+                    Ver detalhes
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="divide-y divide-border xl:hidden">
+        @for (user of users(); track user.id) {
+          <article class="space-y-3 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="truncate font-medium text-ink">{{ user.name }}</h3>
+                <p class="mt-0.5 truncate text-xs text-muted">
+                  {{ user.email }}
+                </p>
+              </div>
+              <span
+                class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+                [class]="statusBadge(user.isActive)"
+              >
+                {{ statusLabel(user.isActive) }}
+              </span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span
+                class="rounded-full px-2.5 py-1 font-medium"
+                [class]="roleBadge(user.role)"
+              >
+                {{ roleLabel(user.role) }}
+              </span>
+              <span class="text-muted"
+                >Último acesso: {{ formatDate(user.lastLoginAt) }}</span
+              >
+            </div>
+            <a
+              [routerLink]="['/users', user.id]"
+              class="inline-flex min-h-10 items-center font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Ver detalhes
+            </a>
+          </article>
+        }
+      </div>
+    </section>
+  }
+</div>

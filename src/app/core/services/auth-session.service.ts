@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AuthTokenClaims } from '../models/auth.model';
+import { isUserRole } from '../models/user-role.model';
 
 const TOKEN_KEY = 'harpia_token';
 
@@ -120,11 +121,15 @@ export class AuthSessionService {
       typeof claims.sub === 'string' &&
       claims.sub.length > 0 &&
       typeof claims.email === 'string' &&
+      claims.email.length > 0 &&
       typeof claims.organizationId === 'string' &&
       claims.organizationId.length > 0 &&
       Number.isInteger(claims.tokenVersion) &&
-      typeof claims.role === 'string' &&
-      Number.isFinite(claims.exp)
+      (claims.tokenVersion ?? -1) >= 0 &&
+      isUserRole(claims.role) &&
+      Number.isFinite(claims.exp) &&
+      (claims.exp ?? 0) > 0 &&
+      (claims.iat === undefined || Number.isFinite(claims.iat))
     );
   }
 }

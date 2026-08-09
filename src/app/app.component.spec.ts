@@ -54,6 +54,35 @@ describe('AppComponent', () => {
     expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 
+  it('torna o menu móvel modal, fechável por Escape e bloqueia o fundo', async () => {
+    const compiled = await renderAt('/dashboard');
+    const opener = compiled.querySelector(
+      'button[aria-label="Abrir navegação"]',
+    ) as HTMLButtonElement;
+    opener.focus();
+    opener.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const dialog = compiled.querySelector(
+      '#mobile-navigation-dialog',
+    ) as HTMLElement;
+    expect(dialog).not.toBeNull();
+    expect(opener.getAttribute('aria-expanded')).toBe('true');
+    expect(compiled.querySelector('[inert]')).not.toBeNull();
+
+    dialog.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(compiled.querySelector('#mobile-navigation-dialog')).toBeNull();
+    expect(compiled.querySelector('[inert]')).toBeNull();
+    expect(opener.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(opener);
+  });
+
   for (const url of [
     '/login',
     '/forgot-password',

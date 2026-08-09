@@ -1,4 +1,6 @@
 import { authGuard } from './core/guards/auth.guard';
+import { APP_PERMISSIONS } from './core/config/rbac.config';
+import { permissionGuard } from './core/guards/permission.guard';
 import { routes } from './app.routes';
 
 describe('Rotas de empreendimentos', () => {
@@ -12,6 +14,37 @@ describe('Rotas de empreendimentos', () => {
     expect(detailRoute?.canActivate).toContain(authGuard);
     expect(listRoute?.loadComponent).toBeDefined();
     expect(detailRoute?.loadComponent).toBeDefined();
+  });
+});
+
+describe('Rotas administrativas', () => {
+  it('protege usuários, convites e auditoria com as permissões correspondentes', () => {
+    const usersRoute = routes.find((route) => route.path === 'users');
+    const invitationsRoute = routes.find(
+      (route) => route.path === 'users/invitations',
+    );
+    const auditRoute = routes.find((route) => route.path === 'audit-logs');
+
+    for (const route of [usersRoute, invitationsRoute, auditRoute]) {
+      expect(route?.canActivate).toContain(authGuard);
+      expect(route?.canActivate).toContain(permissionGuard);
+      expect(route?.loadComponent).toBeDefined();
+    }
+    expect(usersRoute?.data?.['permission']).toBe(APP_PERMISSIONS.USERS_MANAGE);
+    expect(invitationsRoute?.data?.['permission']).toBe(
+      APP_PERMISSIONS.USERS_MANAGE,
+    );
+    expect(auditRoute?.data?.['permission']).toBe(APP_PERMISSIONS.AUDIT_READ);
+  });
+
+  it('declara a rota estática de convites antes do detalhe dinâmico', () => {
+    const invitationsIndex = routes.findIndex(
+      (route) => route.path === 'users/invitations',
+    );
+    const detailIndex = routes.findIndex((route) => route.path === 'users/:id');
+
+    expect(invitationsIndex).toBeGreaterThan(-1);
+    expect(invitationsIndex).toBeLessThan(detailIndex);
   });
 });
 

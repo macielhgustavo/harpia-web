@@ -4,6 +4,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { safeInternalReturnUrl } from '../../core/services/auth-session.service';
+import { AuthorizationService } from '../../core/services/authorization.service';
 import { AuthCardComponent } from '../../shared/components/auth-card/auth-card.component';
 import { extractError } from '../../shared/utils/http-error';
 
@@ -135,6 +136,7 @@ export class LoginComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly authorization = inject(AuthorizationService);
 
   readonly loading = signal(false);
   readonly errorMessage = signal('');
@@ -170,9 +172,12 @@ export class LoginComponent {
         const returnUrl = safeLoginReturnUrl(
           this.route.snapshot.queryParamMap.get('returnUrl'),
         );
-        void this.router.navigateByUrl(returnUrl ?? '/dashboard', {
-          replaceUrl: true,
-        });
+        void this.router.navigateByUrl(
+          returnUrl ?? this.authorization.firstAccessibleRoute(),
+          {
+            replaceUrl: true,
+          },
+        );
       },
       error: (error: unknown) => {
         this.loading.set(false);

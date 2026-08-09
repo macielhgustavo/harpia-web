@@ -71,6 +71,22 @@ export class AuthService {
     this.navigateToLogin(reason, returnUrl);
   }
 
+  /**
+   * Ends only the session that started an asynchronous security mutation.
+   * A newer login created while the request was pending is left untouched.
+   */
+  logoutIfCurrentToken(
+    expectedToken: string | null,
+    reason?: AuthRedirectReason,
+  ): boolean {
+    if (!this.session.clearToken(expectedToken)) {
+      return false;
+    }
+
+    this.navigateToLogin(reason);
+    return true;
+  }
+
   private navigateToLogin(
     reason?: AuthRedirectReason,
     returnUrl?: string,

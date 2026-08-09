@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthSessionService } from '../../../core/services/auth-session.service';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {
@@ -13,6 +14,12 @@ describe('HeaderComponent', () => {
       imports: [HeaderComponent],
       providers: [
         { provide: AuthService, useValue: { logout } },
+        {
+          provide: AuthSessionService,
+          useValue: {
+            getClaims: () => ({ email: 'admin@harpia.com' }),
+          },
+        },
         provideRouter([]),
       ],
     }).compileComponents();

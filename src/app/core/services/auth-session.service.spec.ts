@@ -69,6 +69,32 @@ describe('AuthSessionService', () => {
     expect(service.getToken()).toBeNull();
   });
 
+  it('rejects claims with an unknown role or invalid typed fields', () => {
+    service.setToken(
+      makeToken(Math.floor(Date.now() / 1000) + 300, {
+        role: 'SUPER_ADMIN',
+      }),
+    );
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.getToken()).toBeNull();
+
+    service.setToken(
+      makeToken(Math.floor(Date.now() / 1000) + 300, {
+        email: '',
+      }),
+    );
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.getToken()).toBeNull();
+
+    service.setToken(
+      makeToken(Math.floor(Date.now() / 1000) + 300, {
+        tokenVersion: -1,
+      }),
+    );
+    expect(service.isAuthenticated()).toBeFalse();
+    expect(service.getToken()).toBeNull();
+  });
+
   it('only clears the token that initiated session invalidation', () => {
     const oldToken = makeToken(Math.floor(Date.now() / 1000) + 300);
     const newToken = makeToken(Math.floor(Date.now() / 1000) + 600, {

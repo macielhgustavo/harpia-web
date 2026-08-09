@@ -1,0 +1,437 @@
+<div class="space-y-6">
+  <div
+    class="contents"
+    [attr.inert]="createOpen() || revokeTarget() ? '' : null"
+  >
+    <a
+      routerLink="/users"
+      class="inline-flex min-h-10 items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+    >
+      <lucide-icon [img]="BackIcon" [size]="17"></lucide-icon>
+      Voltar para usuários
+    </a>
+
+    <header
+      class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+    >
+      <div>
+        <p class="text-sm font-medium text-primary">Administração</p>
+        <h1 class="mt-1 text-2xl font-semibold text-ink sm:text-3xl">
+          Convites de usuários
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-muted">
+          Registre novos acessos e acompanhe a validade e a situação de cada
+          convite.
+        </p>
+      </div>
+      @if (canManageInvitations()) {
+        <button
+          type="button"
+          (click)="openCreate()"
+          [disabled]="loading()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <lucide-icon [img]="InviteIcon" [size]="17"></lucide-icon>
+          Novo convite
+        </button>
+      }
+    </header>
+
+    @if (feedback()) {
+      <div
+        class="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-primary"
+        role="status"
+      >
+        {{ feedback() }}
+      </div>
+    }
+
+    <section
+      class="rounded-2xl border border-border bg-card p-4 shadow-card sm:p-5"
+      aria-label="Filtros de convites"
+    >
+      <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_14rem]">
+        <div class="relative">
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="17"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+            aria-hidden="true"
+          ></lucide-icon>
+          <label for="invitation-search" class="sr-only">Buscar convite</label>
+          <input
+            id="invitation-search"
+            type="search"
+            [value]="search()"
+            (input)="search.set($any($event.target).value)"
+            class="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-primary"
+            placeholder="Buscar por e-mail ou responsável"
+          />
+        </div>
+        <div>
+          <label for="invitation-status-filter" class="sr-only"
+            >Filtrar por status</label
+          >
+          <select
+            id="invitation-status-filter"
+            [value]="statusFilter()"
+            (change)="onStatusChange($any($event.target).value)"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="ALL">Todos os status</option>
+            <option value="PENDING">Pendentes</option>
+            <option value="ACCEPTED">Aceitos</option>
+            <option value="REVOKED">Revogados</option>
+            <option value="EXPIRED">Expirados</option>
+          </select>
+        </div>
+      </div>
+    </section>
+
+    @if (loading()) {
+      <section
+        class="rounded-2xl border border-border bg-card px-5 py-12 text-center shadow-card"
+        aria-live="polite"
+      >
+        <p class="text-sm text-muted">Carregando convites...</p>
+      </section>
+    } @else if (error()) {
+      <section
+        class="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center"
+        role="alert"
+      >
+        <p class="text-sm text-red-800">{{ error() }}</p>
+        <button
+          type="button"
+          (click)="reload()"
+          class="mt-4 inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-800 hover:bg-red-100"
+        >
+          <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>
+          Tentar novamente
+        </button>
+      </section>
+    } @else if (filteredInvitations().length === 0) {
+      <section
+        class="rounded-2xl border border-border bg-card px-5 py-12 text-center shadow-card"
+      >
+        <span
+          class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-surface-warm text-muted"
+          aria-hidden="true"
+        >
+          <lucide-icon [img]="InviteIcon" [size]="22"></lucide-icon>
+        </span>
+        <h2 class="mt-4 font-semibold text-ink">Nenhum convite encontrado</h2>
+        <p class="mt-1 text-sm text-muted">
+          Ajuste a busca ou o filtro para ver outros resultados.
+        </p>
+      </section>
+    } @else {
+      <section
+        class="overflow-hidden rounded-2xl border border-border bg-card shadow-card"
+      >
+        <div
+          class="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5"
+        >
+          <h2 class="font-semibold text-ink">Convites registrados</h2>
+          <span class="text-sm text-muted"
+            >{{ filteredInvitations().length }} resultado(s)</span
+          >
+        </div>
+
+        <div class="hidden overflow-x-auto xl:block">
+          <table class="w-full min-w-[880px] text-left text-sm">
+            <caption class="sr-only">
+              Lista de convites de usuários
+            </caption>
+            <thead
+              class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+            >
+              <tr>
+                <th scope="col" class="px-5 py-3 font-semibold">E-mail</th>
+                <th scope="col" class="px-5 py-3 font-semibold">Papel</th>
+                <th scope="col" class="px-5 py-3 font-semibold">Status</th>
+                <th scope="col" class="px-5 py-3 font-semibold">Responsável</th>
+                <th scope="col" class="px-5 py-3 font-semibold">Data</th>
+                <th scope="col" class="px-5 py-3 text-right font-semibold">
+                  Ação
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              @for (invitation of filteredInvitations(); track invitation.id) {
+                <tr class="transition-colors hover:bg-surface-warm/60">
+                  <td class="px-5 py-4 font-medium text-ink">
+                    {{ invitation.email }}
+                  </td>
+                  <td class="px-5 py-4">
+                    <span
+                      class="rounded-full px-2.5 py-1 text-xs font-medium"
+                      [class]="roleBadge(invitation.role)"
+                    >
+                      {{ roleLabel(invitation.role) }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-4">
+                    <span
+                      class="rounded-full px-2.5 py-1 text-xs font-medium"
+                      [class]="statusBadge(statusOf(invitation))"
+                    >
+                      {{ statusLabel(statusOf(invitation)) }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-4 text-muted">
+                    {{ invitation.invitedBy.name }}
+                  </td>
+                  <td class="px-5 py-4 text-muted">
+                    <span class="block text-xs">{{
+                      statusDateLabel(invitation)
+                    }}</span>
+                    <span class="mt-0.5 block">{{
+                      formatDate(statusDate(invitation))
+                    }}</span>
+                  </td>
+                  <td class="px-5 py-4 text-right">
+                    @if (canRevokeInvitation(invitation)) {
+                      <button
+                        type="button"
+                        (click)="requestRevoke(invitation)"
+                        class="font-medium text-red-700 underline-offset-4 hover:underline"
+                        [attr.aria-label]="
+                          'Revogar convite de ' + invitation.email
+                        "
+                      >
+                        Revogar
+                      </button>
+                    } @else {
+                      <span class="text-xs text-muted">Sem ações</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="divide-y divide-border xl:hidden">
+          @for (invitation of filteredInvitations(); track invitation.id) {
+            <article class="space-y-3 p-4">
+              <div class="flex items-start justify-between gap-3">
+                <p class="min-w-0 break-all font-medium text-ink">
+                  {{ invitation.email }}
+                </p>
+                <span
+                  class="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+                  [class]="statusBadge(statusOf(invitation))"
+                >
+                  {{ statusLabel(statusOf(invitation)) }}
+                </span>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  class="rounded-full px-2.5 py-1 text-xs font-medium"
+                  [class]="roleBadge(invitation.role)"
+                >
+                  {{ roleLabel(invitation.role) }}
+                </span>
+                <span class="text-xs text-muted"
+                  >{{ statusDateLabel(invitation) }}:
+                  {{ formatDate(statusDate(invitation)) }}</span
+                >
+              </div>
+              <p class="text-xs text-muted">
+                Registrado por {{ invitation.invitedBy.name }}
+              </p>
+              @if (canRevokeInvitation(invitation)) {
+                <button
+                  type="button"
+                  (click)="requestRevoke(invitation)"
+                  class="min-h-10 font-medium text-red-700 underline-offset-4 hover:underline"
+                >
+                  Revogar convite
+                </button>
+              }
+            </article>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  @if (createOpen()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="presentation"
+      (click)="closeCreate()"
+    >
+      <section
+        class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-invitation-title"
+        appDialogFocus
+        (dialogEscape)="closeCreate()"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2
+              id="create-invitation-title"
+              class="text-xl font-semibold text-ink"
+            >
+              Novo convite
+            </h2>
+            <p class="mt-1 text-sm leading-5 text-muted">
+              O convite será registrado sem envio de e-mail nesta etapa.
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="closeCreate()"
+            [disabled]="creating()"
+            class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-60"
+            aria-label="Fechar formulário de convite"
+          >
+            <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+          </button>
+        </div>
+
+        <form
+          [formGroup]="form"
+          (ngSubmit)="createInvitation()"
+          class="mt-6 space-y-4"
+          novalidate
+        >
+          <div>
+            <label
+              for="invitation-email"
+              class="mb-1 block text-sm font-medium text-ink"
+              >E-mail</label
+            >
+            <input
+              id="invitation-email"
+              type="email"
+              formControlName="email"
+              data-dialog-initial-focus
+              autocomplete="email"
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+              [class.border-red-400]="emailInvalid()"
+              [attr.aria-invalid]="emailInvalid()"
+              [attr.aria-describedby]="
+                emailInvalid() ? 'invitation-email-error' : null
+              "
+              placeholder="usuario@empresa.com"
+            />
+            @if (emailInvalid()) {
+              <p id="invitation-email-error" class="mt-1 text-xs text-red-700">
+                Informe um e-mail válido.
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="invitation-role"
+              class="mb-1 block text-sm font-medium text-ink"
+              >Papel inicial</label
+            >
+            <select
+              id="invitation-role"
+              formControlName="role"
+              class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            >
+              @for (role of roleOptions; track role) {
+                <option [value]="role">{{ roleLabel(role) }}</option>
+              }
+            </select>
+          </div>
+
+          @if (createError()) {
+            <div
+              class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+              role="alert"
+            >
+              {{ createError() }}
+            </div>
+          }
+
+          <div
+            class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end"
+          >
+            <button
+              type="button"
+              (click)="closeCreate()"
+              [disabled]="creating()"
+              class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              [disabled]="form.invalid || creating()"
+              class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {{ creating() ? "Registrando..." : "Registrar convite" }}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  }
+
+  @if (revokeTarget(); as invitation) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="presentation"
+      (click)="closeRevoke()"
+    >
+      <section
+        class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="revoke-invitation-title"
+        appDialogFocus
+        (dialogEscape)="closeRevoke()"
+        (click)="$event.stopPropagation()"
+      >
+        <h2 id="revoke-invitation-title" class="text-lg font-semibold text-ink">
+          Revogar convite
+        </h2>
+        <p class="mt-3 text-sm leading-6 text-muted">
+          Revogar o convite pendente de {{ invitation.email }}? Esta ação impede
+          sua aceitação.
+        </p>
+
+        @if (revokeError()) {
+          <div
+            class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            role="alert"
+          >
+            {{ revokeError() }}
+          </div>
+        }
+
+        <div
+          class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
+        >
+          <button
+            type="button"
+            (click)="closeRevoke()"
+            data-dialog-initial-focus
+            [disabled]="revoking()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            (click)="confirmRevoke()"
+            [disabled]="revoking()"
+            class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ revoking() ? "Revogando..." : "Revogar convite" }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</div>

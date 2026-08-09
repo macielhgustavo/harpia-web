@@ -1,3 +1,5 @@
+import type { UserRole } from './user-role.model';
+
 export interface LoginResponse {
   access_token: string;
 }
@@ -30,7 +32,7 @@ export interface AuthTokenClaims {
   email: string;
   organizationId: string;
   tokenVersion: number;
-  role: string;
+  role: UserRole;
   iat?: number;
   exp: number;
 }

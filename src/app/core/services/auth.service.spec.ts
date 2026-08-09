@@ -144,6 +144,29 @@ describe('AuthService', () => {
     });
   });
 
+  it('logs out after a self-role change only while the initiating token is current', () => {
+    session.clearToken.and.returnValue(true);
+
+    expect(
+      service.logoutIfCurrentToken('role-change-token', 'session-expired'),
+    ).toBeTrue();
+    expect(session.clearToken).toHaveBeenCalledOnceWith('role-change-token');
+    expect(router.navigate).toHaveBeenCalledOnceWith(['/login'], {
+      queryParams: { reason: 'session-expired' },
+      replaceUrl: true,
+    });
+  });
+
+  it('preserves a newer session after a delayed self-role response', () => {
+    session.clearToken.and.returnValue(false);
+
+    expect(
+      service.logoutIfCurrentToken('older-token', 'session-expired'),
+    ).toBeFalse();
+    expect(session.clearToken).toHaveBeenCalledOnceWith('older-token');
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
   it('delegates session state and token access to the central store', () => {
     session.isAuthenticated.and.returnValue(true);
     session.getToken.and.returnValue('signed-token');
