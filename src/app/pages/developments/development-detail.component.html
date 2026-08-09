@@ -1,62 +1,453 @@
 <div class="space-y-6">
-  <a routerLink="/developments" class="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary"><lucide-icon [img]="ArrowLeftIcon" [size]="17"></lucide-icon>Voltar para Empreendimentos</a>
+  <a
+    routerLink="/developments"
+    class="inline-flex items-center gap-2 text-sm font-medium text-muted transition-colors hover:text-primary"
+    ><lucide-icon [img]="ArrowLeftIcon" [size]="17"></lucide-icon>Voltar para
+    Empreendimentos</a
+  >
 
   @if (loading()) {
-    <div class="rounded-xl border border-border bg-card p-6 text-sm text-muted shadow-card">Carregando empreendimento...</div>
+    <div
+      class="rounded-xl border border-border bg-card p-6 text-sm text-muted shadow-card"
+    >
+      Carregando empreendimento...
+    </div>
   } @else if (error()) {
-    <div class="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800"><p class="text-sm" role="alert">{{ error() }}</p><button type="button" (click)="loadData()" class="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium hover:bg-card"><lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>Tentar novamente</button></div>
+    <div class="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">
+      <p class="text-sm" role="alert">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="loadData()"
+        class="mt-3 inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium hover:bg-card"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
   } @else {
     @if (development(); as development) {
-      <header class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <header
+        class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+      >
         <div>
-          <div class="flex flex-wrap items-center gap-2"><h1 class="text-2xl font-bold text-ink">{{ development.name }}</h1><span class="rounded-full px-2.5 py-1 text-xs font-medium" [ngClass]="statusBadge(development.status)">{{ statusLabel(development.status) }}</span><span class="rounded-full bg-surface-warm px-2.5 py-1 text-xs font-medium text-ink">{{ typeLabel(development.type) }}</span></div>
-          <p class="mt-2 text-sm text-muted">{{ development.company?.name || 'Sem empresa/SPE vinculada' }}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-2xl font-bold text-ink">{{ development.name }}</h1>
+            <span
+              class="rounded-full px-2.5 py-1 text-xs font-medium"
+              [ngClass]="statusBadge(development.status)"
+              >{{ statusLabel(development.status) }}</span
+            ><span
+              class="rounded-full bg-surface-warm px-2.5 py-1 text-xs font-medium text-ink"
+              >{{ typeLabel(development.type) }}</span
+            >
+          </div>
+          <p class="mt-2 text-sm text-muted">
+            {{ development.company?.name || "Sem empresa/SPE vinculada" }}
+          </p>
         </div>
-        <div class="flex flex-col gap-2 sm:flex-row"><button type="button" (click)="openEdit()" class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm"><lucide-icon [img]="PencilIcon" [size]="16"></lucide-icon>Editar</button><button type="button" (click)="requestDelete()" class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"><lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>Excluir</button></div>
+        @if (canWriteDevelopments) {
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              (click)="openEdit()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm"
+            >
+              <lucide-icon [img]="PencilIcon" [size]="16"></lucide-icon
+              >Editar</button
+            ><button
+              type="button"
+              (click)="requestDelete()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              <lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>Excluir
+            </button>
+          </div>
+        }
       </header>
 
-      @if (feedback()) { <div class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary" role="status">{{ feedback() }}</div> }
+      @if (feedback()) {
+        <div
+          class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+          role="status"
+        >
+          {{ feedback() }}
+        </div>
+      }
 
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <section class="rounded-xl border border-border bg-card p-5 shadow-card xl:col-span-2">
-          <div class="mb-5 flex items-center gap-2"><lucide-icon [img]="BuildingIcon" [size]="19" class="text-primary"></lucide-icon><h2 class="font-semibold text-ink">Visão geral</h2></div>
+        <section
+          class="rounded-xl border border-border bg-card p-5 shadow-card xl:col-span-2"
+        >
+          <div class="mb-5 flex items-center gap-2">
+            <lucide-icon
+              [img]="BuildingIcon"
+              [size]="19"
+              class="text-primary"
+            ></lucide-icon>
+            <h2 class="font-semibold text-ink">Visão geral</h2>
+          </div>
           <dl class="grid grid-cols-1 gap-5 text-sm sm:grid-cols-2">
-            <div class="sm:col-span-2"><dt class="text-xs uppercase tracking-wide text-muted">Descrição</dt><dd class="mt-1 whitespace-pre-line text-ink">{{ development.description || 'Não informado' }}</dd></div>
-            <div><dt class="text-xs uppercase tracking-wide text-muted">Endereço</dt><dd class="mt-1 inline-flex items-start gap-2 text-ink"><lucide-icon [img]="MapIcon" [size]="15" class="mt-0.5 shrink-0 text-muted"></lucide-icon>{{ development.address || 'Não informado' }}</dd></div>
-            <div><dt class="text-xs uppercase tracking-wide text-muted">Cidade</dt><dd class="mt-1 text-ink">{{ development.city || 'Não informado' }}</dd></div>
-            <div><dt class="text-xs uppercase tracking-wide text-muted">Lançamento previsto</dt><dd class="mt-1 inline-flex items-center gap-2 text-ink"><lucide-icon [img]="CalendarIcon" [size]="15" class="text-muted"></lucide-icon>{{ formatDate(development.expectedLaunchDate) }}</dd></div>
-            <div><dt class="text-xs uppercase tracking-wide text-muted">Entrega prevista</dt><dd class="mt-1 inline-flex items-center gap-2 text-ink"><lucide-icon [img]="CalendarIcon" [size]="15" class="text-muted"></lucide-icon>{{ formatDate(development.expectedDeliveryDate) }}</dd></div>
-            <div><dt class="text-xs uppercase tracking-wide text-muted">Cadastro</dt><dd class="mt-1 text-ink">{{ formatDate(development.createdAt) }}</dd></div><div><dt class="text-xs uppercase tracking-wide text-muted">Última atualização</dt><dd class="mt-1 text-ink">{{ formatDate(development.updatedAt) }}</dd></div>
-            <div class="sm:col-span-2"><dt class="text-xs uppercase tracking-wide text-muted">Empresa / SPE</dt><dd class="mt-1">@if (development.company) { <a [routerLink]="['/companies', development.company.id]" class="font-medium text-primary hover:underline">{{ development.company.name }} — {{ development.company.type === 'SPE' ? 'SPE' : 'Incorporadora' }}</a> } @else { <span class="text-ink">Não informado</span> }</dd></div>
+            <div class="sm:col-span-2">
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Descrição
+              </dt>
+              <dd class="mt-1 whitespace-pre-line text-ink">
+                {{ development.description || "Não informado" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Endereço
+              </dt>
+              <dd class="mt-1 inline-flex items-start gap-2 text-ink">
+                <lucide-icon
+                  [img]="MapIcon"
+                  [size]="15"
+                  class="mt-0.5 shrink-0 text-muted"
+                ></lucide-icon
+                >{{ development.address || "Não informado" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Cidade</dt>
+              <dd class="mt-1 text-ink">
+                {{ development.city || "Não informado" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Lançamento previsto
+              </dt>
+              <dd class="mt-1 inline-flex items-center gap-2 text-ink">
+                <lucide-icon
+                  [img]="CalendarIcon"
+                  [size]="15"
+                  class="text-muted"
+                ></lucide-icon
+                >{{ formatDate(development.expectedLaunchDate) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Entrega prevista
+              </dt>
+              <dd class="mt-1 inline-flex items-center gap-2 text-ink">
+                <lucide-icon
+                  [img]="CalendarIcon"
+                  [size]="15"
+                  class="text-muted"
+                ></lucide-icon
+                >{{ formatDate(development.expectedDeliveryDate) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Cadastro
+              </dt>
+              <dd class="mt-1 text-ink">
+                {{ formatDate(development.createdAt) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Última atualização
+              </dt>
+              <dd class="mt-1 text-ink">
+                {{ formatDate(development.updatedAt) }}
+              </dd>
+            </div>
+            <div class="sm:col-span-2">
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Empresa / SPE
+              </dt>
+              <dd class="mt-1">
+                @if (development.company) {
+                  <a
+                    [routerLink]="['/companies', development.company.id]"
+                    class="font-medium text-primary hover:underline"
+                    >{{ development.company.name }} —
+                    {{
+                      development.company.type === "SPE"
+                        ? "SPE"
+                        : "Incorporadora"
+                    }}</a
+                  >
+                } @else {
+                  <span class="text-ink">Não informado</span>
+                }
+              </dd>
+            </div>
           </dl>
         </section>
 
-        <section class="rounded-xl border border-border bg-card p-5 shadow-card">
+        <section
+          class="rounded-xl border border-border bg-card p-5 shadow-card"
+        >
           <h2 class="mb-4 font-semibold text-ink">Resumo operacional</h2>
-          <dl class="grid grid-cols-2 gap-3 text-sm"><div class="rounded-lg bg-surface-warm p-3"><dt class="text-xs text-muted">Tipologias</dt><dd class="mt-1 text-xl font-bold text-ink">{{ development.unitTypes.length }}</dd></div><div class="rounded-lg bg-surface-warm p-3"><dt class="text-xs text-muted">Unidades</dt><dd class="mt-1 text-xl font-bold text-ink">{{ development._count.units }}</dd></div><div class="rounded-lg bg-surface-warm p-3"><dt class="text-xs text-muted">Tabelas de preço</dt><dd class="mt-1 text-xl font-bold text-ink">{{ development.priceTables.length }}</dd></div><div class="rounded-lg bg-surface-warm p-3"><dt class="text-xs text-muted">Alocações</dt><dd class="mt-1 text-xl font-bold text-ink">{{ development._count.allocations }}</dd></div></dl>
-          @if (unitStatusSummary().length > 0) { <div class="mt-5 border-t border-border pt-4"><h3 class="text-xs font-semibold uppercase tracking-wide text-muted">Unidades por status</h3><div class="mt-3 space-y-2">@for (item of unitStatusSummary(); track item.status) { <div class="flex items-center justify-between text-sm"><span class="text-ink">{{ item.label }}</span><span class="rounded-full bg-surface-warm px-2 py-0.5 font-medium text-ink">{{ item.count }}</span></div> }</div></div> }
+          <dl class="grid grid-cols-2 gap-3 text-sm">
+            <div class="rounded-lg bg-surface-warm p-3">
+              <dt class="text-xs text-muted">Tipologias</dt>
+              <dd class="mt-1 text-xl font-bold text-ink">
+                {{ development.unitTypes.length }}
+              </dd>
+            </div>
+            <div class="rounded-lg bg-surface-warm p-3">
+              <dt class="text-xs text-muted">Unidades</dt>
+              <dd class="mt-1 text-xl font-bold text-ink">
+                {{ development._count.units }}
+              </dd>
+            </div>
+            <div class="rounded-lg bg-surface-warm p-3">
+              <dt class="text-xs text-muted">Tabelas de preço</dt>
+              <dd class="mt-1 text-xl font-bold text-ink">
+                {{ development.priceTables.length }}
+              </dd>
+            </div>
+            @if (development._count.allocations !== undefined) {
+              <div class="rounded-lg bg-surface-warm p-3">
+                <dt class="text-xs text-muted">Alocações</dt>
+                <dd class="mt-1 text-xl font-bold text-ink">
+                  {{ development._count.allocations }}
+                </dd>
+              </div>
+            }
+          </dl>
+          @if (unitStatusSummary().length > 0) {
+            <div class="mt-5 border-t border-border pt-4">
+              <h3
+                class="text-xs font-semibold uppercase tracking-wide text-muted"
+              >
+                Unidades por status
+              </h3>
+              <div class="mt-3 space-y-2">
+                @for (item of unitStatusSummary(); track item.status) {
+                  <div class="flex items-center justify-between text-sm">
+                    <span class="text-ink">{{ item.label }}</span
+                    ><span
+                      class="rounded-full bg-surface-warm px-2 py-0.5 font-medium text-ink"
+                      >{{ item.count }}</span
+                    >
+                  </div>
+                }
+              </div>
+            </div>
+          }
         </section>
       </div>
 
-      <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-        <div class="flex items-center justify-between border-b border-border bg-surface-warm px-5 py-4"><div class="flex items-center gap-2"><lucide-icon [img]="UnitTypeIcon" [size]="19" class="text-primary"></lucide-icon><h2 class="font-semibold text-ink">Tipologias</h2></div><span class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted">{{ development.unitTypes.length }}</span></div>
-        @if (development.unitTypes.length === 0) { <p class="p-5 text-sm text-muted">Nenhuma tipologia cadastrada.</p> } @else { <div class="grid grid-cols-1 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0">@for (unitType of development.unitTypes; track unitType.id) { <article class="p-5"><div class="flex items-start justify-between gap-3"><h3 class="font-medium text-ink">{{ unitType.name }}</h3><span class="rounded-full bg-surface-warm px-2 py-0.5 text-xs text-muted">{{ unitTypeUnits(unitType.id) }} unidade(s)</span></div><dl class="mt-3 grid grid-cols-3 gap-3 text-sm"><div><dt class="text-xs text-muted">Quartos</dt><dd class="mt-1 text-ink">{{ unitType.bedrooms ?? '—' }}</dd></div><div><dt class="text-xs text-muted">Suítes</dt><dd class="mt-1 text-ink">{{ unitType.suites ?? '—' }}</dd></div><div><dt class="text-xs text-muted">Área padrão</dt><dd class="mt-1 text-ink">{{ formatArea(unitType.standardArea) }}</dd></div></dl></article> }</div> }
+      <app-unit-types-section
+        [developmentId]="development.id"
+        (changed)="onUnitTypesChanged($event)"
+      />
+
+      <section
+        class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+      >
+        <div
+          class="flex flex-col gap-2 border-b border-border bg-surface-warm px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="flex items-center gap-2">
+            <lucide-icon
+              [img]="UnitIcon"
+              [size]="19"
+              class="text-primary"
+            ></lucide-icon>
+            <h2 class="font-semibold text-ink">Unidades</h2>
+          </div>
+          <span class="text-xs text-muted">Prévia de até 6 unidades</span>
+        </div>
+        @if (development.units.length === 0) {
+          <p class="p-5 text-sm text-muted">Nenhuma unidade cadastrada.</p>
+        } @else {
+          <div
+            class="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 xl:grid-cols-3"
+          >
+            @for (unit of unitPreview(); track unit.id) {
+              <article class="bg-card p-5">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 class="font-medium text-ink">{{ unit.identifier }}</h3>
+                    <p class="mt-1 text-xs text-muted">
+                      {{ unit.unitType?.name || "Sem tipologia" }}
+                    </p>
+                  </div>
+                  <span
+                    class="rounded-full bg-surface-warm px-2 py-0.5 text-xs font-medium text-ink"
+                    >{{ unitStatusLabel(unit.status) }}</span
+                  >
+                </div>
+                <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <dt class="text-xs text-muted">Agrupamento</dt>
+                    <dd class="mt-1 text-ink">
+                      {{ unit.grouping || "Não informado" }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">Categoria</dt>
+                    <dd class="mt-1 text-ink">
+                      {{ unitCategoryLabel(unit.category) }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">Área construída</dt>
+                    <dd class="mt-1 text-ink">
+                      {{ formatArea(unit.builtArea) }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">Área do terreno</dt>
+                    <dd class="mt-1 text-ink">
+                      {{ formatArea(unit.landArea) }}
+                    </dd>
+                  </div>
+                </dl>
+              </article>
+            }
+          </div>
+        }
+        <p
+          class="border-t border-border bg-surface-warm px-5 py-3 text-sm text-muted"
+        >
+          A gestão completa de unidades será adicionada na próxima etapa.
+        </p>
       </section>
 
-      <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-        <div class="flex flex-col gap-2 border-b border-border bg-surface-warm px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div class="flex items-center gap-2"><lucide-icon [img]="UnitIcon" [size]="19" class="text-primary"></lucide-icon><h2 class="font-semibold text-ink">Unidades</h2></div><span class="text-xs text-muted">Prévia de até 6 unidades</span></div>
-        @if (development.units.length === 0) { <p class="p-5 text-sm text-muted">Nenhuma unidade cadastrada.</p> } @else { <div class="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 xl:grid-cols-3">@for (unit of unitPreview(); track unit.id) { <article class="bg-card p-5"><div class="flex items-start justify-between gap-3"><div><h3 class="font-medium text-ink">{{ unit.identifier }}</h3><p class="mt-1 text-xs text-muted">{{ unit.unitType?.name || 'Sem tipologia' }}</p></div><span class="rounded-full bg-surface-warm px-2 py-0.5 text-xs font-medium text-ink">{{ unitStatusLabel(unit.status) }}</span></div><dl class="mt-4 grid grid-cols-2 gap-3 text-sm"><div><dt class="text-xs text-muted">Agrupamento</dt><dd class="mt-1 text-ink">{{ unit.grouping || 'Não informado' }}</dd></div><div><dt class="text-xs text-muted">Categoria</dt><dd class="mt-1 text-ink">{{ unitCategoryLabel(unit.category) }}</dd></div><div><dt class="text-xs text-muted">Área construída</dt><dd class="mt-1 text-ink">{{ formatArea(unit.builtArea) }}</dd></div><div><dt class="text-xs text-muted">Área do terreno</dt><dd class="mt-1 text-ink">{{ formatArea(unit.landArea) }}</dd></div></dl></article> }</div> }
-        <p class="border-t border-border bg-surface-warm px-5 py-3 text-sm text-muted">A gestão completa de unidades será adicionada na próxima etapa.</p>
+      <section
+        class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+      >
+        <div
+          class="flex items-center justify-between border-b border-border bg-surface-warm px-5 py-4"
+        >
+          <div class="flex items-center gap-2">
+            <lucide-icon
+              [img]="PriceIcon"
+              [size]="19"
+              class="text-primary"
+            ></lucide-icon>
+            <h2 class="font-semibold text-ink">Tabelas de preço</h2>
+          </div>
+          <span
+            class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted"
+            >{{ development.priceTables.length }}</span
+          >
+        </div>
+        @if (development.priceTables.length === 0) {
+          <p class="p-5 text-sm text-muted">
+            Nenhuma tabela de preço cadastrada.
+          </p>
+        } @else {
+          <div class="divide-y divide-border">
+            @for (table of development.priceTables; track table.id) {
+              <article
+                class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div>
+                  <h3 class="font-medium text-ink">{{ table.name }}</h3>
+                  <p class="mt-1 text-sm text-muted">Fase: {{ table.phase }}</p>
+                </div>
+                <span
+                  class="self-start rounded-full px-2.5 py-1 text-xs font-medium"
+                  [class]="
+                    table.active
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-slate-100 text-slate-700'
+                  "
+                  >{{ table.active ? "Ativa" : "Inativa" }}</span
+                >
+              </article>
+            }
+          </div>
+        }
       </section>
 
-      <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-        <div class="flex items-center justify-between border-b border-border bg-surface-warm px-5 py-4"><div class="flex items-center gap-2"><lucide-icon [img]="PriceIcon" [size]="19" class="text-primary"></lucide-icon><h2 class="font-semibold text-ink">Tabelas de preço</h2></div><span class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted">{{ development.priceTables.length }}</span></div>
-        @if (development.priceTables.length === 0) { <p class="p-5 text-sm text-muted">Nenhuma tabela de preço cadastrada.</p> } @else { <div class="divide-y divide-border">@for (table of development.priceTables; track table.id) { <article class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="font-medium text-ink">{{ table.name }}</h3><p class="mt-1 text-sm text-muted">Fase: {{ table.phase }}</p></div><span class="self-start rounded-full px-2.5 py-1 text-xs font-medium" [class]="table.active ? 'bg-green-100 text-green-800' : 'bg-slate-100 text-slate-700'">{{ table.active ? 'Ativa' : 'Inativa' }}</span></article> }</div> }
-      </section>
-
-      @if (editOpen()) { <app-development-form-modal [development]="development" [companies]="companies()" (closed)="closeEdit()" (saved)="onSaved($event)" /> }
-      @if (deleteOpen()) {
-        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation" (click)="closeDelete()"><section class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl" role="dialog" aria-modal="true" aria-label="Confirmar exclusão" (click)="$event.stopPropagation()"><div class="flex items-start justify-between gap-4"><div><h2 class="text-lg font-semibold text-ink">Remover empreendimento</h2><p class="mt-2 text-sm leading-relaxed text-muted">Confirma a remoção de <strong class="font-semibold text-ink">{{ development.name }}</strong>?</p><div class="mt-3 flex items-start gap-2 rounded-lg border border-border bg-surface-warm px-3 py-2 text-sm text-ink"><lucide-icon [img]="WarningIcon" [size]="17" class="mt-0.5 shrink-0 text-primary"></lucide-icon><p>Registros internos poderão ser removidos. Investimentos ou alocações vinculados impedem a exclusão.</p></div></div><button type="button" (click)="closeDelete()" [disabled]="deleting()" class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50" aria-label="Fechar confirmação"><lucide-icon [img]="XIcon" [size]="18"></lucide-icon></button></div>@if (deleteError()) { <div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{{ deleteError() }}</div> }<div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" (click)="closeDelete()" [disabled]="deleting()" class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60">Cancelar</button><button type="button" (click)="confirmDelete()" [disabled]="deleting()" class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"><lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>{{ deleting() ? 'Removendo...' : 'Remover empreendimento' }}</button></div></section></div>
+      @if (canWriteDevelopments && editOpen()) {
+        <app-development-form-modal
+          [development]="development"
+          [companies]="companies()"
+          (closed)="closeEdit()"
+          (saved)="onSaved($event)"
+        />
+      }
+      @if (canWriteDevelopments && deleteOpen()) {
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          role="presentation"
+          (click)="closeDelete()"
+        >
+          <section
+            class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirmar exclusão"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <h2 class="text-lg font-semibold text-ink">
+                  Remover empreendimento
+                </h2>
+                <p class="mt-2 text-sm leading-relaxed text-muted">
+                  Confirma a remoção de
+                  <strong class="font-semibold text-ink">{{
+                    development.name
+                  }}</strong
+                  >?
+                </p>
+                <div
+                  class="mt-3 flex items-start gap-2 rounded-lg border border-border bg-surface-warm px-3 py-2 text-sm text-ink"
+                >
+                  <lucide-icon
+                    [img]="WarningIcon"
+                    [size]="17"
+                    class="mt-0.5 shrink-0 text-primary"
+                  ></lucide-icon>
+                  <p>
+                    Registros internos poderão ser removidos. Investimentos ou
+                    alocações vinculados impedem a exclusão.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                (click)="closeDelete()"
+                [disabled]="deleting()"
+                class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+                aria-label="Fechar confirmação"
+              >
+                <lucide-icon [img]="XIcon" [size]="18"></lucide-icon>
+              </button>
+            </div>
+            @if (deleteError()) {
+              <div
+                class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+                role="alert"
+              >
+                {{ deleteError() }}
+              </div>
+            }
+            <div
+              class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
+            >
+              <button
+                type="button"
+                (click)="closeDelete()"
+                [disabled]="deleting()"
+                class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+              >
+                Cancelar</button
+              ><button
+                type="button"
+                (click)="confirmDelete()"
+                [disabled]="deleting()"
+                class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+              >
+                <lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon
+                >{{ deleting() ? "Removendo..." : "Remover empreendimento" }}
+              </button>
+            </div>
+          </section>
+        </div>
       }
     }
   }

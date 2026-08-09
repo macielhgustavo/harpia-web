@@ -57,11 +57,12 @@ describe('AuditLogsComponent', () => {
     );
     expect(component.knownActions).toContain('USER_ACTIVATED');
     expect(component.knownActions).toContain('USER_DEACTIVATED');
+    expect(component.knownEntityTypes).toContain('UNIT_TYPE');
   });
 
   it('envia filtros definidos e reinicia na página 1 sem converter datas', () => {
     component.action.set('CREATE');
-    component.entityType.set('COMPANY');
+    component.entityType.set('UNIT_TYPE');
     component.startDate.set('2026-08-01');
     component.endDate.set('2026-08-09');
     component.applyFilters();
@@ -70,7 +71,7 @@ describe('AuditLogsComponent', () => {
       jasmine.objectContaining({
         page: 1,
         action: 'CREATE',
-        entityType: 'COMPANY',
+        entityType: 'UNIT_TYPE',
         startDate: '2026-08-01',
         endDate: '2026-08-09',
       }),

@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-angular';
 import { forkJoin } from 'rxjs';
+import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { CompanyListItem } from '../../core/models/company.model';
 import {
   Development,
@@ -28,6 +29,7 @@ import {
 } from '../../core/models/development.model';
 import { CompanyService } from '../../core/services/company.service';
 import { DevelopmentService } from '../../core/services/development.service';
+import { AuthorizationService } from '../../core/services/authorization.service';
 import {
   DEVELOPMENT_STATUS_OPTIONS,
   DEVELOPMENT_TYPE_OPTIONS,
@@ -42,13 +44,23 @@ import { DevelopmentFormModalComponent } from './development-form-modal.componen
 @Component({
   selector: 'app-developments',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, DevelopmentFormModalComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    DevelopmentFormModalComponent,
+  ],
   templateUrl: './developments.component.html',
 })
 export class DevelopmentsComponent implements OnInit {
   private readonly developmentService = inject(DevelopmentService);
   private readonly companyService = inject(CompanyService);
   private readonly router = inject(Router);
+  private readonly authorization = inject(AuthorizationService);
+
+  readonly canWriteDevelopments = this.authorization.hasPermission(
+    APP_PERMISSIONS.DEVELOPMENTS_WRITE,
+  );
 
   readonly developments = signal<DevelopmentListItem[]>([]);
   readonly companies = signal<CompanyListItem[]>([]);
@@ -117,13 +129,19 @@ export class DevelopmentsComponent implements OnInit {
 
   readonly totalDevelopments = computed(() => this.developments().length);
   readonly totalCapturing = computed(
-    () => this.developments().filter((item) => item.status === 'EM_CAPTACAO').length,
+    () =>
+      this.developments().filter((item) => item.status === 'EM_CAPTACAO')
+        .length,
   );
   readonly totalBuilding = computed(
-    () => this.developments().filter((item) => item.status === 'EM_OBRA').length,
+    () =>
+      this.developments().filter((item) => item.status === 'EM_OBRA').length,
   );
   readonly totalCompleted = computed(
-    () => this.developments().filter((item) => ['PRONTO', 'ENTREGUE'].includes(item.status)).length,
+    () =>
+      this.developments().filter((item) =>
+        ['PRONTO', 'ENTREGUE'].includes(item.status),
+      ).length,
   );
   readonly totalUnits = computed(() =>
     this.developments().reduce((total, item) => total + item._count.units, 0),
@@ -147,7 +165,10 @@ export class DevelopmentsComponent implements OnInit {
       },
       error: (err: unknown) => {
         this.loadError.set(
-          extractError(err, 'Não foi possível carregar os empreendimentos ou as empresas.'),
+          extractError(
+            err,
+            'Não foi possível carregar os empreendimentos ou as empresas.',
+          ),
         );
         this.loading.set(false);
       },
@@ -155,6 +176,7 @@ export class DevelopmentsComponent implements OnInit {
   }
 
   openCreate(): void {
+    if (!this.canWriteDevelopments) return;
     this.clearMessages();
     this.editingDevelopment.set(null);
     this.formOpen.set(true);
@@ -162,6 +184,7 @@ export class DevelopmentsComponent implements OnInit {
 
   openEdit(development: Development, event?: Event): void {
     event?.stopPropagation();
+    if (!this.canWriteDevelopments) return;
     this.clearMessages();
     this.editingDevelopment.set(development);
     this.formOpen.set(true);
@@ -185,6 +208,7 @@ export class DevelopmentsComponent implements OnInit {
 
   requestDelete(development: DevelopmentListItem, event?: Event): void {
     event?.stopPropagation();
+    if (!this.canWriteDevelopments) return;
     this.clearMessages();
     this.deleteTarget.set(development);
   }
@@ -195,7 +219,7 @@ export class DevelopmentsComponent implements OnInit {
 
   confirmDelete(): void {
     const development = this.deleteTarget();
-    if (!development || this.deleting()) return;
+    if (!this.canWriteDevelopments || !development || this.deleting()) return;
 
     this.deleting.set(true);
     this.actionError.set('');
@@ -203,7 +227,9 @@ export class DevelopmentsComponent implements OnInit {
       next: () => {
         this.deleting.set(false);
         this.deleteTarget.set(null);
-        this.feedback.set(`Empreendimento “${development.name}” removido com sucesso.`);
+        this.feedback.set(
+          `Empreendimento “${development.name}” removido com sucesso.`,
+        );
         this.loadData();
       },
       error: (err: unknown) => {
@@ -211,7 +237,9 @@ export class DevelopmentsComponent implements OnInit {
         const status = (err as HttpErrorResponse).status;
         if (status === 404) {
           this.deleteTarget.set(null);
-          this.actionError.set('Empreendimento não encontrado. A lista foi atualizada.');
+          this.actionError.set(
+            'Empreendimento não encontrado. A lista foi atualizada.',
+          );
           this.loadData();
           return;
         }

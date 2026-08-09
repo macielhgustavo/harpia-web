@@ -6,12 +6,16 @@ import { COMPANY_FIXTURES, DEVELOPMENT_FIXTURES } from './development.fixtures';
 import { DevelopmentFormModalComponent } from './development-form-modal.component';
 
 class DevelopmentServiceMock {
-  readonly create = jasmine.createSpy().and.callFake((payload: Partial<Development>) =>
-    of({ ...DEVELOPMENT_FIXTURES[0], ...payload }),
-  );
-  readonly update = jasmine.createSpy().and.callFake((_id: string, payload: Partial<Development>) =>
-    of({ ...DEVELOPMENT_FIXTURES[0], ...payload }),
-  );
+  readonly create = jasmine
+    .createSpy()
+    .and.callFake((payload: Partial<Development>) =>
+      of({ ...DEVELOPMENT_FIXTURES[0], ...payload }),
+    );
+  readonly update = jasmine
+    .createSpy()
+    .and.callFake((_id: string, payload: Partial<Development>) =>
+      of({ ...DEVELOPMENT_FIXTURES[0], ...payload }),
+    );
 }
 
 describe('DevelopmentFormModalComponent', () => {
@@ -22,9 +26,13 @@ describe('DevelopmentFormModalComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DevelopmentFormModalComponent],
-      providers: [{ provide: DevelopmentService, useClass: DevelopmentServiceMock }],
+      providers: [
+        { provide: DevelopmentService, useClass: DevelopmentServiceMock },
+      ],
     }).compileComponents();
-    service = TestBed.inject(DevelopmentService) as unknown as DevelopmentServiceMock;
+    service = TestBed.inject(
+      DevelopmentService,
+    ) as unknown as DevelopmentServiceMock;
   });
 
   function render(development: Development | null = null): void {
@@ -94,6 +102,22 @@ describe('DevelopmentFormModalComponent', () => {
         companyId: null,
         description: null,
         expectedLaunchDate: '2026-09-01',
+      }),
+    );
+  });
+
+  it('envia null ao limpar as datas durante a edição', () => {
+    render(DEVELOPMENT_FIXTURES[0]);
+    component.form.expectedLaunchDate = '';
+    component.form.expectedDeliveryDate = '';
+
+    component.save();
+
+    expect(service.update).toHaveBeenCalledWith(
+      'dev-aurora',
+      jasmine.objectContaining({
+        expectedLaunchDate: null,
+        expectedDeliveryDate: null,
       }),
     );
   });

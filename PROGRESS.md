@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-09 — Tipologias por empreendimento:** adicionado CRUD completo dentro do detalhe do empreendimento, com contagem autoritativa de unidades, criação e edição validadas, limpeza explícita de campos opcionais, exclusão com aviso de unidades que ficarão sem tipologia, permissões de leitura/escrita, estados responsivos e diálogos acessíveis. A auditoria do backend registra as mutações e os efeitos da desvinculação de unidades.
+
 - **2026-08-09 — Usuários, convites, permissões e auditoria:** adicionadas as páginas `/users`, `/users/:id`, `/users/invitations` e `/audit-logs`; filtros e estados responsivos; alteração de papel/status com confirmações e regras de OWNER/ADMIN; convite e revogação sem prometer envio de e-mail; consulta paginada e segura de metadados de auditoria; RBAC de navegação espelhado do backend, rotas protegidas, estado de acesso negado e primeiro destino compatível com cada perfil. O backend continua sendo a autoridade final para toda permissão.
 
 - **2026-08-09 — Autenticação robusta:** adicionadas as telas de esquecimento, redefinição e alteração de senha; feedback determinístico da política forte; validação local de expiração do JWT; encerramento seguro da sessão em 401 por token expirado/revogado; preservação da sessão em 403 e no erro de senha atual; retorno à rota original após login e logout obrigatório após troca de senha. O envio real de e-mail permanece deliberadamente desativado nesta fase.

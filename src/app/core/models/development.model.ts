@@ -4,11 +4,7 @@ import type { Unit } from './unit.model';
 import type { UnitType } from './unit-type.model';
 
 export type DevelopmentType =
-  | 'PREDIO'
-  | 'CONDOMINIO_CASAS'
-  | 'LOTEAMENTO'
-  | 'COMERCIAL'
-  | 'MISTO';
+  'PREDIO' | 'CONDOMINIO_CASAS' | 'LOTEAMENTO' | 'COMERCIAL' | 'MISTO';
 
 export type DevelopmentStatus =
   | 'EM_APROVACAO'
@@ -53,7 +49,7 @@ export interface DevelopmentDetail extends Development {
   units: Unit[];
   priceTables: PriceTable[];
   _count: {
-    allocations: number;
+    allocations?: number;
     units: number;
   };
 }
@@ -78,6 +74,6 @@ export interface UpdateDevelopmentInput {
   address?: string | null;
   city?: string | null;
   status?: DevelopmentStatus;
-  expectedLaunchDate?: string;
-  expectedDeliveryDate?: string;
+  expectedLaunchDate?: string | null;
+  expectedDeliveryDate?: string | null;
 }

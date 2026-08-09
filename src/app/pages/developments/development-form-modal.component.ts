@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule, Save, X } from 'lucide-angular';
 import { Observable } from 'rxjs';
@@ -94,7 +102,12 @@ export class DevelopmentFormModalComponent implements OnInit {
   }
 
   isValid(): boolean {
-    return !!this.form.name.trim() && !!this.form.type && !!this.form.status && !this.datesInvalid();
+    return (
+      !!this.form.name.trim() &&
+      !!this.form.type &&
+      !!this.form.status &&
+      !this.datesInvalid()
+    );
   }
 
   requestClose(): void {
@@ -126,18 +139,21 @@ export class DevelopmentFormModalComponent implements OnInit {
         companyId: this.form.companyId || null,
         address: this.form.address.trim() || null,
         city: this.form.city.trim() || null,
+        expectedLaunchDate: this.form.expectedLaunchDate || null,
+        expectedDeliveryDate: this.form.expectedDeliveryDate || null,
       };
-      if (this.form.expectedLaunchDate) payload.expectedLaunchDate = this.form.expectedLaunchDate;
-      if (this.form.expectedDeliveryDate) payload.expectedDeliveryDate = this.form.expectedDeliveryDate;
       request = this.developmentService.update(this.development.id, payload);
     } else {
       const payload: CreateDevelopmentInput = { ...basePayload };
-      if (this.form.description.trim()) payload.description = this.form.description.trim();
+      if (this.form.description.trim())
+        payload.description = this.form.description.trim();
       if (this.form.companyId) payload.companyId = this.form.companyId;
       if (this.form.address.trim()) payload.address = this.form.address.trim();
       if (this.form.city.trim()) payload.city = this.form.city.trim();
-      if (this.form.expectedLaunchDate) payload.expectedLaunchDate = this.form.expectedLaunchDate;
-      if (this.form.expectedDeliveryDate) payload.expectedDeliveryDate = this.form.expectedDeliveryDate;
+      if (this.form.expectedLaunchDate)
+        payload.expectedLaunchDate = this.form.expectedLaunchDate;
+      if (this.form.expectedDeliveryDate)
+        payload.expectedDeliveryDate = this.form.expectedDeliveryDate;
       request = this.developmentService.create(payload);
     }
 
@@ -149,7 +165,10 @@ export class DevelopmentFormModalComponent implements OnInit {
       error: (err: unknown) => {
         this.saving.set(false);
         this.error.set(
-          extractError(err, 'Não foi possível salvar o empreendimento. Verifique os dados.'),
+          extractError(
+            err,
+            'Não foi possível salvar o empreendimento. Verifique os dados.',
+          ),
         );
       },
     });

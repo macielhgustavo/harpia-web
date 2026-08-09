@@ -74,6 +74,7 @@ export class AuditLogsComponent implements OnInit {
     'PERSON',
     'COMPANY',
     'DEVELOPMENT',
+    'UNIT_TYPE',
     'UNIT',
     'PRICE_TABLE',
     'UNIT_PRICE',
