@@ -6,12 +6,23 @@ import { LucideAngularModule, X } from 'lucide-angular';
 import { SidebarComponent } from './shared/components/sidebar/sidebar.component';
 import { HeaderComponent } from './shared/components/header/header.component';
 
+const PUBLIC_AUTH_PATHS = new Set([
+  '/login',
+  '/forgot-password',
+  '/reset-password',
+]);
+
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, HeaderComponent, LucideAngularModule],
+  imports: [
+    RouterOutlet,
+    SidebarComponent,
+    HeaderComponent,
+    LucideAngularModule,
+  ],
   template: `
-    @if (isLoginPage()) {
+    @if (isPublicAuthPage()) {
       <router-outlet />
     } @else {
       <div class="flex h-screen overflow-hidden">
@@ -25,7 +36,10 @@ import { HeaderComponent } from './shared/components/header/header.component';
             role="presentation"
             (click)="closeMobileMenu()"
           >
-            <div class="relative h-full w-64" (click)="$event.stopPropagation()">
+            <div
+              class="relative h-full w-64"
+              (click)="$event.stopPropagation()"
+            >
               <app-sidebar />
               <button
                 type="button"
@@ -64,8 +78,10 @@ export class AppComponent {
     { initialValue: this.router.url },
   );
 
-  isLoginPage(): boolean {
-    return this.currentUrl().startsWith('/login');
+  isPublicAuthPage(): boolean {
+    const path =
+      this.currentUrl().split(/[?#]/, 1)[0].replace(/\/+$/, '') || '/';
+    return PUBLIC_AUTH_PATHS.has(path);
   }
 
   openMobileMenu(): void {

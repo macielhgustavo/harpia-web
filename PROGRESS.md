@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-09 — Autenticação robusta:** adicionadas as telas de esquecimento, redefinição e alteração de senha; feedback determinístico da política forte; validação local de expiração do JWT; encerramento seguro da sessão em 401 por token expirado/revogado; preservação da sessão em 403 e no erro de senha atual; retorno à rota original após login e logout obrigatório após troca de senha. O envio real de e-mail permanece deliberadamente desativado nesta fase.
+
 - **2026-08-02 — Empreendimentos — listagem, CRUD e visão geral:** model reconciliado; listagem, filtros, CRUD e detalhe com resumos de tipologias, unidades e tabelas de preço, tratamento de 409 e validação contra a API real.
 
 - **2026-08-02 — Tela de Empresas/SPEs:** lista, filtros, indicadores, detalhe e CRUD completos, com relacionamentos de empreendimentos e contas bancárias, tratamento do bloqueio 409 e responsividade. Model e fluxos reconciliados e validados contra a API real.

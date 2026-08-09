@@ -15,17 +15,42 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/login/login.component').then((m) => m.LoginComponent),
   },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () =>
+      import('./pages/reset-password/reset-password.component').then(
+        (m) => m.ResetPasswordComponent,
+      ),
+  },
+  {
+    path: 'account/security',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/account-security/account-security.component').then(
+        (m) => m.AccountSecurityComponent,
+      ),
+  },
   { path: 'dashboard', ...placeholder('Dashboard') },
   {
     path: 'people',
     canActivate: [authGuard],
-    loadComponent: () => import('./pages/people/people.component').then((m) => m.PeopleComponent),
+    loadComponent: () =>
+      import('./pages/people/people.component').then((m) => m.PeopleComponent),
   },
   {
     path: 'people/:id',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/people/person-detail.component').then((m) => m.PersonDetailComponent),
+      import('./pages/people/person-detail.component').then(
+        (m) => m.PersonDetailComponent,
+      ),
   },
   { path: 'interactions', ...placeholder('Interações') },
   {
@@ -50,7 +75,9 @@ export const routes: Routes = [
     path: 'companies',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./pages/companies/companies.component').then((m) => m.CompaniesComponent),
+      import('./pages/companies/companies.component').then(
+        (m) => m.CompaniesComponent,
+      ),
   },
   {
     path: 'companies/:id',

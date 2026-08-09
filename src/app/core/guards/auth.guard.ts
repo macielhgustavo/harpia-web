@@ -1,14 +1,26 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { AuthService } from '../services/auth.service';
+import {
+  AuthSessionService,
+  safeInternalReturnUrl,
+} from '../services/auth-session.service';
 
-export const authGuard: CanActivateFn = () => {
-  const authService = inject(AuthService);
+export const authGuard: CanActivateFn = (_route, state) => {
+  const session = inject(AuthSessionService);
   const router = inject(Router);
+  const hadToken = session.getToken() !== null;
 
-  if (authService.isAuthenticated()) {
+  if (session.isAuthenticated()) {
     return true;
   }
 
-  return router.createUrlTree(['/login']);
+  const returnUrl = safeInternalReturnUrl(state.url);
+  const queryParams = {
+    ...(hadToken ? { reason: 'session-expired' } : {}),
+    ...(returnUrl ? { returnUrl } : {}),
+  };
+
+  return router.createUrlTree(['/login'], {
+    queryParams: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+  });
 };

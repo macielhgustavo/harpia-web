@@ -1,13 +1,16 @@
 import { Component, EventEmitter, Output, inject } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { LogOut, LucideAngularModule, Menu } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [LucideAngularModule],
+  imports: [RouterLink, LucideAngularModule],
   template: `
-    <header class="flex items-center justify-between gap-4 border-b border-border bg-card px-4 py-3 sm:px-6 md:justify-end">
+    <header
+      class="flex items-center justify-between gap-4 border-b border-border bg-card px-4 py-3 sm:px-6 md:justify-end"
+    >
       <button
         type="button"
         (click)="menuToggle.emit()"
@@ -16,12 +19,20 @@ import { AuthService } from '../../../core/services/auth.service';
       >
         <lucide-icon [img]="MenuIcon" [size]="18"></lucide-icon>
       </button>
-      <div class="flex items-center gap-3">
-        <div class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">
+      <a
+        routerLink="/account/security"
+        class="flex items-center gap-3 rounded-lg px-1.5 py-1 transition-colors hover:bg-surface-warm"
+        aria-label="Abrir segurança da conta"
+      >
+        <div
+          class="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white"
+        >
           A
         </div>
-        <span class="text-sm font-medium text-ink">{{ userName }}</span>
-      </div>
+        <span class="hidden text-sm font-medium text-ink sm:inline">{{
+          userName
+        }}</span>
+      </a>
       <button
         type="button"
         (click)="logout()"
