@@ -13,6 +13,7 @@ import { Interaction } from '../../core/models/interaction.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { PersonService } from '../../core/services/person.service';
 import { InteractionFormModalComponent } from '../interactions/interaction-form-modal.component';
+import { formatDate as formatCalendarDate } from '../../shared/utils/development';
 import { extractError, isEmailValid } from '../../shared/utils/http-error';
 import {
   ROLE_OPTIONS,
@@ -482,7 +483,6 @@ export class PersonDetailComponent implements OnInit {
     style: 'currency',
     currency: 'BRL',
   });
-  private readonly dateFmt = new Intl.DateTimeFormat('pt-BR');
 
   readonly isInvestor = computed(
     () => !!this.person()?.roles.some((r) => r.role === 'INVESTIDOR'),
@@ -659,7 +659,7 @@ export class PersonDetailComponent implements OnInit {
   }
 
   formatDate(value?: string | null): string {
-    return value ? this.dateFmt.format(new Date(value)) : '—';
+    return value ? formatCalendarDate(value) : '—';
   }
 
   interactionTypeLabel(type: Interaction['type']): string {
