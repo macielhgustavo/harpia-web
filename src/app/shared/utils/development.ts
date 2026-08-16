@@ -4,6 +4,29 @@ import {
 } from '../../core/models/development.model';
 import { UnitCategory, UnitStatus } from '../../core/models/unit.model';
 
+export const UNIT_CATEGORY_OPTIONS: ReadonlyArray<{
+  value: UnitCategory;
+  label: string;
+}> = [
+  { value: 'APARTAMENTO', label: 'Apartamento' },
+  { value: 'CASA', label: 'Casa' },
+  { value: 'LOTE', label: 'Lote' },
+  { value: 'SALA_COMERCIAL', label: 'Sala comercial' },
+];
+
+export const UNIT_STATUS_OPTIONS: ReadonlyArray<{
+  value: UnitStatus;
+  label: string;
+}> = [
+  { value: 'DISPONIVEL', label: 'Disponível' },
+  { value: 'RESERVADA', label: 'Reservada' },
+  { value: 'VENDIDA', label: 'Vendida' },
+  { value: 'QUITADA', label: 'Quitada' },
+  { value: 'DISTRATADA', label: 'Distratada' },
+  { value: 'BLOQUEADA', label: 'Bloqueada' },
+  { value: 'PERMUTADA', label: 'Permutada' },
+];
+
 export const DEVELOPMENT_STATUS_OPTIONS: ReadonlyArray<{
   value: DevelopmentStatus;
   label: string;
@@ -28,11 +51,17 @@ export const DEVELOPMENT_TYPE_OPTIONS: ReadonlyArray<{
 ];
 
 export function developmentStatusLabel(status: DevelopmentStatus): string {
-  return DEVELOPMENT_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
+  return (
+    DEVELOPMENT_STATUS_OPTIONS.find((option) => option.value === status)
+      ?.label ?? status
+  );
 }
 
 export function developmentTypeLabel(type: DevelopmentType): string {
-  return DEVELOPMENT_TYPE_OPTIONS.find((option) => option.value === type)?.label ?? type;
+  return (
+    DEVELOPMENT_TYPE_OPTIONS.find((option) => option.value === type)?.label ??
+    type
+  );
 }
 
 export function developmentStatusBadge(status: DevelopmentStatus): string {
@@ -48,26 +77,30 @@ export function developmentStatusBadge(status: DevelopmentStatus): string {
 }
 
 export function unitStatusLabel(status: UnitStatus): string {
-  const labels: Record<UnitStatus, string> = {
-    DISPONIVEL: 'Disponível',
-    RESERVADA: 'Reservada',
-    VENDIDA: 'Vendida',
-    QUITADA: 'Quitada',
-    DISTRATADA: 'Distratada',
-    BLOQUEADA: 'Bloqueada',
-    PERMUTADA: 'Permutada',
-  };
-  return labels[status];
+  return (
+    UNIT_STATUS_OPTIONS.find((option) => option.value === status)?.label ??
+    status
+  );
 }
 
 export function unitCategoryLabel(category: UnitCategory): string {
-  const labels: Record<UnitCategory, string> = {
-    APARTAMENTO: 'Apartamento',
-    CASA: 'Casa',
-    LOTE: 'Lote',
-    SALA_COMERCIAL: 'Sala comercial',
+  return (
+    UNIT_CATEGORY_OPTIONS.find((option) => option.value === category)?.label ??
+    category
+  );
+}
+
+export function unitStatusBadge(status: UnitStatus): string {
+  const classes: Record<UnitStatus, string> = {
+    DISPONIVEL: 'bg-green-100 text-green-800',
+    RESERVADA: 'bg-amber-100 text-amber-900',
+    VENDIDA: 'bg-blue-100 text-blue-800',
+    QUITADA: 'bg-teal-100 text-teal-800',
+    DISTRATADA: 'bg-slate-100 text-slate-700',
+    BLOQUEADA: 'bg-red-100 text-red-800',
+    PERMUTADA: 'bg-violet-100 text-violet-800',
   };
-  return labels[category];
+  return classes[status];
 }
 
 export function toDateInput(value?: string | null): string {

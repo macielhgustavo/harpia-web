@@ -1,0 +1,309 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    class="my-auto max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="unit-modal-title"
+    [attr.aria-busy]="saving()"
+    appDialogFocus
+    (dialogEscape)="requestClose()"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="unit-modal-title" class="text-xl font-semibold text-ink">
+          {{ isEditing ? "Editar unidade" : "Nova unidade" }}
+        </h2>
+        <p class="mt-1 text-sm leading-5 text-muted">
+          Cadastre a identificação comercial e as características físicas da
+          unidade.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="shrink-0 rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+        aria-label="Fechar formulário de unidade"
+      >
+        <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+      </button>
+    </div>
+
+    <form (ngSubmit)="save()" class="mt-6 space-y-5" novalidate>
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label
+            for="unit-identifier"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Identificador *</label
+          >
+          <input
+            #identifierInput
+            id="unit-identifier"
+            name="identifier"
+            type="text"
+            [(ngModel)]="form.identifier"
+            [attr.maxlength]="identifierMaxLength"
+            required
+            aria-required="true"
+            data-dialog-initial-focus
+            autocomplete="off"
+            placeholder="Ex.: Apto 101"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            [class.border-red-400]="submitted() && identifierInvalid()"
+            [attr.aria-invalid]="submitted() && identifierInvalid()"
+            [attr.aria-describedby]="
+              submitted() && identifierInvalid()
+                ? 'unit-identifier-error'
+                : null
+            "
+          />
+          @if (submitted() && identifierInvalid()) {
+            <p
+              id="unit-identifier-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Informe um identificador com até {{ identifierMaxLength }}
+              caracteres.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label
+            for="unit-grouping"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Agrupamento</label
+          >
+          <input
+            id="unit-grouping"
+            name="grouping"
+            type="text"
+            [(ngModel)]="form.grouping"
+            autocomplete="off"
+            placeholder="Ex.: Torre A"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          />
+        </div>
+
+        <div>
+          <label
+            for="unit-category"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Categoria *</label
+          >
+          <select
+            id="unit-category"
+            name="category"
+            [(ngModel)]="form.category"
+            required
+            aria-required="true"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            @for (option of categoryOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label for="unit-type" class="mb-1 block text-sm font-medium text-ink"
+            >Tipologia</label
+          >
+          <select
+            id="unit-type"
+            name="unitTypeId"
+            [(ngModel)]="form.unitTypeId"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Sem tipologia</option>
+            @for (unitType of unitTypes; track unitType.id) {
+              <option [value]="unitType.id">{{ unitType.name }}</option>
+            }
+          </select>
+          @if (unitTypes.length === 0) {
+            <p class="mt-1 text-xs text-muted">
+              Cadastre uma tipologia primeiro ou mantenha a unidade sem
+              tipologia.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label
+            for="unit-built-area"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Área construída (m²)</label
+          >
+          <input
+            #builtAreaInput
+            id="unit-built-area"
+            name="builtArea"
+            type="text"
+            inputmode="decimal"
+            [(ngModel)]="form.builtArea"
+            autocomplete="off"
+            placeholder="Ex.: 55,5"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            [class.border-red-400]="submitted() && builtAreaInvalid()"
+            [attr.aria-invalid]="submitted() && builtAreaInvalid()"
+            [attr.aria-describedby]="
+              submitted() && builtAreaInvalid() ? 'unit-built-area-error' : null
+            "
+          />
+          @if (submitted() && builtAreaInvalid()) {
+            <p
+              id="unit-built-area-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Use um número igual ou maior que zero.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label
+            for="unit-land-area"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Área do terreno (m²)</label
+          >
+          <input
+            #landAreaInput
+            id="unit-land-area"
+            name="landArea"
+            type="text"
+            inputmode="decimal"
+            [(ngModel)]="form.landArea"
+            autocomplete="off"
+            placeholder="Ex.: 180"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            [class.border-red-400]="submitted() && landAreaInvalid()"
+            [attr.aria-invalid]="submitted() && landAreaInvalid()"
+            [attr.aria-describedby]="
+              submitted() && landAreaInvalid() ? 'unit-land-area-error' : null
+            "
+          />
+          @if (submitted() && landAreaInvalid()) {
+            <p
+              id="unit-land-area-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Use um número igual ou maior que zero.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label
+            for="unit-parking-spots"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Vagas</label
+          >
+          <input
+            #parkingSpotsInput
+            id="unit-parking-spots"
+            name="parkingSpots"
+            type="text"
+            inputmode="numeric"
+            [(ngModel)]="form.parkingSpots"
+            autocomplete="off"
+            placeholder="Ex.: 1"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            [class.border-red-400]="submitted() && parkingSpotsInvalid()"
+            [attr.aria-invalid]="submitted() && parkingSpotsInvalid()"
+            [attr.aria-describedby]="
+              submitted() && parkingSpotsInvalid()
+                ? 'unit-parking-spots-error'
+                : null
+            "
+          />
+          @if (submitted() && parkingSpotsInvalid()) {
+            <p
+              id="unit-parking-spots-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Use um número inteiro igual ou maior que zero.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label
+            for="unit-status"
+            class="mb-1 block text-sm font-medium text-ink"
+            >Status *</label
+          >
+          <select
+            id="unit-status"
+            name="status"
+            [(ngModel)]="form.status"
+            required
+            aria-required="true"
+            class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label for="unit-notes" class="mb-1 block text-sm font-medium text-ink"
+          >Observações</label
+        >
+        <textarea
+          id="unit-notes"
+          name="notes"
+          rows="3"
+          [(ngModel)]="form.notes"
+          class="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Informações complementares da unidade"
+        ></textarea>
+      </div>
+
+      @if (error()) {
+        <div
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      <div class="flex flex-col-reverse gap-3 pt-1 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="w-full rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60 sm:w-auto"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="saving()"
+          class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          <lucide-icon [img]="SaveIcon" [size]="17"></lucide-icon>
+          {{
+            saving()
+              ? "Salvando..."
+              : isEditing
+                ? "Salvar alterações"
+                : "Criar unidade"
+          }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

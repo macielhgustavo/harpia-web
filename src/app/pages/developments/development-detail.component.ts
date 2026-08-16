@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AlertTriangle,
@@ -8,7 +8,6 @@ import {
   Building2,
   CalendarDays,
   ChartNoAxesColumnIncreasing,
-  House,
   LucideAngularModule,
   MapPin,
   Pencil,
@@ -23,7 +22,6 @@ import {
   Development,
   DevelopmentDetail,
 } from '../../core/models/development.model';
-import { UnitStatus } from '../../core/models/unit.model';
 import { CompanyService } from '../../core/services/company.service';
 import { DevelopmentService } from '../../core/services/development.service';
 import { AuthorizationService } from '../../core/services/authorization.service';
@@ -32,18 +30,11 @@ import {
   developmentStatusLabel,
   developmentTypeLabel,
   formatDate,
-  unitCategoryLabel,
-  unitStatusLabel,
 } from '../../shared/utils/development';
 import { extractError } from '../../shared/utils/http-error';
 import { DevelopmentFormModalComponent } from './development-form-modal.component';
 import { UnitTypesSectionComponent } from './unit-types-section.component';
-
-interface UnitStatusSummary {
-  status: UnitStatus;
-  label: string;
-  count: number;
-}
+import { UnitsSectionComponent } from './units-section.component';
 
 @Component({
   selector: 'app-development-detail',
@@ -54,6 +45,7 @@ interface UnitStatusSummary {
     LucideAngularModule,
     DevelopmentFormModalComponent,
     UnitTypesSectionComponent,
+    UnitsSectionComponent,
   ],
   templateUrl: './development-detail.component.html',
 })
@@ -85,8 +77,6 @@ export class DevelopmentDetailComponent implements OnInit {
   readonly statusBadge = developmentStatusBadge;
   readonly typeLabel = developmentTypeLabel;
   readonly formatDate = formatDate;
-  readonly unitStatusLabel = unitStatusLabel;
-  readonly unitCategoryLabel = unitCategoryLabel;
 
   readonly ArrowLeftIcon = ArrowLeft;
   readonly PencilIcon = Pencil;
@@ -94,26 +84,10 @@ export class DevelopmentDetailComponent implements OnInit {
   readonly BuildingIcon = Building2;
   readonly MapIcon = MapPin;
   readonly CalendarIcon = CalendarDays;
-  readonly UnitIcon = House;
   readonly PriceIcon = ChartNoAxesColumnIncreasing;
   readonly WarningIcon = AlertTriangle;
   readonly RefreshIcon = RefreshCw;
   readonly XIcon = X;
-
-  readonly unitPreview = computed(() =>
-    (this.development()?.units ?? []).slice(0, 6),
-  );
-  readonly unitStatusSummary = computed<UnitStatusSummary[]>(() => {
-    const units = this.development()?.units ?? [];
-    const counts = new Map<UnitStatus, number>();
-    for (const unit of units)
-      counts.set(unit.status, (counts.get(unit.status) ?? 0) + 1);
-    return [...counts.entries()].map(([status, count]) => ({
-      status,
-      label: unitStatusLabel(status),
-      count,
-    }));
-  });
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -192,6 +166,26 @@ export class DevelopmentDetailComponent implements OnInit {
     });
   }
 
+  onUnitsChanged(message: string): void {
+    this.feedback.set(message);
+    const sequence = ++this.developmentRefreshSequence;
+    this.developmentService.getById(this.developmentId).subscribe({
+      next: (development) => {
+        if (sequence !== this.developmentRefreshSequence) return;
+        this.development.set(development);
+      },
+      error: (error: unknown) => {
+        if (sequence !== this.developmentRefreshSequence) return;
+        this.feedback.set(
+          `${message} ${extractError(
+            error,
+            'Não foi possível atualizar os resumos do empreendimento.',
+          )}`,
+        );
+      },
+    });
+  }
+
   requestDelete(): void {
     if (!this.canWriteDevelopments) return;
     this.deleteError.set('');
@@ -226,11 +220,5 @@ export class DevelopmentDetailComponent implements OnInit {
         );
       },
     });
-  }
-
-  formatArea(value?: number | null): string {
-    return value == null
-      ? 'Não informado'
-      : `${new Intl.NumberFormat('pt-BR').format(value)} m²`;
   }
 }

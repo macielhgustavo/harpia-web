@@ -1,0 +1,511 @@
+<section
+  class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+>
+  <header
+    class="flex flex-col gap-3 border-b border-border bg-surface-warm px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <div class="flex items-center gap-2">
+      <lucide-icon
+        [img]="UnitIcon"
+        [size]="19"
+        class="text-primary"
+      ></lucide-icon>
+      <h2
+        #sectionHeading
+        tabindex="-1"
+        class="font-semibold text-ink outline-none"
+      >
+        Unidades
+      </h2>
+      <span
+        class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted"
+        >{{ units().length }}</span
+      >
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="openCreate()"
+        [disabled]="loading()"
+        class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <lucide-icon [img]="AddIcon" [size]="16"></lucide-icon>
+        Nova unidade
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <div
+      class="border-b border-primary bg-emerald-50 px-5 py-3 text-sm text-primary"
+      role="status"
+    >
+      {{ feedback() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <p class="p-5 text-sm text-muted" role="status">Carregando unidades...</p>
+  } @else if (error()) {
+    <div class="p-5">
+      <p class="text-sm text-red-800" role="alert">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="reload()"
+        class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-800 hover:bg-red-50"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>
+        Tentar novamente
+      </button>
+    </div>
+  } @else if (units().length === 0) {
+    <div class="p-8 text-center">
+      <p class="text-sm text-muted">Nenhuma unidade cadastrada.</p>
+      @if (canWrite) {
+        <button
+          type="button"
+          (click)="openCreate()"
+          class="mt-3 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Cadastrar a primeira unidade
+        </button>
+      }
+    </div>
+  } @else {
+    <div
+      class="grid grid-cols-2 gap-px border-b border-border bg-border xl:grid-cols-4"
+    >
+      <div class="bg-card p-4">
+        <p class="text-xs text-muted">Total</p>
+        <p class="mt-1 text-xl font-bold text-ink">{{ stats().total }}</p>
+      </div>
+      <div class="bg-card p-4">
+        <p class="text-xs text-muted">Disponíveis</p>
+        <p class="mt-1 text-xl font-bold text-green-800">
+          {{ stats().available }}
+        </p>
+      </div>
+      <div class="bg-card p-4">
+        <p class="text-xs text-muted">Reservadas</p>
+        <p class="mt-1 text-xl font-bold text-amber-800">
+          {{ stats().reserved }}
+        </p>
+      </div>
+      <div class="bg-card p-4">
+        <p class="text-xs text-muted">Vendidas / quitadas</p>
+        <p class="mt-1 text-xl font-bold text-blue-800">{{ stats().sold }}</p>
+      </div>
+    </div>
+
+    <div class="border-b border-border bg-surface-warm p-4">
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <label class="relative block xl:col-span-2">
+          <span class="sr-only">Buscar unidade</span>
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="16"
+            class="pointer-events-none absolute left-3 top-3 text-muted"
+          ></lucide-icon>
+          <input
+            type="search"
+            name="unitSearch"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            placeholder="Buscar unidade, torre ou tipologia"
+            class="w-full rounded-lg border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-ink outline-none focus:border-primary"
+          />
+        </label>
+
+        <label>
+          <span class="sr-only">Filtrar por status</span>
+          <select
+            name="unitStatusFilter"
+            [ngModel]="statusFilter()"
+            (ngModelChange)="statusFilter.set($event)"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Todos os status</option>
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <span class="sr-only">Filtrar por categoria</span>
+          <select
+            name="unitCategoryFilter"
+            [ngModel]="categoryFilter()"
+            (ngModelChange)="categoryFilter.set($event)"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Todas as categorias</option>
+            @for (option of categoryOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>
+          <span class="sr-only">Filtrar por tipologia</span>
+          <select
+            name="unitTypeFilter"
+            [ngModel]="unitTypeFilter()"
+            (ngModelChange)="unitTypeFilter.set($event)"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Todas as tipologias</option>
+            <option value="none">Sem tipologia</option>
+            @for (unitType of unitTypes; track unitType.id) {
+              <option [value]="unitType.id">{{ unitType.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div
+        class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <label class="sm:max-w-xs sm:flex-1">
+          <span class="sr-only">Filtrar por agrupamento</span>
+          <select
+            name="unitGroupingFilter"
+            [ngModel]="groupingFilter()"
+            (ngModelChange)="groupingFilter.set($event)"
+            class="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Todos os agrupamentos</option>
+            @for (grouping of groupingOptions(); track grouping) {
+              <option [value]="grouping">{{ grouping }}</option>
+            }
+          </select>
+        </label>
+        <div class="flex items-center justify-between gap-3 sm:justify-end">
+          <span class="text-xs text-muted">
+            {{ filteredUnits().length }} de {{ units().length }} unidades
+          </span>
+          @if (hasFilters()) {
+            <button
+              type="button"
+              (click)="resetFilters()"
+              class="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-ink hover:bg-surface-warm"
+            >
+              <lucide-icon [img]="ResetIcon" [size]="15"></lucide-icon>
+              Limpar filtros
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    @if (filteredUnits().length === 0) {
+      <div class="p-8 text-center">
+        <p class="text-sm text-muted">
+          Nenhuma unidade corresponde aos filtros aplicados.
+        </p>
+        <button
+          type="button"
+          (click)="resetFilters()"
+          class="mt-3 text-sm font-medium text-primary underline-offset-4 hover:underline"
+        >
+          Limpar filtros
+        </button>
+      </div>
+    } @else {
+      <div class="hidden overflow-x-auto xl:block">
+        <table class="w-full min-w-[880px] text-left text-sm">
+          <thead
+            class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+          >
+            <tr>
+              <th scope="col" class="px-4 py-3 font-semibold">Unidade</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Tipologia</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Categoria</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Status</th>
+              <th scope="col" class="px-4 py-3 font-semibold">Área</th>
+              <th scope="col" class="px-4 py-3 text-right font-semibold">
+                Ações
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (unit of filteredUnits(); track unit.id) {
+              <tr class="hover:bg-surface-warm">
+                <td class="px-4 py-3">
+                  <p class="font-medium text-ink">{{ unit.identifier }}</p>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ unit.grouping || "Sem agrupamento" }}
+                  </p>
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ unit.unitType?.name || "Sem tipologia" }}
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ categoryLabel(unit.category) }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-medium"
+                    [class]="statusBadge(unit.status)"
+                    >{{ statusLabel(unit.status) }}</span
+                  >
+                </td>
+                <td class="px-4 py-3 text-ink">{{ areaLabel(unit) }}</td>
+                <td class="px-4 py-3">
+                  @if (canWrite) {
+                    <div class="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        (click)="openStatus(unit)"
+                        class="rounded-lg px-2.5 py-2 text-xs font-medium text-primary hover:bg-surface-warm"
+                        [attr.aria-label]="
+                          'Alterar status da unidade ' + unit.identifier
+                        "
+                      >
+                        Status
+                      </button>
+                      <button
+                        type="button"
+                        (click)="openEdit(unit)"
+                        class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-primary"
+                        [attr.aria-label]="'Editar unidade ' + unit.identifier"
+                      >
+                        <lucide-icon [img]="EditIcon" [size]="16"></lucide-icon>
+                      </button>
+                      <button
+                        type="button"
+                        (click)="requestDelete(unit)"
+                        class="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-700"
+                        [attr.aria-label]="'Remover unidade ' + unit.identifier"
+                      >
+                        <lucide-icon
+                          [img]="DeleteIcon"
+                          [size]="16"
+                        ></lucide-icon>
+                      </button>
+                    </div>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-cols-1 gap-px bg-border sm:grid-cols-2 xl:hidden">
+        @for (unit of filteredUnits(); track unit.id) {
+          <article class="bg-card p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="truncate font-medium text-ink">
+                  {{ unit.identifier }}
+                </h3>
+                <p class="mt-1 text-xs text-muted">
+                  {{ unit.grouping || "Sem agrupamento" }}
+                </p>
+              </div>
+              <span
+                class="shrink-0 rounded-full px-2 py-1 text-xs font-medium"
+                [class]="statusBadge(unit.status)"
+                >{{ statusLabel(unit.status) }}</span
+              >
+            </div>
+            <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt class="text-xs text-muted">Tipologia</dt>
+                <dd class="mt-1 text-ink">
+                  {{ unit.unitType?.name || "Sem tipologia" }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Categoria</dt>
+                <dd class="mt-1 text-ink">
+                  {{ categoryLabel(unit.category) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Área</dt>
+                <dd class="mt-1 text-ink">{{ areaLabel(unit) }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Vagas</dt>
+                <dd class="mt-1 text-ink">{{ unit.parkingSpots ?? "—" }}</dd>
+              </div>
+            </dl>
+            @if (canWrite) {
+              <div
+                class="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3"
+              >
+                <button
+                  type="button"
+                  (click)="openStatus(unit)"
+                  class="rounded-lg border border-border px-2 py-2 text-xs font-medium text-primary hover:bg-surface-warm"
+                >
+                  Status
+                </button>
+                <button
+                  type="button"
+                  (click)="openEdit(unit)"
+                  class="inline-flex items-center justify-center gap-1 rounded-lg border border-border px-2 py-2 text-xs font-medium text-ink hover:bg-surface-warm"
+                >
+                  <lucide-icon [img]="EditIcon" [size]="14"></lucide-icon>
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  (click)="requestDelete(unit)"
+                  class="inline-flex items-center justify-center gap-1 rounded-lg border border-red-200 px-2 py-2 text-xs font-medium text-red-700 hover:bg-red-50"
+                >
+                  <lucide-icon [img]="DeleteIcon" [size]="14"></lucide-icon>
+                  Excluir
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  }
+</section>
+
+@if (formOpen()) {
+  <app-unit-form-modal
+    [developmentId]="developmentId"
+    [unitTypes]="unitTypes"
+    [unit]="editing()"
+    (closed)="closeForm()"
+    (saved)="onSaved($event)"
+    (stale)="onStaleUnit()"
+  />
+}
+
+@if (statusTarget(); as unit) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeStatus()"
+  >
+    <section
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="unit-status-title"
+      appDialogFocus
+      (dialogEscape)="closeStatus()"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="unit-status-title" class="text-lg font-semibold text-ink">
+        Alterar status
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        Unidade
+        <strong class="font-semibold text-ink">{{ unit.identifier }}</strong>
+      </p>
+      <label
+        for="quick-unit-status"
+        class="mt-5 block text-sm font-medium text-ink"
+      >
+        Novo status
+      </label>
+      <select
+        id="quick-unit-status"
+        name="quickUnitStatus"
+        [ngModel]="selectedStatus()"
+        (ngModelChange)="selectedStatus.set($event)"
+        data-dialog-initial-focus
+        class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+      >
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+      @if (statusError()) {
+        <p class="mt-3 text-sm text-red-800" role="alert">
+          {{ statusError() }}
+        </p>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeStatus()"
+          [disabled]="statusSaving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="saveStatus()"
+          [disabled]="statusSaving()"
+          class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+        >
+          {{ statusSaving() ? "Salvando..." : "Salvar status" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (deleteTarget(); as unit) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeDelete()"
+  >
+    <section
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-unit-title"
+      appDialogFocus
+      (dialogEscape)="closeDelete()"
+      (click)="$event.stopPropagation()"
+    >
+      <h2 id="delete-unit-title" class="text-lg font-semibold text-ink">
+        Remover unidade
+      </h2>
+      <p class="mt-3 text-sm leading-6 text-muted">
+        Confirma a remoção de
+        <strong class="font-semibold text-ink">{{ unit.identifier }}</strong
+        >?
+      </p>
+      <div
+        class="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+      >
+        <lucide-icon
+          [img]="WarningIcon"
+          [size]="17"
+          class="mt-0.5 shrink-0"
+        ></lucide-icon>
+        <p>
+          {{ priceImpactMessage(unit) }} Documentos permanecerão cadastrados,
+          mas ficarão sem vínculo com a unidade.
+        </p>
+      </div>
+      @if (deleteError()) {
+        <p class="mt-4 text-sm text-red-800" role="alert">
+          {{ deleteError() }}
+        </p>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeDelete()"
+          data-dialog-initial-focus
+          [disabled]="deleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+        >
+          {{ deleting() ? "Removendo..." : "Remover unidade" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

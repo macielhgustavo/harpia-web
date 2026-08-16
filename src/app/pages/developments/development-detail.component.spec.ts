@@ -8,6 +8,7 @@ import { AuthorizationService } from '../../core/services/authorization.service'
 import { CompanyService } from '../../core/services/company.service';
 import { DevelopmentService } from '../../core/services/development.service';
 import { UnitTypeService } from '../../core/services/unit-type.service';
+import { UnitService } from '../../core/services/unit.service';
 import {
   COMPANY_FIXTURES,
   DEVELOPMENT_DETAIL_FIXTURE,
@@ -43,6 +44,19 @@ class UnitTypeServiceMock {
   readonly remove = jasmine.createSpy().and.returnValue(of(undefined));
 }
 
+class UnitServiceMock {
+  readonly list = jasmine.createSpy().and.returnValue(
+    of(
+      DEVELOPMENT_DETAIL_FIXTURE.units.map((unit) => ({
+        ...unit,
+        prices: [],
+      })),
+    ),
+  );
+  readonly remove = jasmine.createSpy().and.returnValue(of(undefined));
+  readonly update = jasmine.createSpy().and.returnValue(of(undefined));
+}
+
 class AuthorizationServiceMock {
   readonly hasPermission = jasmine.createSpy().and.returnValue(true);
 }
@@ -62,6 +76,7 @@ describe('DevelopmentDetailComponent', () => {
         { provide: DevelopmentService, useClass: DevelopmentServiceMock },
         { provide: CompanyService, useClass: CompanyServiceMock },
         { provide: UnitTypeService, useClass: UnitTypeServiceMock },
+        { provide: UnitService, useClass: UnitServiceMock },
         { provide: AuthorizationService, useClass: AuthorizationServiceMock },
         provideRouter([]),
         {
@@ -209,6 +224,19 @@ describe('DevelopmentDetailComponent', () => {
     expect(service.getById).toHaveBeenCalledTimes(2);
     expect(companyService.list).toHaveBeenCalledTimes(1);
     expect(component.loading()).toBeFalse();
+  });
+
+  it('integra a gestão de unidades e atualiza somente o resumo do empreendimento', () => {
+    render();
+
+    component.onUnitsChanged('Unidade criada com sucesso.');
+
+    expect(component.feedback()).toBe('Unidade criada com sucesso.');
+    expect(service.getById).toHaveBeenCalledTimes(2);
+    expect(companyService.list).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'gestão completa de unidades será adicionada',
+    );
   });
 
   it('preserva a página e o sucesso se apenas a atualização dos resumos falhar', () => {
