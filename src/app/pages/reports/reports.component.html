@@ -1,0 +1,222 @@
+<div class="space-y-6">
+  <header class="flex items-start gap-3">
+    <span class="rounded-xl bg-primary p-2.5 text-white">
+      <lucide-icon [img]="ReportsIcon" [size]="22" />
+    </span>
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Relatórios</h1>
+      <p class="mt-1 text-sm text-muted">
+        Exporte análises financeiras em PDF ou Excel com filtros seguros da
+        organização atual.
+      </p>
+    </div>
+  </header>
+
+  @if (feedback()) {
+    <p
+      class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+      role="status"
+    >
+      {{ feedback() }}
+    </p>
+  }
+  @if (generationError()) {
+    <p
+      class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      role="alert"
+    >
+      {{ generationError() }}
+    </p>
+  }
+
+  <section
+    class="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5"
+    aria-labelledby="report-filters-title"
+  >
+    <div
+      class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <h2 id="report-filters-title" class="font-semibold text-ink">
+          Filtros
+        </h2>
+        <p class="mt-1 text-xs text-muted">
+          Cada relatório aplica somente os filtros compatíveis indicados no
+          cartão.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="resetFilters()"
+        [disabled]="!!generating()"
+        class="rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+      >
+        Limpar filtros
+      </button>
+    </div>
+
+    @if (referencesError()) {
+      <div
+        class="mb-4 flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between"
+        role="alert"
+      >
+        <span>{{ referencesError() }}</span>
+        <button
+          type="button"
+          (click)="loadReferences()"
+          class="inline-flex items-center gap-1.5 font-medium underline"
+        >
+          <lucide-icon [img]="RefreshIcon" [size]="15" />Tentar novamente
+        </button>
+      </div>
+    }
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <label>
+        <span class="block text-sm font-medium text-ink">Data inicial</span>
+        <input
+          type="date"
+          name="startDate"
+          [(ngModel)]="startDate"
+          [disabled]="!!generating()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        />
+      </label>
+      <label>
+        <span class="block text-sm font-medium text-ink">Data final</span>
+        <input
+          type="date"
+          name="endDate"
+          [(ngModel)]="endDate"
+          [disabled]="!!generating()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        />
+      </label>
+      <label>
+        <span class="block text-sm font-medium text-ink"
+          >Referência para atrasos</span
+        >
+        <input
+          type="date"
+          name="asOfDate"
+          [(ngModel)]="asOfDate"
+          [disabled]="!!generating()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        />
+      </label>
+      <label>
+        <span class="block text-sm font-medium text-ink">Investidor</span>
+        <select
+          name="investorId"
+          [(ngModel)]="investorId"
+          [disabled]="referencesLoading() || !!generating()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary disabled:opacity-60"
+        >
+          <option value="">
+            {{
+              referencesLoading() ? "Carregando..." : "Todos os investidores"
+            }}
+          </option>
+          @for (investor of investors(); track investor.id) {
+            <option [value]="investor.id">{{ investor.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span class="block text-sm font-medium text-ink">Empreendimento</span>
+        <select
+          name="developmentId"
+          [(ngModel)]="developmentId"
+          [disabled]="referencesLoading() || !!generating()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary disabled:opacity-60"
+        >
+          <option value="">
+            {{
+              referencesLoading() ? "Carregando..." : "Todos os empreendimentos"
+            }}
+          </option>
+          @for (development of developments(); track development.id) {
+            <option [value]="development.id">{{ development.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        <span class="block text-sm font-medium text-ink"
+          >Status do retorno</span
+        >
+        <select
+          name="status"
+          [(ngModel)]="status"
+          [disabled]="!!generating()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary disabled:opacity-60"
+        >
+          <option value="">Todos os status</option>
+          <option value="PENDENTE">Pendente</option>
+          <option value="PAGO">Pago</option>
+          <option value="ATRASADO">Atrasado</option>
+        </select>
+      </label>
+    </div>
+
+    @if (validationError()) {
+      <p class="mt-4 text-sm text-red-800" role="alert">
+        {{ validationError() }}
+      </p>
+    }
+  </section>
+
+  <section
+    class="grid grid-cols-1 gap-5 xl:grid-cols-2"
+    aria-label="Tipos de relatório"
+  >
+    @for (report of reports; track report.type) {
+      <article
+        class="flex flex-col rounded-xl border border-border bg-card p-5 shadow-card"
+      >
+        <div class="flex items-start gap-3">
+          <span class="rounded-lg bg-surface-warm p-2 text-primary">
+            <lucide-icon [img]="reportIcon(report.type)" [size]="21" />
+          </span>
+          <div>
+            <h2 class="font-semibold text-ink">{{ report.title }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ report.description }}</p>
+          </div>
+        </div>
+        <p class="mt-4 rounded-lg bg-surface-warm px-3 py-2 text-xs text-muted">
+          <strong class="text-ink">Filtros aplicados:</strong>
+          {{ report.filters }}.
+        </p>
+        <div
+          class="mt-auto flex flex-col gap-2 pt-5 sm:flex-row sm:justify-end"
+        >
+          <button
+            type="button"
+            (click)="generate(report.type, 'pdf')"
+            [disabled]="!!generating()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary hover:bg-surface-warm disabled:opacity-60"
+          >
+            <lucide-icon [img]="DownloadIcon" [size]="16" />
+            {{
+              isGenerating(report.type, "pdf")
+                ? "Gerando relatório..."
+                : "Baixar PDF"
+            }}
+          </button>
+          <button
+            type="button"
+            (click)="generate(report.type, 'xlsx')"
+            [disabled]="!!generating()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+          >
+            <lucide-icon [img]="DownloadIcon" [size]="16" />
+            {{
+              isGenerating(report.type, "xlsx")
+                ? "Gerando relatório..."
+                : "Baixar Excel"
+            }}
+          </button>
+        </div>
+      </article>
+    }
+  </section>
+</div>

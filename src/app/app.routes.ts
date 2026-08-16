@@ -1,15 +1,9 @@
 import { Routes } from '@angular/router';
-import { APP_PERMISSIONS, AppPermission } from './core/config/rbac.config';
+import { APP_PERMISSIONS } from './core/config/rbac.config';
 import { authGuard } from './core/guards/auth.guard';
 import { homeRedirectGuard } from './core/guards/home-redirect.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 import { PlaceholderComponent } from './shared/components/placeholder/placeholder.component';
-
-const placeholder = (title: string, permission: AppPermission) => ({
-  canActivate: [authGuard, permissionGuard],
-  component: PlaceholderComponent,
-  data: { title, permission },
-});
 
 export const routes: Routes = [
   {
@@ -130,6 +124,15 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/returns/returns.component').then(
         (m) => m.ReturnsComponent,
+      ),
+  },
+  {
+    path: 'reports',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.REPORTS_EXPORT },
+    loadComponent: () =>
+      import('./pages/reports/reports.component').then(
+        (m) => m.ReportsComponent,
       ),
   },
   {

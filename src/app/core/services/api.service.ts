@@ -12,10 +12,11 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params });
   }
 
-  getBlob(path: string): Observable<HttpResponse<Blob>> {
+  getBlob(path: string, params?: HttpParams): Observable<HttpResponse<Blob>> {
     return this.http.get(`${this.baseUrl}${path}`, {
       observe: 'response',
       responseType: 'blob',
+      params,
     });
   }
 

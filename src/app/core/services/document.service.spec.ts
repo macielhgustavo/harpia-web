@@ -2,11 +2,9 @@ import { HttpResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { Document } from '../models/document.model';
+import { filenameFromContentDisposition } from '../../shared/utils/file-download';
 import { ApiService } from './api.service';
-import {
-  DocumentService,
-  filenameFromContentDisposition,
-} from './document.service';
+import { DocumentService } from './document.service';
 
 describe('DocumentService', () => {
   let service: DocumentService;

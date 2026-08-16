@@ -81,6 +81,17 @@ describe('Rota do dashboard', () => {
   });
 });
 
+describe('Rota de relatórios', () => {
+  it('é lazy e exige a permissão de exportação', () => {
+    const route = routes.find((item) => item.path === 'reports');
+    expect(route?.canActivate).toContain(authGuard);
+    expect(route?.canActivate).toContain(permissionGuard);
+    expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.REPORTS_EXPORT);
+    expect(route?.loadComponent).toBeDefined();
+    expect(route?.component).toBeUndefined();
+  });
+});
+
 describe('Rotas administrativas', () => {
   it('protege usuários, convites e auditoria com as permissões correspondentes', () => {
     const usersRoute = routes.find((route) => route.path === 'users');

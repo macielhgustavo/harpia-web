@@ -121,6 +121,7 @@ export const PERMISSION_ROUTES = [
   { route: '/interactions', permission: APP_PERMISSIONS.INTERACTIONS_READ },
   { route: '/investments', permission: APP_PERMISSIONS.INVESTMENTS_READ },
   { route: '/returns', permission: APP_PERMISSIONS.RETURNS_READ },
+  { route: '/reports', permission: APP_PERMISSIONS.REPORTS_EXPORT },
   { route: '/bank-accounts', permission: APP_PERMISSIONS.BANK_ACCOUNTS_READ },
   { route: '/users', permission: APP_PERMISSIONS.USERS_MANAGE },
   { route: '/audit-logs', permission: APP_PERMISSIONS.AUDIT_READ },

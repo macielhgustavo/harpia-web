@@ -48,6 +48,7 @@ describe('SidebarComponent', () => {
   it('mostra administração e identidade da sessão para OWNER', () => {
     render([
       APP_PERMISSIONS.DASHBOARD_READ,
+      APP_PERMISSIONS.REPORTS_EXPORT,
       APP_PERMISSIONS.USERS_MANAGE,
       APP_PERMISSIONS.AUDIT_READ,
     ]);
@@ -57,6 +58,7 @@ describe('SidebarComponent', () => {
     expect(text).toContain('Usuários');
     expect(text).toContain('Convites');
     expect(text).toContain('Auditoria');
+    expect(text).toContain('Relatórios');
     expect(text).toContain('owner@harpia.com');
     expect(text).toContain('Proprietário');
     expect(

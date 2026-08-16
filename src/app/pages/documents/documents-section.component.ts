@@ -28,10 +28,8 @@ import {
   DocumentFilters,
 } from '../../core/models/document.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
-import {
-  DocumentService,
-  filenameFromContentDisposition,
-} from '../../core/services/document.service';
+import { DocumentService } from '../../core/services/document.service';
+import { filenameFromContentDisposition } from '../../shared/utils/file-download';
 import { formatDate } from '../../shared/utils/development';
 import { extractError } from '../../shared/utils/http-error';
 

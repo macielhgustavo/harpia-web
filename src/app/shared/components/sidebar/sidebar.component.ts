@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   Building2,
   Coins,
+  FileSpreadsheet,
   Landmark,
   LayoutDashboard,
   LucideAngularModule,
@@ -107,6 +108,7 @@ export class SidebarComponent {
     Building2,
     TrendingUp,
     Coins,
+    FileSpreadsheet,
     Landmark,
     Wallet,
     UserCog,

@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-16 — Relatórios financeiros:** adicionada a área protegida por `REPORTS_EXPORT` para captação, retornos, retornos em atraso e posição por investidor, com filtros reais de período, referência, investidor, empreendimento e status; exportação autenticada em PDF/XLSX por `Blob`, feedback de processamento e preservação do nome do arquivo.
+
 - **2026-08-16 — Dashboard por perfil:** substituído o placeholder por uma visão real da organização, restrita a `DASHBOARD_READ`, com atenção imediata a retornos vencidos, captação, alocação, caixa geral, investidores, retornos, portfólio de empreendimentos e unidades, captação por empreendimento e últimas interações com próximos passos.
 
 - **2026-08-16 — Documentos privados:** criado componente reutilizável para pessoa, investimento, unidade e empreendimento, com listagem, busca, categoria, metadados, upload preliminarmente validado até 25 MB, download autenticado por `Blob` preservando o nome e exclusão do arquivo privado; fluxos respeitam `DOCUMENTS_READ`/`DOCUMENTS_WRITE` e nunca tratam `fileUrl` como URL pública.
