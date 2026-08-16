@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-16 — Dashboard por perfil:** substituído o placeholder por uma visão real da organização, restrita a `DASHBOARD_READ`, com atenção imediata a retornos vencidos, captação, alocação, caixa geral, investidores, retornos, portfólio de empreendimentos e unidades, captação por empreendimento e últimas interações com próximos passos.
+
 - **2026-08-16 — Documentos privados:** criado componente reutilizável para pessoa, investimento, unidade e empreendimento, com listagem, busca, categoria, metadados, upload preliminarmente validado até 25 MB, download autenticado por `Blob` preservando o nome e exclusão do arquivo privado; fluxos respeitam `DOCUMENTS_READ`/`DOCUMENTS_WRITE` e nunca tratam `fileUrl` como URL pública.
 
 - **2026-08-16 — Contas bancárias:** substituído o placeholder por gestão real das contas da organização e de empresas/SPEs, com indicadores, busca, filtro por empresa, criação, edição, desvinculação e exclusão; visualização financeira restrita a `BANK_ACCOUNTS_READ`, mutações restritas a `BANK_ACCOUNTS_WRITE` e tenant derivado exclusivamente da sessão.

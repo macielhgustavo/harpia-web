@@ -55,7 +55,12 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    ...placeholder('Dashboard', APP_PERMISSIONS.DASHBOARD_READ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.DASHBOARD_READ },
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard.component').then(
+        (m) => m.DashboardComponent,
+      ),
   },
   {
     path: 'people',

@@ -70,6 +70,17 @@ describe('Rota de contas bancárias', () => {
   });
 });
 
+describe('Rota do dashboard', () => {
+  it('substitui o placeholder por página lazy e protegida por permissão', () => {
+    const route = routes.find((item) => item.path === 'dashboard');
+    expect(route?.canActivate).toContain(authGuard);
+    expect(route?.canActivate).toContain(permissionGuard);
+    expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.DASHBOARD_READ);
+    expect(route?.loadComponent).toBeDefined();
+    expect(route?.component).toBeUndefined();
+  });
+});
+
 describe('Rotas administrativas', () => {
   it('protege usuários, convites e auditoria com as permissões correspondentes', () => {
     const usersRoute = routes.find((route) => route.path === 'users');
