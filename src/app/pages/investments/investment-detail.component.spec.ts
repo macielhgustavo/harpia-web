@@ -4,6 +4,8 @@ import { of, Subject, throwError } from 'rxjs';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { InvestmentDetail } from '../../core/models/investment.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
+import { AllocationService } from '../../core/services/allocation.service';
+import { DevelopmentService } from '../../core/services/development.service';
 import { InvestmentService } from '../../core/services/investment.service';
 import { InvestmentDetailComponent } from './investment-detail.component';
 
@@ -12,6 +14,8 @@ describe('InvestmentDetailComponent', () => {
   let component: InvestmentDetailComponent;
   let service: jasmine.SpyObj<InvestmentService>;
   let authorization: jasmine.SpyObj<AuthorizationService>;
+  let allocationService: jasmine.SpyObj<AllocationService>;
+  let developmentService: jasmine.SpyObj<DevelopmentService>;
 
   const detail: InvestmentDetail = {
     id: 'investment-1',
@@ -65,14 +69,26 @@ describe('InvestmentDetailComponent', () => {
       'AuthorizationService',
       ['hasPermission'],
     );
+    allocationService = jasmine.createSpyObj<AllocationService>(
+      'AllocationService',
+      ['remove'],
+    );
+    developmentService = jasmine.createSpyObj<DevelopmentService>(
+      'DevelopmentService',
+      ['list'],
+    );
     service.getById.and.returnValue(of(detail));
     service.remove.and.returnValue(of(detail));
+    allocationService.remove.and.returnValue(of(detail.allocations[0]));
+    developmentService.list.and.returnValue(of([]));
     authorization.hasPermission.and.returnValue(true);
     TestBed.configureTestingModule({
       imports: [InvestmentDetailComponent],
       providers: [
         { provide: InvestmentService, useValue: service },
         { provide: AuthorizationService, useValue: authorization },
+        { provide: AllocationService, useValue: allocationService },
+        { provide: DevelopmentService, useValue: developmentService },
         provideRouter([]),
         {
           provide: ActivatedRoute,
@@ -102,6 +118,30 @@ describe('InvestmentDetailComponent', () => {
     expect(component.returnStatusLabel(detail.allocations[0].returns[0])).toBe(
       'Atrasado',
     );
+    expect(component.allocatedTotal()).toBe(300000);
+    expect(component.availableAmount()).toBe(200000);
+  });
+
+  it('inclui alocações de caixa geral no total consumido', () => {
+    service.getById.and.returnValue(
+      of({
+        ...detail,
+        allocations: [
+          ...detail.allocations,
+          {
+            ...detail.allocations[0],
+            id: 'allocation-2',
+            developmentId: null,
+            development: null,
+            amount: 50000,
+            returns: [],
+          },
+        ],
+      }),
+    );
+    render();
+    expect(component.allocatedTotal()).toBe(350000);
+    expect(component.availableAmount()).toBe(150000);
   });
 
   it('trata 404 sem expor diferença de tenant', () => {
@@ -142,6 +182,42 @@ describe('InvestmentDetailComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/investments'], {
       queryParams: { feedback: 'removed' },
     });
+  });
+
+  it('abre criação somente com saldo e empreendimentos disponíveis', () => {
+    render();
+    component.openCreateAllocation();
+    expect(component.allocationFormOpen()).toBeTrue();
+    component.closeAllocationForm();
+    component.developmentsError.set('Falha');
+    component.openCreateAllocation();
+    expect(component.allocationFormOpen()).toBeFalse();
+  });
+
+  it('exclui alocação uma vez e atualiza o detalhe', () => {
+    const pending = new Subject<(typeof detail.allocations)[number]>();
+    allocationService.remove.and.returnValue(pending);
+    render();
+    component.requestAllocationDelete(detail.allocations[0]);
+    component.confirmAllocationDelete();
+    component.confirmAllocationDelete();
+    expect(allocationService.remove).toHaveBeenCalledOnceWith('allocation-1');
+    pending.next(detail.allocations[0]);
+    pending.complete();
+    expect(service.getById).toHaveBeenCalledTimes(2);
+    expect(component.feedback()).toContain('excluída');
+  });
+
+  it('reconcilia 404 de alocação sem marcar o investimento como ausente', () => {
+    allocationService.remove.and.returnValue(
+      throwError(() => ({ status: 404 })),
+    );
+    render();
+    component.requestAllocationDelete(detail.allocations[0]);
+    component.confirmAllocationDelete();
+    expect(component.allocationDeleteOpen()).toBeFalse();
+    expect(component.notFound()).toBeFalse();
+    expect(service.getById).toHaveBeenCalledTimes(2);
   });
 
   it('descarta resposta antiga de atualização', () => {

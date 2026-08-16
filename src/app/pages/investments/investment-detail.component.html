@@ -108,15 +108,15 @@
         >
           <p class="text-sm text-muted">Alocado</p>
           <p class="mt-2 text-xl font-bold text-ink">
-            {{ formatCurrency(item.allocatedAmount) }}
+            {{ formatCurrency(allocatedTotal()) }}
           </p>
         </article>
         <article
           class="rounded-xl border border-border bg-card p-4 shadow-card"
         >
-          <p class="text-sm text-muted">Disponível / caixa geral</p>
+          <p class="text-sm text-muted">Saldo disponível</p>
           <p class="mt-2 text-xl font-bold text-ink">
-            {{ formatCurrency(item.unallocatedAmount) }}
+            {{ formatCurrency(availableAmount()) }}
           </p>
         </article>
         <article
@@ -196,7 +196,7 @@
               <dd class="font-medium text-ink">
                 {{
                   item.amount > 0
-                    ? ((item.allocatedAmount / item.amount) * 100).toFixed(1)
+                    ? ((allocatedTotal() / item.amount) * 100).toFixed(1)
                     : "0.0"
                 }}%
               </dd>
@@ -209,18 +209,111 @@
         class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
         aria-labelledby="allocations-title"
       >
-        <div class="border-b border-border bg-surface-warm px-5 py-4">
-          <h2 id="allocations-title" class="font-semibold text-ink">
-            Alocações
-          </h2>
-          <p class="mt-1 text-xs text-muted">
-            Destinação do aporte e retornos vinculados.
-          </p>
+        <div
+          class="flex flex-col gap-3 border-b border-border bg-surface-warm px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <h2
+              #allocationsHeading
+              id="allocations-title"
+              tabindex="-1"
+              class="font-semibold text-ink outline-none"
+            >
+              Alocações
+            </h2>
+            <p class="mt-1 text-xs text-muted">
+              Destinação do aporte e retornos vinculados.
+            </p>
+          </div>
+          @if (canWrite) {
+            <button
+              type="button"
+              (click)="openCreateAllocation()"
+              [disabled]="
+                developmentsLoading() ||
+                !!developmentsError() ||
+                availableAmount() <= 0
+              "
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <lucide-icon [img]="AddIcon" [size]="16"></lucide-icon>
+              Nova alocação
+            </button>
+          }
         </div>
+        @if (developmentsError()) {
+          <div
+            class="flex flex-col gap-3 border-b border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between"
+            role="alert"
+          >
+            <span>{{ developmentsError() }}</span>
+            <button
+              type="button"
+              (click)="loadDevelopments()"
+              class="font-medium underline"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        }
+        @if (item.allocations.length > 0 || availableAmount() > 0) {
+          <div class="border-b border-border px-5 py-4">
+            <div
+              class="flex h-3 overflow-hidden rounded-full bg-surface-warm"
+              aria-hidden="true"
+            >
+              @for (
+                allocation of item.allocations;
+                track allocation.id;
+                let index = $index
+              ) {
+                <span
+                  [class]="distributionClass(index)"
+                  [style.width.%]="allocationPercentage(allocation)"
+                ></span>
+              }
+            </div>
+            <div class="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+              @for (
+                allocation of item.allocations;
+                track allocation.id;
+                let index = $index
+              ) {
+                <span class="inline-flex items-center gap-1.5 text-muted">
+                  <span
+                    class="h-2.5 w-2.5 rounded-full"
+                    [class]="distributionClass(index)"
+                  ></span>
+                  {{ allocationDestination(allocation) }}:
+                  <strong class="font-medium text-ink">{{
+                    formatCurrency(allocation.amount)
+                  }}</strong>
+                </span>
+              }
+              @if (availableAmount() > 0) {
+                <span class="inline-flex items-center gap-1.5 text-muted">
+                  <span class="h-2.5 w-2.5 rounded-full bg-surface-warm"></span>
+                  Disponível:
+                  <strong class="font-medium text-ink">{{
+                    formatCurrency(availableAmount())
+                  }}</strong>
+                </span>
+              }
+            </div>
+          </div>
+        }
         @if (item.allocations.length === 0) {
-          <p class="p-5 text-sm text-muted">
-            Nenhuma alocação cadastrada para este investimento.
-          </p>
+          <div class="p-5">
+            <p class="text-sm text-muted">
+              Nenhuma alocação cadastrada para este investimento.
+            </p>
+            @if (canWrite && !developmentsError()) {
+              <p class="mt-1 text-xs text-muted">
+                Use “Nova alocação” para destinar o aporte a um empreendimento
+                ou ao caixa geral.
+              </p>
+            }
+          </div>
         } @else {
           <div class="divide-y divide-border">
             @for (allocation of item.allocations; track allocation.id) {
@@ -236,7 +329,7 @@
                       Alocado em {{ formatDate(allocation.date) }}
                     </p>
                   </div>
-                  <div class="sm:text-right">
+                  <div class="flex flex-col gap-2 sm:items-end">
                     <p class="font-semibold text-ink">
                       {{ formatCurrency(allocation.amount) }}
                     </p>
@@ -244,6 +337,43 @@
                       {{ allocationPercentage(allocation).toFixed(1) }}% do
                       aporte
                     </p>
+                    @if (canWrite) {
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          (click)="openEditAllocation(allocation)"
+                          [disabled]="
+                            developmentsLoading() || !!developmentsError()
+                          "
+                          class="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-surface-warm disabled:opacity-50"
+                          [attr.aria-label]="
+                            'Editar alocação em ' +
+                            allocationDestination(allocation)
+                          "
+                        >
+                          <lucide-icon
+                            [img]="EditIcon"
+                            [size]="14"
+                          ></lucide-icon
+                          >Editar
+                        </button>
+                        <button
+                          type="button"
+                          (click)="requestAllocationDelete(allocation)"
+                          class="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                          [attr.aria-label]="
+                            'Excluir alocação em ' +
+                            allocationDestination(allocation)
+                          "
+                        >
+                          <lucide-icon
+                            [img]="DeleteIcon"
+                            [size]="14"
+                          ></lucide-icon
+                          >Excluir
+                        </button>
+                      </div>
+                    }
                   </div>
                 </div>
                 <div
@@ -321,6 +451,111 @@
     }
   }
 </div>
+
+@if (allocationFormOpen() && investment(); as item) {
+  <app-allocation-form-modal
+    [investmentId]="item.id"
+    [investmentAmount]="item.amount"
+    [allocatedAmount]="allocatedTotal()"
+    [allocation]="selectedAllocation()"
+    [developments]="developments()"
+    (closed)="closeAllocationForm()"
+    (saved)="onAllocationSaved($event)"
+    (stale)="onAllocationStale()"
+  />
+}
+
+@if (allocationDeleteOpen() && selectedAllocation(); as allocation) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeAllocationDelete()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeAllocationDelete()"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="allocation-delete-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2
+            id="allocation-delete-title"
+            class="text-lg font-semibold text-ink"
+          >
+            Excluir alocação
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-muted">
+            Confirma a exclusão de
+            <strong class="font-semibold text-ink">{{
+              formatCurrency(allocation.amount)
+            }}</strong>
+            em {{ allocationDestination(allocation) }}?
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeAllocationDelete()"
+          [disabled]="allocationDeleting()"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+          aria-label="Fechar confirmação"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      @if (allocation.returns.length > 0) {
+        <div
+          class="mt-4 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          <lucide-icon
+            [img]="WarningIcon"
+            [size]="18"
+            class="mt-0.5 shrink-0"
+          ></lucide-icon>
+          <p>
+            {{ allocation.returns.length }}
+            {{
+              allocation.returns.length === 1
+                ? "retorno associado será"
+                : "retornos associados serão"
+            }}
+            removido{{ allocation.returns.length === 1 ? "" : "s" }} em cascata.
+          </p>
+        </div>
+      }
+      @if (allocationDeleteError()) {
+        <div
+          class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ allocationDeleteError() }}
+        </div>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeAllocationDelete()"
+          [disabled]="allocationDeleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmAllocationDelete()"
+          [disabled]="allocationDeleting()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+        >
+          <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon>
+          {{ allocationDeleting() ? "Excluindo..." : "Excluir alocação" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
 
 @if (formOpen() && investment(); as item) {
   <app-investment-form-modal

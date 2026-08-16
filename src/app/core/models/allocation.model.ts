@@ -24,3 +24,33 @@ export interface AllocationWithDevelopment extends Allocation {
 export interface AllocationDetail extends AllocationWithDevelopment {
   returns: Return[];
 }
+
+export interface AllocationInvestmentSummary {
+  id: string;
+  amount: number;
+  investorId?: string;
+}
+
+export interface AllocationListItem extends AllocationWithDevelopment {
+  investment: AllocationInvestmentSummary;
+}
+
+export interface AllocationFullDetail extends AllocationWithDevelopment {
+  investment: AllocationInvestmentSummary;
+  returns: Return[];
+}
+
+export interface CreateAllocationInput {
+  investmentId: string;
+  developmentId?: string;
+  amount: number;
+  date: string;
+  notes?: string;
+}
+
+export interface UpdateAllocationInput {
+  developmentId?: string | null;
+  amount?: number;
+  date?: string;
+  notes?: string;
+}

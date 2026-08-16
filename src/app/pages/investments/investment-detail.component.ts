@@ -1,5 +1,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   AlertTriangle,
@@ -8,6 +16,7 @@ import {
   CircleDollarSign,
   LucideAngularModule,
   Pencil,
+  Plus,
   RefreshCw,
   Trash2,
   UserRound,
@@ -15,13 +24,20 @@ import {
   X,
 } from 'lucide-angular';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
-import { AllocationDetail } from '../../core/models/allocation.model';
+import {
+  Allocation,
+  AllocationDetail,
+  AllocationWithDevelopment,
+} from '../../core/models/allocation.model';
+import { DevelopmentListItem } from '../../core/models/development.model';
 import {
   Investment,
   InvestmentDetail,
 } from '../../core/models/investment.model';
 import { Return } from '../../core/models/return.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
+import { AllocationService } from '../../core/services/allocation.service';
+import { DevelopmentService } from '../../core/services/development.service';
 import { InvestmentService } from '../../core/services/investment.service';
 import { DialogFocusDirective } from '../../shared/directives/dialog-focus.directive';
 import { formatBrl } from '../../shared/utils/currency';
@@ -32,12 +48,14 @@ import {
 } from '../../shared/utils/investment';
 import { extractError } from '../../shared/utils/http-error';
 import { InvestmentFormModalComponent } from './investment-form-modal.component';
+import { AllocationFormModalComponent } from './allocation-form-modal.component';
 
 @Component({
   selector: 'app-investment-detail',
   standalone: true,
   imports: [
     DialogFocusDirective,
+    AllocationFormModalComponent,
     InvestmentFormModalComponent,
     LucideAngularModule,
     RouterLink,
@@ -46,11 +64,17 @@ import { InvestmentFormModalComponent } from './investment-form-modal.component'
 })
 export class InvestmentDetailComponent implements OnInit {
   private readonly investmentService = inject(InvestmentService);
+  private readonly allocationService = inject(AllocationService);
+  private readonly developmentService = inject(DevelopmentService);
   private readonly authorization = inject(AuthorizationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private loadSequence = 0;
   private investmentId = '';
+  private focusAllocationsAfterLoad = false;
+
+  @ViewChild('allocationsHeading')
+  private allocationsHeading?: ElementRef<HTMLElement>;
 
   readonly investment = signal<InvestmentDetail | null>(null);
   readonly loading = signal(true);
@@ -61,6 +85,14 @@ export class InvestmentDetailComponent implements OnInit {
   readonly deleteOpen = signal(false);
   readonly deleting = signal(false);
   readonly deleteError = signal('');
+  readonly developments = signal<DevelopmentListItem[]>([]);
+  readonly developmentsLoading = signal(false);
+  readonly developmentsError = signal('');
+  readonly allocationFormOpen = signal(false);
+  readonly selectedAllocation = signal<AllocationDetail | null>(null);
+  readonly allocationDeleteOpen = signal(false);
+  readonly allocationDeleting = signal(false);
+  readonly allocationDeleteError = signal('');
 
   readonly canWrite = this.authorization.hasPermission(
     APP_PERMISSIONS.INVESTMENTS_WRITE,
@@ -71,6 +103,7 @@ export class InvestmentDetailComponent implements OnInit {
 
   readonly BackIcon = ArrowLeft;
   readonly EditIcon = Pencil;
+  readonly AddIcon = Plus;
   readonly DeleteIcon = Trash2;
   readonly MoneyIcon = CircleDollarSign;
   readonly WalletIcon = WalletCards;
@@ -91,6 +124,15 @@ export class InvestmentDetailComponent implements OnInit {
   readonly realizedReturns = computed(() =>
     this.returns().reduce((sum, item) => sum + (item.realizedAmount ?? 0), 0),
   );
+  readonly allocatedTotal = computed(() =>
+    (this.investment()?.allocations ?? []).reduce(
+      (sum, allocation) => sum + allocation.amount,
+      0,
+    ),
+  );
+  readonly availableAmount = computed(() =>
+    Math.max(0, (this.investment()?.amount ?? 0) - this.allocatedTotal()),
+  );
 
   ngOnInit(): void {
     this.investmentId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -100,21 +142,35 @@ export class InvestmentDetailComponent implements OnInit {
       return;
     }
     this.loadInvestment();
+    if (this.canWrite) this.loadDevelopments();
   }
 
-  loadInvestment(): void {
+  loadInvestment(silent = false): void {
     const sequence = ++this.loadSequence;
-    this.loading.set(true);
-    this.error.set('');
-    this.notFound.set(false);
+    if (!silent) {
+      this.loading.set(true);
+      this.error.set('');
+      this.notFound.set(false);
+    }
     this.investmentService.getById(this.investmentId).subscribe({
       next: (investment) => {
         if (sequence !== this.loadSequence) return;
         this.investment.set(investment);
         this.loading.set(false);
+        this.restoreAllocationFocus();
       },
       error: (error: unknown) => {
         if (sequence !== this.loadSequence) return;
+        if (silent) {
+          this.feedback.set(
+            extractError(
+              error,
+              'A alteração foi concluída, mas não foi possível atualizar o resumo.',
+            ),
+          );
+          this.restoreAllocationFocus();
+          return;
+        }
         this.loading.set(false);
         if ((error as HttpErrorResponse).status === 404) {
           this.notFound.set(true);
@@ -123,6 +179,27 @@ export class InvestmentDetailComponent implements OnInit {
         }
         this.error.set(
           extractError(error, 'Não foi possível carregar o investimento.'),
+        );
+      },
+    });
+  }
+
+  loadDevelopments(): void {
+    if (!this.canWrite || this.developmentsLoading()) return;
+    this.developmentsLoading.set(true);
+    this.developmentsError.set('');
+    this.developmentService.list().subscribe({
+      next: (developments) => {
+        this.developments.set(developments);
+        this.developmentsLoading.set(false);
+      },
+      error: (error: unknown) => {
+        this.developmentsLoading.set(false);
+        this.developmentsError.set(
+          extractError(
+            error,
+            'Não foi possível carregar os empreendimentos disponíveis.',
+          ),
         );
       },
     });
@@ -148,6 +225,108 @@ export class InvestmentDetailComponent implements OnInit {
     this.closeForm();
     this.notFound.set(true);
     this.investment.set(null);
+  }
+
+  openCreateAllocation(): void {
+    if (
+      !this.canWrite ||
+      !this.investment() ||
+      this.developmentsLoading() ||
+      !!this.developmentsError() ||
+      this.availableAmount() <= 0
+    ) {
+      return;
+    }
+    this.selectedAllocation.set(null);
+    this.allocationFormOpen.set(true);
+  }
+
+  openEditAllocation(allocation: AllocationDetail): void {
+    if (
+      !this.canWrite ||
+      this.developmentsLoading() ||
+      !!this.developmentsError()
+    ) {
+      return;
+    }
+    this.selectedAllocation.set(allocation);
+    this.allocationFormOpen.set(true);
+  }
+
+  closeAllocationForm(): void {
+    this.allocationFormOpen.set(false);
+    this.selectedAllocation.set(null);
+  }
+
+  onAllocationSaved(_: AllocationWithDevelopment): void {
+    const wasEditing = !!this.selectedAllocation();
+    this.closeAllocationForm();
+    this.feedback.set(
+      wasEditing
+        ? 'Alocação atualizada com sucesso.'
+        : 'Alocação criada com sucesso.',
+    );
+    this.refreshAfterAllocationChange();
+  }
+
+  onAllocationStale(): void {
+    this.closeAllocationForm();
+    this.feedback.set(
+      'A alocação não existe mais. Os dados serão atualizados.',
+    );
+    this.refreshAfterAllocationChange();
+  }
+
+  requestAllocationDelete(allocation: AllocationDetail): void {
+    if (!this.canWrite || this.allocationDeleting()) return;
+    this.selectedAllocation.set(allocation);
+    this.allocationDeleteError.set('');
+    this.allocationDeleteOpen.set(true);
+  }
+
+  closeAllocationDelete(): void {
+    if (this.allocationDeleting()) return;
+    this.allocationDeleteOpen.set(false);
+    this.allocationDeleteError.set('');
+    this.selectedAllocation.set(null);
+  }
+
+  confirmAllocationDelete(): void {
+    const allocation = this.selectedAllocation();
+    if (
+      !this.canWrite ||
+      !allocation ||
+      !this.allocationDeleteOpen() ||
+      this.allocationDeleting()
+    ) {
+      return;
+    }
+    this.allocationDeleting.set(true);
+    this.allocationDeleteError.set('');
+    this.allocationService.remove(allocation.id).subscribe({
+      next: (_: Allocation) => {
+        this.allocationDeleting.set(false);
+        this.allocationDeleteOpen.set(false);
+        this.selectedAllocation.set(null);
+        this.feedback.set('Alocação excluída com sucesso.');
+        this.refreshAfterAllocationChange();
+      },
+      error: (error: unknown) => {
+        this.allocationDeleting.set(false);
+        if ((error as HttpErrorResponse).status === 404) {
+          this.allocationDeleteOpen.set(false);
+          this.selectedAllocation.set(null);
+          this.feedback.set(
+            'A alocação não existe mais. Os dados serão atualizados.',
+          );
+          this.refreshAfterAllocationChange();
+          return;
+        }
+        this.allocationDeleteError.set(
+          extractError(error, 'Não foi possível excluir a alocação.'),
+        );
+      },
+    });
   }
 
   requestDelete(): void {
@@ -196,6 +375,23 @@ export class InvestmentDetailComponent implements OnInit {
   allocationPercentage(allocation: AllocationDetail): number {
     const total = this.investment()?.amount ?? 0;
     return total > 0 ? (allocation.amount / total) * 100 : 0;
+  }
+
+  distributionClass(index: number): string {
+    return ['bg-primary', 'bg-emerald-600', 'bg-amber-500', 'bg-sky-600'][
+      index % 4
+    ];
+  }
+
+  private refreshAfterAllocationChange(): void {
+    this.focusAllocationsAfterLoad = true;
+    this.loadInvestment(true);
+  }
+
+  private restoreAllocationFocus(): void {
+    if (!this.focusAllocationsAfterLoad) return;
+    this.focusAllocationsAfterLoad = false;
+    queueMicrotask(() => this.allocationsHeading?.nativeElement.focus());
   }
 
   returnStatusLabel(item: Return): string {
