@@ -97,7 +97,21 @@ export const routes: Routes = [
   },
   {
     path: 'investments',
-    ...placeholder('Investimentos', APP_PERMISSIONS.INVESTMENTS_READ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.INVESTMENTS_READ },
+    loadComponent: () =>
+      import('./pages/investments/investments.component').then(
+        (m) => m.InvestmentsComponent,
+      ),
+  },
+  {
+    path: 'investments/:id',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.INVESTMENTS_READ },
+    loadComponent: () =>
+      import('./pages/investments/investment-detail.component').then(
+        (m) => m.InvestmentDetailComponent,
+      ),
   },
   {
     path: 'returns',

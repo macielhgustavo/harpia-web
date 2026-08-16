@@ -1,0 +1,466 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Investimentos</h1>
+      <p class="mt-1 max-w-2xl text-sm text-muted">
+        Acompanhe os aportes, a distribuição entre empreendimentos e o saldo em
+        caixa geral.
+      </p>
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="openCreate()"
+        [disabled]="investorsLoading() || !!investorLoadError()"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <lucide-icon [img]="AddIcon" [size]="18"></lucide-icon>
+        Novo investimento
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <div
+      class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+      role="status"
+    >
+      {{ feedback() }}
+    </div>
+  }
+  @if (actionError()) {
+    <div
+      class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      role="alert"
+    >
+      {{ actionError() }}
+    </div>
+  }
+  @if (investorLoadError()) {
+    <div
+      class="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <span
+        >{{ investorLoadError() }} A criação ficará indisponível até a lista ser
+        carregada.</span
+      >
+      <button
+        type="button"
+        (click)="loadInvestors()"
+        class="shrink-0 rounded-lg border border-amber-300 px-3 py-2 font-medium hover:bg-amber-100"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  }
+
+  <section
+    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    aria-label="Indicadores de investimentos"
+  >
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Total investido</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(totalInvested()) }}
+          </p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary"
+          ><lucide-icon [img]="MoneyIcon" [size]="20"></lucide-icon
+        ></span>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Total alocado</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(totalAllocated()) }}
+          </p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary"
+          ><lucide-icon [img]="WalletIcon" [size]="20"></lucide-icon
+        ></span>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Caixa geral</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(totalGeneralCash()) }}
+          </p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary"
+          ><lucide-icon [img]="WalletIcon" [size]="20"></lucide-icon
+        ></span>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Investidores</p>
+          <p class="mt-2 text-2xl font-bold text-ink">{{ investorCount() }}</p>
+        </div>
+        <span class="rounded-lg bg-surface-warm p-2 text-primary"
+          ><lucide-icon [img]="InvestorsIcon" [size]="20"></lucide-icon
+        ></span>
+      </div>
+    </article>
+  </section>
+
+  <section
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    aria-label="Filtros de investimentos"
+  >
+    <div
+      class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_14rem_12rem_auto] lg:items-center"
+    >
+      <div class="relative">
+        <lucide-icon
+          [img]="SearchIcon"
+          [size]="17"
+          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+        ></lucide-icon>
+        <input
+          type="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          aria-label="Buscar investimentos"
+          placeholder="Buscar investidor, destino ou observação"
+          class="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm text-ink outline-none placeholder:text-muted focus:border-primary"
+        />
+      </div>
+      <select
+        [ngModel]="investorFilter()"
+        (ngModelChange)="investorFilter.set($event)"
+        aria-label="Filtrar por investidor"
+        class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+      >
+        <option value="">Todos os investidores</option>
+        @for (investor of investorOptions(); track investor.id) {
+          <option [value]="investor.id">{{ investor.name }}</option>
+        }
+      </select>
+      <select
+        [ngModel]="typeFilter()"
+        (ngModelChange)="typeFilter.set($event)"
+        aria-label="Filtrar por tipo"
+        class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+      >
+        <option value="">Todos os tipos</option>
+        @for (option of typeOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+      @if (hasFilters()) {
+        <button
+          type="button"
+          (click)="resetFilters()"
+          class="rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm"
+        >
+          Limpar
+        </button>
+      }
+    </div>
+  </section>
+
+  <section
+    class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+    aria-label="Lista de investimentos"
+  >
+    @if (loading()) {
+      <div
+        class="flex min-h-48 items-center justify-center p-6 text-sm text-muted"
+      >
+        Carregando investimentos...
+      </div>
+    } @else if (loadError()) {
+      <div
+        class="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center"
+      >
+        <p class="text-sm text-red-800">{{ loadError() }}</p>
+        <button
+          type="button"
+          (click)="loadInvestments()"
+          class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-surface-warm"
+        >
+          <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon> Tentar
+          novamente
+        </button>
+      </div>
+    } @else if (investments().length === 0) {
+      <div
+        class="flex min-h-48 flex-col items-center justify-center gap-2 p-6 text-center"
+      >
+        <lucide-icon
+          [img]="MoneyIcon"
+          [size]="30"
+          class="text-muted"
+        ></lucide-icon>
+        <p class="font-medium text-ink">Nenhum investimento cadastrado</p>
+        <p class="text-sm text-muted">Cadastre um aporte para começar.</p>
+      </div>
+    } @else if (filteredInvestments().length === 0) {
+      <div
+        class="flex min-h-48 flex-col items-center justify-center gap-3 p-6 text-center"
+      >
+        <p class="font-medium text-ink">Nenhum investimento encontrado</p>
+        <button
+          type="button"
+          (click)="resetFilters()"
+          class="rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-surface-warm"
+        >
+          Limpar filtros
+        </button>
+      </div>
+    } @else {
+      <div class="hidden overflow-x-auto xl:block">
+        <table class="w-full min-w-[980px] text-left text-sm">
+          <thead
+            class="border-b border-border bg-surface-warm text-xs uppercase tracking-wide text-muted"
+          >
+            <tr>
+              <th class="px-4 py-3 font-medium">Investidor</th>
+              <th class="px-4 py-3 font-medium">Data</th>
+              <th class="px-4 py-3 text-right font-medium">Valor</th>
+              <th class="px-4 py-3 text-right font-medium">Alocado</th>
+              <th class="px-4 py-3 text-right font-medium">Caixa geral</th>
+              <th class="px-4 py-3 font-medium">Tipo</th>
+              <th class="px-4 py-3 text-right font-medium">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (investment of filteredInvestments(); track investment.id) {
+              <tr
+                tabindex="0"
+                (click)="openDetail(investment.id)"
+                (keydown.enter)="openDetail(investment.id)"
+                class="cursor-pointer hover:bg-surface-warm focus:bg-surface-warm focus:outline-none"
+              >
+                <td class="px-4 py-3 font-medium text-ink">
+                  {{ investment.investor.name }}
+                </td>
+                <td class="px-4 py-3 text-muted">
+                  {{ formatDate(investment.date) }}
+                </td>
+                <td class="px-4 py-3 text-right font-medium text-ink">
+                  {{ formatCurrency(investment.amount) }}
+                </td>
+                <td class="px-4 py-3 text-right text-ink">
+                  {{ formatCurrency(investment.allocatedAmount) }}
+                </td>
+                <td class="px-4 py-3 text-right text-ink">
+                  {{ formatCurrency(investment.unallocatedAmount) }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full bg-surface-warm px-2.5 py-1 text-xs font-medium text-ink"
+                    >{{ typeLabel(investment.type) }}</span
+                  >
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center justify-end gap-1">
+                    @if (canWrite) {
+                      <button
+                        type="button"
+                        (click)="openEdit(investment, $event)"
+                        class="rounded-lg p-2 text-muted hover:bg-card hover:text-primary"
+                        [attr.aria-label]="
+                          'Editar investimento de ' + investment.investor.name
+                        "
+                      >
+                        <lucide-icon [img]="EditIcon" [size]="16"></lucide-icon>
+                      </button>
+                      <button
+                        type="button"
+                        (click)="requestDelete(investment, $event)"
+                        class="rounded-lg p-2 text-muted hover:bg-red-50 hover:text-red-700"
+                        [attr.aria-label]="
+                          'Remover investimento de ' + investment.investor.name
+                        "
+                      >
+                        <lucide-icon
+                          [img]="DeleteIcon"
+                          [size]="16"
+                        ></lucide-icon>
+                      </button>
+                    }
+                    <lucide-icon
+                      [img]="ChevronIcon"
+                      [size]="17"
+                      class="ml-1 text-muted"
+                    ></lucide-icon>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="divide-y divide-border xl:hidden">
+        @for (investment of filteredInvestments(); track investment.id) {
+          <article class="p-4">
+            <button
+              type="button"
+              (click)="openDetail(investment.id)"
+              class="w-full text-left"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h2 class="truncate font-semibold text-ink">
+                    {{ investment.investor.name }}
+                  </h2>
+                  <p class="mt-1 text-sm text-muted">
+                    {{ formatDate(investment.date) }}
+                  </p>
+                </div>
+                <span
+                  class="shrink-0 rounded-full bg-surface-warm px-2.5 py-1 text-xs font-medium text-ink"
+                  >{{ typeLabel(investment.type) }}</span
+                >
+              </div>
+              <dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+                <div>
+                  <dt class="text-xs text-muted">Valor</dt>
+                  <dd class="mt-1 font-medium text-ink">
+                    {{ formatCurrency(investment.amount) }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">Alocado</dt>
+                  <dd class="mt-1 text-ink">
+                    {{ formatCurrency(investment.allocatedAmount) }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">Caixa geral</dt>
+                  <dd class="mt-1 text-ink">
+                    {{ formatCurrency(investment.unallocatedAmount) }}
+                  </dd>
+                </div>
+              </dl>
+            </button>
+            @if (canWrite) {
+              <div
+                class="mt-4 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:justify-end"
+              >
+                <button
+                  type="button"
+                  (click)="openEdit(investment)"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-ink hover:bg-surface-warm"
+                >
+                  <lucide-icon [img]="EditIcon" [size]="15"></lucide-icon>Editar
+                </button>
+                <button
+                  type="button"
+                  (click)="requestDelete(investment)"
+                  class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
+                >
+                  <lucide-icon [img]="DeleteIcon" [size]="15"></lucide-icon
+                  >Remover
+                </button>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>
+
+@if (formOpen()) {
+  <app-investment-form-modal
+    [investment]="editing()"
+    [investorName]="editing()?.investor?.name ?? ''"
+    [investors]="investors()"
+    (closed)="closeForm()"
+    (saved)="onSaved($event)"
+    (stale)="onStale()"
+  />
+}
+
+@if (deleteTarget(); as investment) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeDelete()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeDelete()"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="investment-delete-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2
+            id="investment-delete-title"
+            class="text-lg font-semibold text-ink"
+          >
+            Remover investimento
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-muted">
+            Confirma a remoção do investimento de
+            <strong class="font-semibold text-ink">{{
+              investment.investor.name
+            }}</strong
+            >, no valor de {{ formatCurrency(investment.amount) }}?
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+          aria-label="Fechar confirmação"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      @if (investment.allocations.length > 0) {
+        <p
+          class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          As {{ investment.allocations.length }} alocações vinculadas e seus
+          retornos serão removidos junto com o investimento.
+        </p>
+      }
+      @if (actionError()) {
+        <div
+          class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ actionError() }}
+        </div>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+        >
+          <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon
+          >{{ deleting() ? "Removendo..." : "Remover investimento" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

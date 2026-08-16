@@ -1,0 +1,239 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    appDialogFocus
+    (dialogEscape)="requestClose()"
+    class="max-h-[calc(100vh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-card shadow-xl sm:max-h-[calc(100vh-2rem)]"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-labelledby]="
+      isEditing ? 'investment-edit-title' : 'investment-create-title'
+    "
+    (click)="$event.stopPropagation()"
+  >
+    <header
+      class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6"
+    >
+      <div>
+        <h2
+          [id]="isEditing ? 'investment-edit-title' : 'investment-create-title'"
+          class="text-lg font-semibold text-ink"
+        >
+          {{ isEditing ? "Editar investimento" : "Novo investimento" }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          {{
+            isEditing
+              ? "O investidor do aporte não pode ser alterado."
+              : "Somente pessoas com papel Investidor podem receber aportes."
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+        aria-label="Fechar formulário de investimento"
+      >
+        <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+      </button>
+    </header>
+
+    <form class="space-y-5 p-5 sm:p-6" (ngSubmit)="save()" novalidate>
+      @if (isEditing) {
+        <div>
+          <span class="block text-sm font-medium text-ink">Investidor</span>
+          <p
+            class="mt-2 rounded-lg border border-border bg-surface-warm px-3 py-2.5 text-sm text-ink"
+          >
+            {{ investorName || "Investidor não informado" }}
+          </p>
+        </div>
+      } @else {
+        <div>
+          <label
+            for="investment-investor"
+            class="block text-sm font-medium text-ink"
+            >Investidor *</label
+          >
+          <select
+            #investorInput
+            id="investment-investor"
+            name="investorId"
+            [(ngModel)]="form.investorId"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && investorInvalid()"
+            [attr.aria-describedby]="
+              submitted() && investorInvalid()
+                ? 'investment-investor-error'
+                : null
+            "
+            data-dialog-initial-focus
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Selecione um investidor</option>
+            @for (investor of sortedInvestors; track investor.id) {
+              <option [value]="investor.id">{{ investor.name }}</option>
+            }
+          </select>
+          @if (submitted() && investorInvalid()) {
+            <p
+              id="investment-investor-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Selecione um investidor.
+            </p>
+          }
+          @if (sortedInvestors.length === 0) {
+            <p class="mt-2 text-xs text-amber-800" role="status">
+              Nenhuma pessoa com papel Investidor está disponível. Cadastre o
+              papel na página Pessoas.
+            </p>
+          }
+        </div>
+      }
+
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <label
+            for="investment-amount"
+            class="block text-sm font-medium text-ink"
+            >Valor *</label
+          >
+          <input
+            #amountInput
+            id="investment-amount"
+            name="amount"
+            type="text"
+            inputmode="numeric"
+            appCurrencyMask
+            [(ngModel)]="form.amount"
+            required
+            aria-required="true"
+            [attr.data-dialog-initial-focus]="isEditing ? '' : null"
+            [attr.aria-invalid]="submitted() && amountInvalid()"
+            [attr.aria-describedby]="
+              submitted() && amountInvalid() ? 'investment-amount-error' : null
+            "
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            placeholder="R$ 0,00"
+          />
+          @if (submitted() && amountInvalid()) {
+            <p
+              id="investment-amount-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Informe um valor maior que zero.
+            </p>
+          }
+        </div>
+
+        <div>
+          <label
+            for="investment-date"
+            class="block text-sm font-medium text-ink"
+            >Data *</label
+          >
+          <input
+            #dateInput
+            id="investment-date"
+            name="date"
+            type="date"
+            [(ngModel)]="form.date"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && dateInvalid()"
+            [attr.aria-describedby]="
+              submitted() && dateInvalid() ? 'investment-date-error' : null
+            "
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          />
+          @if (submitted() && dateInvalid()) {
+            <p
+              id="investment-date-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Informe a data.
+            </p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <label for="investment-type" class="block text-sm font-medium text-ink"
+          >Tipo *</label
+        >
+        <select
+          id="investment-type"
+          name="type"
+          [(ngModel)]="form.type"
+          required
+          aria-required="true"
+          class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          @for (option of typeOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label for="investment-notes" class="block text-sm font-medium text-ink"
+          >Observações</label
+        >
+        <textarea
+          id="investment-notes"
+          name="notes"
+          [(ngModel)]="form.notes"
+          rows="3"
+          class="mt-2 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Informações complementares do aporte"
+        ></textarea>
+      </div>
+
+      @if (error()) {
+        <div
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      <footer
+        class="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"
+      >
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="saving() || (!isEditing && sortedInvestors.length === 0)"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <lucide-icon [img]="SaveIcon" [size]="16"></lucide-icon>
+          {{
+            saving()
+              ? "Salvando..."
+              : isEditing
+                ? "Salvar alterações"
+                : "Criar investimento"
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

@@ -17,6 +17,24 @@ describe('Rotas de empreendimentos', () => {
   });
 });
 
+describe('Rotas de investimentos', () => {
+  it('protege e carrega de forma lazy a lista e o detalhe', () => {
+    const listRoute = routes.find((route) => route.path === 'investments');
+    const detailRoute = routes.find(
+      (route) => route.path === 'investments/:id',
+    );
+
+    for (const route of [listRoute, detailRoute]) {
+      expect(route?.canActivate).toContain(authGuard);
+      expect(route?.canActivate).toContain(permissionGuard);
+      expect(route?.data?.['permission']).toBe(
+        APP_PERMISSIONS.INVESTMENTS_READ,
+      );
+      expect(route?.loadComponent).toBeDefined();
+    }
+  });
+});
+
 describe('Rotas administrativas', () => {
   it('protege usuários, convites e auditoria com as permissões correspondentes', () => {
     const usersRoute = routes.find((route) => route.path === 'users');

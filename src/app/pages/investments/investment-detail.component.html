@@ -1,0 +1,421 @@
+<div class="space-y-6">
+  <a
+    routerLink="/investments"
+    class="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary-dark"
+  >
+    <lucide-icon [img]="BackIcon" [size]="17"></lucide-icon> Voltar para
+    Investimentos
+  </a>
+
+  @if (loading()) {
+    <div
+      class="flex min-h-64 items-center justify-center rounded-xl border border-border bg-card p-6 text-sm text-muted shadow-card"
+    >
+      Carregando investimento...
+    </div>
+  } @else if (notFound()) {
+    <section
+      class="rounded-xl border border-border bg-card p-8 text-center shadow-card"
+    >
+      <h1 class="text-xl font-semibold text-ink">
+        Investimento não encontrado
+      </h1>
+      <p class="mt-2 text-sm text-muted">
+        O registro não existe ou não pertence à sua organização.
+      </p>
+      <a
+        routerLink="/investments"
+        class="mt-5 inline-flex rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark"
+        >Voltar para a lista</a
+      >
+    </section>
+  } @else if (error()) {
+    <section
+      class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center shadow-card"
+    >
+      <p class="text-sm text-red-800">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="loadInvestment()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-surface-warm"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </section>
+  } @else {
+    @if (investment(); as item) {
+      <header
+        class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+      >
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-2xl font-bold text-ink">
+              Investimento de {{ item.investor.name }}
+            </h1>
+            <span
+              class="rounded-full bg-surface-warm px-2.5 py-1 text-xs font-medium text-ink"
+              >{{ typeLabel(item.type) }}</span
+            >
+          </div>
+          <p class="mt-1 text-sm text-muted">
+            Aporte registrado em {{ formatDate(item.date) }}
+          </p>
+        </div>
+        @if (canWrite) {
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              (click)="openEdit()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm"
+            >
+              <lucide-icon [img]="EditIcon" [size]="17"></lucide-icon>Editar
+            </button>
+            <button
+              type="button"
+              (click)="requestDelete()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-50"
+            >
+              <lucide-icon [img]="DeleteIcon" [size]="17"></lucide-icon>Excluir
+            </button>
+          </div>
+        }
+      </header>
+
+      @if (feedback()) {
+        <div
+          class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+          role="status"
+        >
+          {{ feedback() }}
+        </div>
+      }
+
+      <section
+        class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+        aria-label="Resumo do investimento"
+      >
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Valor total</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(item.amount) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Alocado</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(item.allocatedAmount) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Disponível / caixa geral</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(item.unallocatedAmount) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Retornos previstos</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(expectedReturns()) }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            Realizado: {{ formatCurrency(realizedReturns()) }}
+          </p>
+        </article>
+      </section>
+
+      <section
+        class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]"
+      >
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card"
+        >
+          <h2 class="font-semibold text-ink">Dados do aporte</h2>
+          <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Investidor
+              </dt>
+              <dd class="mt-1">
+                <a
+                  [routerLink]="['/people', item.investor.id]"
+                  class="font-medium text-primary hover:text-primary-dark"
+                  >{{ item.investor.name }}</a
+                >
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Tipo</dt>
+              <dd class="mt-1 text-ink">{{ typeLabel(item.type) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">Data</dt>
+              <dd class="mt-1 text-ink">{{ formatDate(item.date) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Última atualização
+              </dt>
+              <dd class="mt-1 text-ink">{{ formatDate(item.updatedAt) }}</dd>
+            </div>
+            <div class="sm:col-span-2">
+              <dt class="text-xs uppercase tracking-wide text-muted">
+                Observações
+              </dt>
+              <dd class="mt-1 whitespace-pre-wrap text-ink">
+                {{ item.notes || "Não informadas" }}
+              </dd>
+            </div>
+          </dl>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card"
+        >
+          <h2 class="font-semibold text-ink">Resumo operacional</h2>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-muted">Alocações</dt>
+              <dd class="font-medium text-ink">
+                {{ item.allocations.length }}
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-muted">Retornos associados</dt>
+              <dd class="font-medium text-ink">{{ returns().length }}</dd>
+            </div>
+            <div class="flex items-center justify-between gap-3">
+              <dt class="text-muted">Percentual alocado</dt>
+              <dd class="font-medium text-ink">
+                {{
+                  item.amount > 0
+                    ? ((item.allocatedAmount / item.amount) * 100).toFixed(1)
+                    : "0.0"
+                }}%
+              </dd>
+            </div>
+          </dl>
+        </article>
+      </section>
+
+      <section
+        class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+        aria-labelledby="allocations-title"
+      >
+        <div class="border-b border-border bg-surface-warm px-5 py-4">
+          <h2 id="allocations-title" class="font-semibold text-ink">
+            Alocações
+          </h2>
+          <p class="mt-1 text-xs text-muted">
+            Destinação do aporte e retornos vinculados.
+          </p>
+        </div>
+        @if (item.allocations.length === 0) {
+          <p class="p-5 text-sm text-muted">
+            Nenhuma alocação cadastrada para este investimento.
+          </p>
+        } @else {
+          <div class="divide-y divide-border">
+            @for (allocation of item.allocations; track allocation.id) {
+              <article class="p-5">
+                <div
+                  class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                >
+                  <div>
+                    <h3 class="font-medium text-ink">
+                      {{ allocationDestination(allocation) }}
+                    </h3>
+                    <p class="mt-1 text-sm text-muted">
+                      Alocado em {{ formatDate(allocation.date) }}
+                    </p>
+                  </div>
+                  <div class="sm:text-right">
+                    <p class="font-semibold text-ink">
+                      {{ formatCurrency(allocation.amount) }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted">
+                      {{ allocationPercentage(allocation).toFixed(1) }}% do
+                      aporte
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="mt-3 h-2 overflow-hidden rounded-full bg-surface-warm"
+                  aria-hidden="true"
+                >
+                  <div
+                    class="h-full rounded-full bg-primary"
+                    [style.width.%]="
+                      allocationPercentage(allocation) > 100
+                        ? 100
+                        : allocationPercentage(allocation)
+                    "
+                  ></div>
+                </div>
+                @if (allocation.notes) {
+                  <p class="mt-3 text-sm text-muted">{{ allocation.notes }}</p>
+                }
+                @if (allocation.returns.length > 0) {
+                  <div
+                    class="mt-4 overflow-x-auto rounded-lg border border-border"
+                  >
+                    <table class="w-full min-w-[620px] text-left text-sm">
+                      <thead
+                        class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+                      >
+                        <tr>
+                          <th class="px-3 py-2 font-medium">Previsão</th>
+                          <th class="px-3 py-2 text-right font-medium">
+                            Previsto
+                          </th>
+                          <th class="px-3 py-2 text-right font-medium">
+                            Realizado
+                          </th>
+                          <th class="px-3 py-2 font-medium">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-border">
+                        @for (
+                          returnItem of allocation.returns;
+                          track returnItem.id
+                        ) {
+                          <tr>
+                            <td class="px-3 py-2 text-ink">
+                              {{ formatDate(returnItem.expectedDate) }}
+                            </td>
+                            <td class="px-3 py-2 text-right text-ink">
+                              {{ formatCurrency(returnItem.expectedAmount) }}
+                            </td>
+                            <td class="px-3 py-2 text-right text-ink">
+                              {{
+                                returnItem.realizedAmount === null
+                                  ? "—"
+                                  : formatCurrency(returnItem.realizedAmount)
+                              }}
+                            </td>
+                            <td class="px-3 py-2">
+                              <span
+                                class="rounded-full px-2 py-1 text-xs font-medium"
+                                [class]="returnStatusBadge(returnItem)"
+                                >{{ returnStatusLabel(returnItem) }}</span
+                              >
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              </article>
+            }
+          </div>
+        }
+      </section>
+    }
+  }
+</div>
+
+@if (formOpen() && investment(); as item) {
+  <app-investment-form-modal
+    [investment]="item"
+    [investorName]="item.investor.name"
+    (closed)="closeForm()"
+    (saved)="onSaved($event)"
+    (stale)="onStale()"
+  />
+}
+
+@if (deleteOpen() && investment(); as item) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeDelete()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeDelete()"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="investment-detail-delete-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2
+            id="investment-detail-delete-title"
+            class="text-lg font-semibold text-ink"
+          >
+            Excluir investimento
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-muted">
+            Confirma a exclusão do aporte de
+            {{ formatCurrency(item.amount) }} de
+            <strong class="font-semibold text-ink">{{
+              item.investor.name
+            }}</strong
+            >?
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+          aria-label="Fechar confirmação"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      @if (item.allocations.length > 0) {
+        <div
+          class="mt-4 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          <lucide-icon
+            [img]="WarningIcon"
+            [size]="18"
+            class="mt-0.5 shrink-0"
+          ></lucide-icon>
+          <p>
+            As {{ item.allocations.length }} alocações e os
+            {{ returns().length }} retornos associados serão removidos em
+            cascata.
+          </p>
+        </div>
+      }
+      @if (deleteError()) {
+        <div
+          class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ deleteError() }}
+        </div>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar</button
+        ><button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+        >
+          <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon
+          >{{ deleting() ? "Excluindo..." : "Excluir investimento" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
