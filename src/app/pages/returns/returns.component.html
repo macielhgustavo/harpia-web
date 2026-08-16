@@ -1,0 +1,492 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Retornos</h1>
+      <p class="mt-1 text-sm text-muted">
+        Acompanhe previsões, atrasos e pagamentos dos investidores.
+      </p>
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="openCreate()"
+        [disabled]="
+          optionsLoading() ||
+          !!optionsError() ||
+          allocationOptions().length === 0
+        "
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <lucide-icon [img]="AddIcon" [size]="17"></lucide-icon>Programar retorno
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <div
+      class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+      role="status"
+    >
+      {{ feedback() }}
+    </div>
+  }
+  @if (optionsError()) {
+    <div
+      class="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <span>{{ optionsError() }}</span>
+      <button
+        type="button"
+        (click)="loadOptions()"
+        class="font-medium underline"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  }
+
+  <section
+    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    aria-label="Resumo dos retornos"
+  >
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <p class="text-sm text-muted">Previsto</p>
+      <p class="mt-2 text-xl font-bold text-ink">
+        {{ formatCurrency(expectedTotal()) }}
+      </p>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <p class="text-sm text-muted">Pago</p>
+      <p class="mt-2 text-xl font-bold text-green-800">
+        {{ formatCurrency(paidTotal()) }}
+      </p>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <p class="text-sm text-muted">Pendente</p>
+      <p class="mt-2 text-xl font-bold text-amber-800">
+        {{ formatCurrency(pendingTotal()) }}
+      </p>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <p class="text-sm text-muted">Atrasado</p>
+      <p class="mt-2 text-xl font-bold text-red-700">
+        {{ formatCurrency(overdueTotal()) }}
+      </p>
+    </article>
+  </section>
+
+  <section
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    aria-label="Filtros de retornos"
+  >
+    <div
+      class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(14rem,2fr)_repeat(3,minmax(10rem,1fr))_auto]"
+    >
+      <label class="relative block">
+        <span class="sr-only">Buscar retorno</span>
+        <lucide-icon
+          [img]="SearchIcon"
+          [size]="17"
+          class="pointer-events-none absolute left-3 top-3 text-muted"
+        ></lucide-icon>
+        <input
+          type="search"
+          name="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          class="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Buscar investidor ou destino"
+        />
+      </label>
+      <label
+        ><span class="sr-only">Filtrar investidor</span
+        ><select
+          name="investor"
+          [ngModel]="investorFilter()"
+          (ngModelChange)="investorFilter.set($event)"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="">Todos os investidores</option>
+          @for (investor of investors(); track investor.id) {
+            <option [value]="investor.id">{{ investor.name }}</option>
+          }
+        </select></label
+      >
+      <label
+        ><span class="sr-only">Filtrar status</span
+        ><select
+          name="status"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="">Todos os status</option>
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select></label
+      >
+      <label
+        ><span class="sr-only">Filtrar destino</span
+        ><select
+          name="destination"
+          [ngModel]="destinationFilter()"
+          (ngModelChange)="destinationFilter.set($event)"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="">Todos os destinos</option>
+          <option value="DEVELOPMENT">Empreendimentos</option>
+          <option value="GENERAL">Caixa geral</option>
+        </select></label
+      >
+      <button
+        type="button"
+        (click)="resetFilters()"
+        class="rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm"
+      >
+        Limpar
+      </button>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div
+      class="flex min-h-64 items-center justify-center rounded-xl border border-border bg-card p-6 text-sm text-muted shadow-card"
+    >
+      Carregando retornos...
+    </div>
+  } @else if (error()) {
+    <div
+      class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center shadow-card"
+    >
+      <p class="text-sm text-red-800">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="loadReturns()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-surface-warm"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
+  } @else if (returns().length === 0) {
+    <div
+      class="rounded-xl border border-border bg-card p-8 text-center shadow-card"
+    >
+      <lucide-icon
+        [img]="MoneyIcon"
+        [size]="34"
+        class="mx-auto text-muted"
+      ></lucide-icon>
+      <h2 class="mt-3 font-semibold text-ink">Nenhum retorno programado</h2>
+      <p class="mt-1 text-sm text-muted">
+        Os retornos vinculados às alocações aparecerão aqui.
+      </p>
+    </div>
+  } @else if (filteredReturns().length === 0) {
+    <div
+      class="rounded-xl border border-border bg-card p-8 text-center shadow-card"
+    >
+      <h2 class="font-semibold text-ink">Nenhum resultado</h2>
+      <p class="mt-1 text-sm text-muted">
+        Ajuste ou limpe os filtros para ver outros retornos.
+      </p>
+      <button
+        type="button"
+        (click)="resetFilters()"
+        class="mt-4 text-sm font-medium text-primary underline"
+      >
+        Limpar filtros
+      </button>
+    </div>
+  } @else {
+    <section
+      class="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card xl:block"
+    >
+      <table class="w-full min-w-[1040px] text-left text-sm">
+        <thead
+          class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+        >
+          <tr>
+            <th class="px-4 py-3 font-medium">Investidor</th>
+            <th class="px-4 py-3 font-medium">Destino</th>
+            <th class="px-4 py-3 text-right font-medium">Previsto</th>
+            <th class="px-4 py-3 font-medium">Data prevista</th>
+            <th class="px-4 py-3 font-medium">Status</th>
+            <th class="px-4 py-3 text-right font-medium">Realizado</th>
+            <th class="px-4 py-3 font-medium">Data realizada</th>
+            <th class="px-4 py-3 text-right font-medium">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          @for (item of filteredReturns(); track item.id) {
+            <tr [class.bg-red-50]="item.status === 'ATRASADO'">
+              <td class="px-4 py-3 font-medium text-ink">
+                {{ item.allocation.investment.investor.name }}
+              </td>
+              <td class="px-4 py-3">
+                <a
+                  [routerLink]="['/investments', item.allocation.investment.id]"
+                  class="text-primary hover:text-primary-dark"
+                  >{{ destination(item) }}</a
+                >
+              </td>
+              <td class="px-4 py-3 text-right text-ink">
+                {{ formatCurrency(item.expectedAmount) }}
+              </td>
+              <td class="px-4 py-3 text-ink">
+                {{ formatDate(item.expectedDate) }}
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="rounded-full px-2 py-1 text-xs font-medium"
+                  [class]="statusBadge(item.status)"
+                  >{{ statusLabel(item.status) }}</span
+                >
+              </td>
+              <td class="px-4 py-3 text-right text-ink">
+                {{
+                  item.realizedAmount === null
+                    ? "—"
+                    : formatCurrency(item.realizedAmount)
+                }}
+              </td>
+              <td class="px-4 py-3 text-ink">
+                {{ item.realizedDate ? formatDate(item.realizedDate) : "—" }}
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex justify-end gap-1">
+                  @if (canWrite && item.status !== "PAGO") {
+                    <button
+                      type="button"
+                      (click)="openPayment(item)"
+                      class="rounded-lg p-2 text-green-700 hover:bg-green-50"
+                      [attr.aria-label]="
+                        'Marcar retorno de ' +
+                        item.allocation.investment.investor.name +
+                        ' como pago'
+                      "
+                      title="Marcar como pago"
+                    >
+                      <lucide-icon [img]="PaidIcon" [size]="17"></lucide-icon>
+                    </button>
+                  }
+                  @if (canWrite) {
+                    <button
+                      type="button"
+                      (click)="openEdit(item)"
+                      class="rounded-lg p-2 text-ink hover:bg-surface-warm"
+                      [attr.aria-label]="
+                        'Editar retorno de ' +
+                        item.allocation.investment.investor.name
+                      "
+                    >
+                      <lucide-icon
+                        [img]="EditIcon"
+                        [size]="17"
+                      ></lucide-icon></button
+                    ><button
+                      type="button"
+                      (click)="requestDelete(item)"
+                      class="rounded-lg p-2 text-red-700 hover:bg-red-50"
+                      [attr.aria-label]="
+                        'Excluir retorno de ' +
+                        item.allocation.investment.investor.name
+                      "
+                    >
+                      <lucide-icon [img]="DeleteIcon" [size]="17"></lucide-icon>
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section
+      class="grid grid-cols-1 gap-4 xl:hidden"
+      aria-label="Lista de retornos"
+    >
+      @for (item of filteredReturns(); track item.id) {
+        <article
+          class="rounded-xl border bg-card p-4 shadow-card"
+          [class.border-red-200]="item.status === 'ATRASADO'"
+          [class.border-border]="item.status !== 'ATRASADO'"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="font-semibold text-ink">
+                {{ item.allocation.investment.investor.name }}
+              </h2>
+              <a
+                [routerLink]="['/investments', item.allocation.investment.id]"
+                class="mt-1 block text-sm text-primary"
+                >{{ destination(item) }}</a
+              >
+            </div>
+            <span
+              class="rounded-full px-2 py-1 text-xs font-medium"
+              [class]="statusBadge(item.status)"
+              >{{ statusLabel(item.status) }}</span
+            >
+          </div>
+          <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt class="text-xs uppercase text-muted">Previsto</dt>
+              <dd class="mt-1 font-medium text-ink">
+                {{ formatCurrency(item.expectedAmount) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Data prevista</dt>
+              <dd class="mt-1 text-ink">{{ formatDate(item.expectedDate) }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Realizado</dt>
+              <dd class="mt-1 text-ink">
+                {{
+                  item.realizedAmount === null
+                    ? "—"
+                    : formatCurrency(item.realizedAmount)
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Data realizada</dt>
+              <dd class="mt-1 text-ink">
+                {{ item.realizedDate ? formatDate(item.realizedDate) : "—" }}
+              </dd>
+            </div>
+          </dl>
+          @if (canWrite) {
+            <div
+              class="mt-4 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row"
+            >
+              @if (item.status !== "PAGO") {
+                <button
+                  type="button"
+                  (click)="openPayment(item)"
+                  class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white"
+                >
+                  <lucide-icon [img]="PaidIcon" [size]="16"></lucide-icon>Marcar
+                  como pago
+                </button>
+              }
+              <button
+                type="button"
+                (click)="openEdit(item)"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink"
+              >
+                <lucide-icon [img]="EditIcon" [size]="16"></lucide-icon
+                >Editar</button
+              ><button
+                type="button"
+                (click)="requestDelete(item)"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700"
+              >
+                <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon
+                >Excluir
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </section>
+  }
+</div>
+
+@if (formOpen()) {
+  <app-return-form-modal
+    [mode]="formMode()"
+    [investmentReturn]="selectedReturn()"
+    [allocations]="allocationOptions()"
+    (closed)="closeForm()"
+    (saved)="onSaved($event)"
+    (stale)="onStale()"
+  />
+}
+
+@if (deleteOpen() && selectedReturn(); as item) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeDelete()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeDelete()"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="return-delete-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="return-delete-title" class="text-lg font-semibold text-ink">
+            Excluir retorno
+          </h2>
+          <p class="mt-2 text-sm leading-relaxed text-muted">
+            Confirma a exclusão do retorno previsto de
+            <strong class="text-ink">{{
+              formatCurrency(item.expectedAmount)
+            }}</strong>
+            para {{ item.allocation.investment.investor.name }}?
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+          aria-label="Fechar confirmação"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      @if (item.status === "PAGO") {
+        <div
+          class="mt-4 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        >
+          <lucide-icon
+            [img]="WarningIcon"
+            [size]="18"
+            class="mt-0.5 shrink-0"
+          ></lucide-icon>
+          <p>Este retorno já possui pagamento registrado.</p>
+        </div>
+      }
+      @if (deleteError()) {
+        <div
+          class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ deleteError() }}
+        </div>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+        >
+          Cancelar</button
+        ><button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon
+          >{{ deleting() ? "Excluindo..." : "Excluir retorno" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

@@ -115,7 +115,12 @@ export const routes: Routes = [
   },
   {
     path: 'returns',
-    ...placeholder('Retornos', APP_PERMISSIONS.RETURNS_READ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.RETURNS_READ },
+    loadComponent: () =>
+      import('./pages/returns/returns.component').then(
+        (m) => m.ReturnsComponent,
+      ),
   },
   {
     path: 'companies',

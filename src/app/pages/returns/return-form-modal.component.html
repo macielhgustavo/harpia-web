@@ -1,0 +1,201 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    appDialogFocus
+    (dialogEscape)="requestClose()"
+    class="max-h-[calc(100vh-1.5rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card shadow-xl sm:max-h-[calc(100vh-2rem)]"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="return-form-title"
+    [attr.aria-busy]="saving()"
+    (click)="$event.stopPropagation()"
+  >
+    <header
+      class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6"
+    >
+      <div>
+        <h2 id="return-form-title" class="text-lg font-semibold text-ink">
+          {{ title }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          {{
+            isPayment
+              ? "Confirme o valor e a data efetivamente realizados."
+              : "Informe a previsão financeira vinculada à alocação."
+          }}
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted hover:bg-surface-warm hover:text-ink disabled:opacity-50"
+        aria-label="Fechar formulário de retorno"
+      >
+        <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+      </button>
+    </header>
+
+    <form class="space-y-5 p-5 sm:p-6" (ngSubmit)="save()" novalidate>
+      @if (isCreate) {
+        <div>
+          <label
+            for="return-allocation"
+            class="block text-sm font-medium text-ink"
+            >Alocação *</label
+          >
+          <select
+            #allocationInput
+            id="return-allocation"
+            name="allocationId"
+            [(ngModel)]="form.allocationId"
+            required
+            aria-required="true"
+            data-dialog-initial-focus
+            [attr.aria-invalid]="submitted() && allocationInvalid()"
+            [attr.aria-describedby]="
+              submitted() && allocationInvalid()
+                ? 'return-allocation-error'
+                : null
+            "
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Selecione uma alocação</option>
+            @for (allocation of allocations; track allocation.id) {
+              <option [value]="allocation.id">{{ allocation.label }}</option>
+            }
+          </select>
+          @if (submitted() && allocationInvalid()) {
+            <p
+              id="return-allocation-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Selecione uma alocação.
+            </p>
+          }
+        </div>
+      } @else {
+        @if (investmentReturn; as item) {
+          <div
+            class="rounded-lg border border-border bg-surface-warm px-3 py-2.5 text-sm text-ink"
+            data-dialog-initial-focus
+            tabindex="-1"
+          >
+            <span class="block text-xs uppercase tracking-wide text-muted"
+              >Retorno de</span
+            >
+            {{ item.allocation.investment.investor.name }} —
+            {{ item.allocation.development?.name || "Caixa geral" }}
+          </div>
+        }
+      }
+
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <label for="return-amount" class="block text-sm font-medium text-ink"
+            >{{ isPayment ? "Valor realizado" : "Valor previsto" }} *</label
+          >
+          <input
+            #amountInput
+            id="return-amount"
+            name="amount"
+            type="text"
+            inputmode="numeric"
+            appCurrencyMask
+            [(ngModel)]="form.amount"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && amountInvalid()"
+            [attr.aria-describedby]="
+              submitted() && amountInvalid() ? 'return-amount-error' : null
+            "
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            placeholder="R$ 0,00"
+          />
+          @if (submitted() && amountInvalid()) {
+            <p
+              id="return-amount-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Informe um valor maior que zero.
+            </p>
+          }
+        </div>
+        <div>
+          <label for="return-date" class="block text-sm font-medium text-ink"
+            >{{ isPayment ? "Data realizada" : "Data prevista" }} *</label
+          >
+          <input
+            #dateInput
+            id="return-date"
+            name="date"
+            type="date"
+            [(ngModel)]="form.date"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && dateInvalid()"
+            [attr.aria-describedby]="
+              submitted() && dateInvalid() ? 'return-date-error' : null
+            "
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          />
+          @if (submitted() && dateInvalid()) {
+            <p
+              id="return-date-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Informe a data.
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (error()) {
+        <div
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      <footer
+        class="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"
+      >
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm disabled:opacity-60"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="saving() || (isCreate && allocations.length === 0)"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+        >
+          <lucide-icon
+            [img]="isPayment ? PaidIcon : SaveIcon"
+            [size]="16"
+          ></lucide-icon>
+          {{
+            saving()
+              ? "Salvando..."
+              : isPayment
+                ? "Confirmar pagamento"
+                : isCreate
+                  ? "Programar retorno"
+                  : "Salvar alterações"
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

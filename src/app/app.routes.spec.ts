@@ -35,6 +35,17 @@ describe('Rotas de investimentos', () => {
   });
 });
 
+describe('Rota de retornos', () => {
+  it('substitui o placeholder por página lazy protegida', () => {
+    const route = routes.find((item) => item.path === 'returns');
+    expect(route?.canActivate).toContain(authGuard);
+    expect(route?.canActivate).toContain(permissionGuard);
+    expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.RETURNS_READ);
+    expect(route?.loadComponent).toBeDefined();
+    expect(route?.component).toBeUndefined();
+  });
+});
+
 describe('Rotas administrativas', () => {
   it('protege usuários, convites e auditoria com as permissões correspondentes', () => {
     const usersRoute = routes.find((route) => route.path === 'users');
