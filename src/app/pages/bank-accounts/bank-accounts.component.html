@@ -1,0 +1,403 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Contas bancárias</h1>
+      <p class="mt-1 text-sm text-muted">
+        Dados financeiros da organização e das empresas ou SPEs vinculadas.
+      </p>
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="openCreate()"
+        [disabled]="companiesLoading() || !!companiesError()"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+      >
+        <lucide-icon [img]="AddIcon" [size]="17"></lucide-icon>Nova conta
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <div
+      class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+      role="status"
+    >
+      {{ feedback() }}
+    </div>
+  }
+  @if (companiesError()) {
+    <div
+      class="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <span>{{ companiesError() }}</span
+      ><button
+        type="button"
+        (click)="loadCompanies()"
+        class="font-medium underline"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  }
+
+  <section
+    class="grid grid-cols-1 gap-4 sm:grid-cols-3"
+    aria-label="Resumo das contas bancárias"
+  >
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Contas cadastradas</p>
+          <p class="mt-2 text-2xl font-bold text-ink">
+            {{ accounts().length }}
+          </p>
+        </div>
+        <lucide-icon
+          [img]="AccountIcon"
+          [size]="24"
+          class="text-primary"
+        ></lucide-icon>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Empresas com conta</p>
+          <p class="mt-2 text-2xl font-bold text-ink">
+            {{ linkedCompaniesCount() }}
+          </p>
+        </div>
+        <lucide-icon
+          [img]="CompanyIcon"
+          [size]="24"
+          class="text-primary"
+        ></lucide-icon>
+      </div>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="text-sm text-muted">Sem empresa vinculada</p>
+          <p class="mt-2 text-2xl font-bold text-primary">
+            {{ unlinkedCount() }}
+          </p>
+        </div>
+        <lucide-icon
+          [img]="UnlinkedIcon"
+          [size]="24"
+          class="text-primary"
+        ></lucide-icon>
+      </div>
+    </article>
+  </section>
+
+  <section
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    aria-label="Filtros de contas bancárias"
+  >
+    <div
+      class="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(16rem,2fr)_minmax(14rem,1fr)_auto]"
+    >
+      <label class="relative block"
+        ><span class="sr-only">Buscar conta bancária</span
+        ><lucide-icon
+          [img]="SearchIcon"
+          [size]="17"
+          class="pointer-events-none absolute left-3 top-3 text-muted"
+        ></lucide-icon
+        ><input
+          type="search"
+          name="search"
+          [ngModel]="search()"
+          (ngModelChange)="search.set($event)"
+          class="w-full rounded-lg border border-border bg-surface py-2.5 pl-10 pr-3 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Buscar banco, agência, conta ou empresa" /></label
+      ><label
+        ><span class="sr-only">Filtrar empresa</span
+        ><select
+          name="company"
+          [ngModel]="companyFilter()"
+          (ngModelChange)="companyFilter.set($event)"
+          class="w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="">Todas as empresas</option>
+          <option value="UNLINKED">Sem empresa vinculada</option>
+          @for (company of filterCompanies(); track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select></label
+      ><button
+        type="button"
+        (click)="resetFilters()"
+        class="rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-ink hover:bg-surface-warm"
+      >
+        Limpar
+      </button>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <div
+      class="flex min-h-64 items-center justify-center rounded-xl border border-border bg-card p-6 text-sm text-muted shadow-card"
+    >
+      Carregando contas bancárias...
+    </div>
+  } @else if (error()) {
+    <div
+      class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center shadow-card"
+    >
+      <p class="text-sm text-red-800">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="loadAccounts()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
+  } @else if (accounts().length === 0) {
+    <div
+      class="rounded-xl border border-border bg-card p-8 text-center shadow-card"
+    >
+      <lucide-icon
+        [img]="BankIcon"
+        [size]="34"
+        class="mx-auto text-muted"
+      ></lucide-icon>
+      <h2 class="mt-3 font-semibold text-ink">
+        Nenhuma conta bancária cadastrada
+      </h2>
+      <p class="mt-1 text-sm text-muted">
+        @if (canWrite) {
+          Cadastre a primeira conta para organizar os dados financeiros.
+        } @else {
+          Ainda não há contas disponíveis para consulta.
+        }
+      </p>
+    </div>
+  } @else if (filteredAccounts().length === 0) {
+    <div
+      class="rounded-xl border border-border bg-card p-8 text-center shadow-card"
+    >
+      <h2 class="font-semibold text-ink">Nenhum resultado</h2>
+      <p class="mt-1 text-sm text-muted">Ajuste ou limpe os filtros.</p>
+      <button
+        type="button"
+        (click)="resetFilters()"
+        class="mt-4 text-sm font-medium text-primary underline"
+      >
+        Limpar filtros
+      </button>
+    </div>
+  } @else {
+    <section
+      class="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-card xl:block"
+    >
+      <table class="w-full min-w-[820px] text-left text-sm">
+        <thead
+          class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+        >
+          <tr>
+            <th class="px-4 py-3 font-medium">Banco</th>
+            <th class="px-4 py-3 font-medium">Agência</th>
+            <th class="px-4 py-3 font-medium">Conta</th>
+            <th class="px-4 py-3 font-medium">Empresa / SPE</th>
+            <th class="px-4 py-3 text-right font-medium">Ações</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          @for (item of filteredAccounts(); track item.id) {
+            <tr>
+              <td class="px-4 py-3 font-medium text-ink">{{ item.bank }}</td>
+              <td class="whitespace-nowrap px-4 py-3 text-ink">
+                {{ item.agency }}
+              </td>
+              <td class="whitespace-nowrap px-4 py-3 text-ink">
+                {{ item.account }}
+              </td>
+              <td class="px-4 py-3">
+                <p class="font-medium text-ink">{{ companyLabel(item) }}</p>
+                <p class="mt-0.5 text-xs text-muted">
+                  {{ companyTypeLabel(item) }}
+                </p>
+              </td>
+              <td class="px-4 py-3">
+                @if (canWrite) {
+                  <div class="flex justify-end gap-1">
+                    <button
+                      type="button"
+                      (click)="openEdit(item)"
+                      [disabled]="companiesLoading() || !!companiesError()"
+                      class="rounded-lg p-2 text-ink hover:bg-surface-warm disabled:opacity-50"
+                      [attr.aria-label]="'Editar conta ' + item.account"
+                    >
+                      <lucide-icon
+                        [img]="EditIcon"
+                        [size]="17"
+                      ></lucide-icon></button
+                    ><button
+                      type="button"
+                      (click)="requestDelete(item)"
+                      class="rounded-lg p-2 text-red-700 hover:bg-red-50"
+                      [attr.aria-label]="'Excluir conta ' + item.account"
+                    >
+                      <lucide-icon [img]="DeleteIcon" [size]="17"></lucide-icon>
+                    </button>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <section
+      class="grid grid-cols-1 gap-4 xl:hidden"
+      aria-label="Contas bancárias"
+    >
+      @for (item of filteredAccounts(); track item.id) {
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <p class="font-semibold text-ink">{{ item.bank }}</p>
+              <p class="mt-1 text-sm text-muted">
+                Agência {{ item.agency }} · Conta {{ item.account }}
+              </p>
+            </div>
+            <lucide-icon
+              [img]="BankIcon"
+              [size]="21"
+              class="shrink-0 text-primary"
+            ></lucide-icon>
+          </div>
+          <div
+            class="mt-4 rounded-lg border border-border bg-surface-warm px-3 py-2.5"
+          >
+            <p class="text-xs uppercase tracking-wide text-muted">
+              Empresa / SPE
+            </p>
+            <p class="mt-1 text-sm font-medium text-ink">
+              {{ companyLabel(item) }}
+            </p>
+            <p class="mt-0.5 text-xs text-muted">
+              {{ companyTypeLabel(item) }}
+            </p>
+          </div>
+          @if (canWrite) {
+            <div
+              class="mt-4 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:justify-end"
+            >
+              <button
+                type="button"
+                (click)="openEdit(item)"
+                [disabled]="companiesLoading() || !!companiesError()"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink disabled:opacity-50"
+              >
+                <lucide-icon [img]="EditIcon" [size]="16"></lucide-icon
+                >Editar</button
+              ><button
+                type="button"
+                (click)="requestDelete(item)"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700"
+              >
+                <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon
+                >Excluir
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </section>
+  }
+</div>
+
+@if (formOpen()) {
+  <app-bank-account-form-modal
+    [bankAccount]="selectedAccount()"
+    [companies]="companies()"
+    (closed)="closeForm()"
+    (saved)="onSaved($event)"
+    (stale)="onStale()"
+  />
+}
+
+@if (deleteOpen() && selectedAccount(); as item) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeDelete()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeDelete()"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="bank-account-delete-title"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2
+            id="bank-account-delete-title"
+            class="text-lg font-semibold text-ink"
+          >
+            Excluir conta bancária
+          </h2>
+          <p class="mt-2 text-sm text-muted">
+            Confirma a exclusão da conta
+            <strong class="text-ink">{{ item.account }}</strong> do banco
+            <strong class="text-ink">{{ item.bank }}</strong
+            >?
+          </p>
+          <p class="mt-2 text-xs text-muted">
+            Essa ação não pode ser desfeita.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+          aria-label="Fechar confirmação"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      @if (deleteError()) {
+        <div
+          class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ deleteError() }}
+        </div>
+      }
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeDelete()"
+          [disabled]="deleting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+        >
+          Cancelar</button
+        ><button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deleting()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          <lucide-icon [img]="DeleteIcon" [size]="16"></lucide-icon
+          >{{ deleting() ? "Excluindo..." : "Excluir conta" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

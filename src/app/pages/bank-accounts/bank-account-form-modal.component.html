@@ -1,0 +1,170 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    appDialogFocus
+    (dialogEscape)="requestClose()"
+    class="max-h-[calc(100vh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-card shadow-xl sm:max-h-[calc(100vh-2rem)]"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="bank-account-form-title"
+    [attr.aria-busy]="saving()"
+    (click)="$event.stopPropagation()"
+  >
+    <header
+      class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6"
+    >
+      <div>
+        <h2 id="bank-account-form-title" class="text-lg font-semibold text-ink">
+          {{ isEditing ? "Editar conta bancária" : "Nova conta bancária" }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          Cadastre os dados da conta e, se necessário, vincule-a a uma empresa
+          ou SPE.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+        aria-label="Fechar formulário de conta bancária"
+      >
+        <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+      </button>
+    </header>
+    <form class="space-y-5 p-5 sm:p-6" (ngSubmit)="save()" novalidate>
+      <div>
+        <label
+          for="bank-account-bank"
+          class="block text-sm font-medium text-ink"
+          >Banco *</label
+        ><input
+          #bankInput
+          id="bank-account-bank"
+          name="bank"
+          [(ngModel)]="form.bank"
+          required
+          aria-required="true"
+          data-dialog-initial-focus
+          [attr.aria-invalid]="submitted() && bankInvalid()"
+          [attr.aria-describedby]="
+            submitted() && bankInvalid() ? 'bank-account-bank-error' : null
+          "
+          class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Ex.: Banco do Brasil"
+        />
+        @if (submitted() && bankInvalid()) {
+          <p
+            id="bank-account-bank-error"
+            class="mt-1 text-xs text-red-700"
+            role="alert"
+          >
+            Informe o banco.
+          </p>
+        }
+      </div>
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <label
+            for="bank-account-agency"
+            class="block text-sm font-medium text-ink"
+            >Agência *</label
+          ><input
+            #agencyInput
+            id="bank-account-agency"
+            name="agency"
+            [(ngModel)]="form.agency"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && agencyInvalid()"
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            placeholder="0001"
+          />
+          @if (submitted() && agencyInvalid()) {
+            <p class="mt-1 text-xs text-red-700" role="alert">
+              Informe a agência.
+            </p>
+          }
+        </div>
+        <div>
+          <label
+            for="bank-account-number"
+            class="block text-sm font-medium text-ink"
+            >Conta *</label
+          ><input
+            #accountInput
+            id="bank-account-number"
+            name="account"
+            [(ngModel)]="form.account"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && accountInvalid()"
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            placeholder="12345-6"
+          />
+          @if (submitted() && accountInvalid()) {
+            <p class="mt-1 text-xs text-red-700" role="alert">
+              Informe a conta.
+            </p>
+          }
+        </div>
+      </div>
+      <div>
+        <label
+          for="bank-account-company"
+          class="block text-sm font-medium text-ink"
+          >Empresa ou SPE</label
+        ><select
+          id="bank-account-company"
+          name="companyId"
+          [(ngModel)]="form.companyId"
+          class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+        >
+          <option value="">Conta geral da organização</option>
+          @for (company of sortedCompanies; track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select>
+        <p class="mt-1 text-xs text-muted">
+          Deixe sem vínculo para manter a conta no caixa geral da organização.
+        </p>
+      </div>
+      @if (error()) {
+        <div
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ error() }}
+        </div>
+      }
+      <footer
+        class="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"
+      >
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+        >
+          Cancelar</button
+        ><button
+          type="submit"
+          [disabled]="saving()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+        >
+          <lucide-icon [img]="SaveIcon" [size]="16"></lucide-icon
+          >{{
+            saving()
+              ? "Salvando..."
+              : isEditing
+                ? "Salvar alterações"
+                : "Criar conta"
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

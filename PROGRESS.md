@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-16 — Contas bancárias:** substituído o placeholder por gestão real das contas da organização e de empresas/SPEs, com indicadores, busca, filtro por empresa, criação, edição, desvinculação e exclusão; visualização financeira restrita a `BANK_ACCOUNTS_READ`, mutações restritas a `BANK_ACCOUNTS_WRITE` e tenant derivado exclusivamente da sessão.
+
 - **2026-08-16 — Interações e próximos passos:** substituído o placeholder por listagem e timeline reais, com busca, filtros por pessoa e tipo, indicadores, criação, edição e exclusão; enums reconciliados com a API; próximo passo destacado; cadastro também disponível diretamente no detalhe da pessoa, respeitando `INTERACTIONS_READ`/`INTERACTIONS_WRITE`.
 
 - **2026-08-16 — Retornos de investidores:** substituído o placeholder por gestão real de previsões e pagamentos, com indicadores de previsto, pago, pendente e atrasado calculado; filtros por investidor, status e destino; programação e edição vinculadas a alocações; ação principal de registrar pagamento com valor/data realizados; exclusão, estados responsivos e permissões `RETURNS_READ`/`RETURNS_WRITE`.

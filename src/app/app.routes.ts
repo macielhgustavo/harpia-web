@@ -147,7 +147,12 @@ export const routes: Routes = [
   },
   {
     path: 'bank-accounts',
-    ...placeholder('Contas Bancárias', APP_PERMISSIONS.BANK_ACCOUNTS_READ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.BANK_ACCOUNTS_READ },
+    loadComponent: () =>
+      import('./pages/bank-accounts/bank-accounts.component').then(
+        (m) => m.BankAccountsComponent,
+      ),
   },
   {
     path: 'users',
