@@ -1,0 +1,205 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    appDialogFocus
+    (dialogEscape)="requestClose()"
+    class="max-h-[calc(100vh-1.5rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-border bg-card shadow-xl sm:max-h-[calc(100vh-2rem)]"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="interaction-form-title"
+    [attr.aria-busy]="saving()"
+    (click)="$event.stopPropagation()"
+  >
+    <header
+      class="flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6"
+    >
+      <div>
+        <h2 id="interaction-form-title" class="text-lg font-semibold text-ink">
+          {{ isEditing ? "Editar interação" : "Nova interação" }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          Registre o contato e deixe o próximo passo claro para a equipe.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+        aria-label="Fechar formulário de interação"
+      >
+        <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+      </button>
+    </header>
+    <form class="space-y-5 p-5 sm:p-6" (ngSubmit)="save()" novalidate>
+      @if (isPersonFixed) {
+        <div
+          class="rounded-lg border border-border bg-surface-warm px-3 py-2.5 text-sm text-ink"
+          data-dialog-initial-focus
+          tabindex="-1"
+        >
+          <span class="block text-xs uppercase tracking-wide text-muted"
+            >Pessoa</span
+          >{{ personName }}
+        </div>
+      } @else {
+        <div>
+          <label
+            for="interaction-person"
+            class="block text-sm font-medium text-ink"
+            >Pessoa *</label
+          ><select
+            #personInput
+            id="interaction-person"
+            name="personId"
+            [(ngModel)]="form.personId"
+            required
+            aria-required="true"
+            data-dialog-initial-focus
+            [attr.aria-invalid]="submitted() && personInvalid()"
+            [attr.aria-describedby]="
+              submitted() && personInvalid() ? 'interaction-person-error' : null
+            "
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            <option value="">Selecione uma pessoa</option>
+            @for (person of sortedPeople; track person.id) {
+              <option [value]="person.id">{{ person.name }}</option>
+            }
+          </select>
+          @if (submitted() && personInvalid()) {
+            <p
+              id="interaction-person-error"
+              class="mt-1 text-xs text-red-700"
+              role="alert"
+            >
+              Selecione uma pessoa.
+            </p>
+          }
+        </div>
+      }
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div>
+          <label
+            for="interaction-date"
+            class="block text-sm font-medium text-ink"
+            >Data *</label
+          ><input
+            #dateInput
+            id="interaction-date"
+            name="date"
+            type="date"
+            [(ngModel)]="form.date"
+            required
+            aria-required="true"
+            [attr.aria-invalid]="submitted() && dateInvalid()"
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          />
+          @if (submitted() && dateInvalid()) {
+            <p class="mt-1 text-xs text-red-700" role="alert">
+              Informe a data.
+            </p>
+          }
+        </div>
+        <div>
+          <label
+            for="interaction-type"
+            class="block text-sm font-medium text-ink"
+            >Tipo *</label
+          ><select
+            id="interaction-type"
+            name="type"
+            [(ngModel)]="form.type"
+            required
+            aria-required="true"
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          >
+            @for (option of typeOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      <div>
+        <label
+          for="interaction-summary"
+          class="block text-sm font-medium text-ink"
+          >Resumo *</label
+        ><textarea
+          #summaryInput
+          id="interaction-summary"
+          name="summary"
+          [(ngModel)]="form.summary"
+          rows="4"
+          required
+          aria-required="true"
+          [attr.aria-invalid]="submitted() && summaryInvalid()"
+          [attr.aria-describedby]="
+            submitted() && summaryInvalid() ? 'interaction-summary-error' : null
+          "
+          class="mt-2 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Principais pontos do contato"
+        ></textarea>
+        @if (submitted() && summaryInvalid()) {
+          <p
+            id="interaction-summary-error"
+            class="mt-1 text-xs text-red-700"
+            role="alert"
+          >
+            Informe um resumo.
+          </p>
+        }
+      </div>
+      <div>
+        <label
+          for="interaction-next-step"
+          class="block text-sm font-medium text-ink"
+          >Próximo passo</label
+        ><textarea
+          id="interaction-next-step"
+          name="nextStep"
+          [(ngModel)]="form.nextStep"
+          rows="2"
+          class="mt-2 w-full resize-y rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-primary"
+          placeholder="Ex.: enviar proposta até sexta-feira"
+        ></textarea>
+      </div>
+      @if (error()) {
+        <div
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ error() }}
+        </div>
+      }
+      <footer
+        class="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"
+      >
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+        >
+          Cancelar</button
+        ><button
+          type="submit"
+          [disabled]="saving() || (!isPersonFixed && sortedPeople.length === 0)"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-60"
+        >
+          <lucide-icon [img]="SaveIcon" [size]="16"></lucide-icon
+          >{{
+            saving()
+              ? "Salvando..."
+              : isEditing
+                ? "Salvar alterações"
+                : "Criar interação"
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+</div>

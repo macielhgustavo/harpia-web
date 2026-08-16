@@ -75,7 +75,12 @@ export const routes: Routes = [
   },
   {
     path: 'interactions',
-    ...placeholder('Interações', APP_PERMISSIONS.INTERACTIONS_READ),
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.INTERACTIONS_READ },
+    loadComponent: () =>
+      import('./pages/interactions/interactions.component').then(
+        (m) => m.InteractionsComponent,
+      ),
   },
   {
     path: 'developments',

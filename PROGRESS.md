@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-16 — Interações e próximos passos:** substituído o placeholder por listagem e timeline reais, com busca, filtros por pessoa e tipo, indicadores, criação, edição e exclusão; enums reconciliados com a API; próximo passo destacado; cadastro também disponível diretamente no detalhe da pessoa, respeitando `INTERACTIONS_READ`/`INTERACTIONS_WRITE`.
+
 - **2026-08-16 — Retornos de investidores:** substituído o placeholder por gestão real de previsões e pagamentos, com indicadores de previsto, pago, pendente e atrasado calculado; filtros por investidor, status e destino; programação e edição vinculadas a alocações; ação principal de registrar pagamento com valor/data realizados; exclusão, estados responsivos e permissões `RETURNS_READ`/`RETURNS_WRITE`.
 
 - **2026-08-16 — Alocações de investimentos:** adicionado CRUD de alocações dentro do detalhe do aporte, com destino em empreendimento ou caixa geral, saldo real calculado sobre todas as alocações, validação preventiva sem substituir o erro autoritativo do backend, distribuição visual, edição, exclusão com aviso de retornos em cascata e reconciliação segura de registros removidos em concorrência.
