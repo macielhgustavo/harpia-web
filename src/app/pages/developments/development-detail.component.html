@@ -231,6 +231,11 @@
         (changed)="onPriceTablesChanged($event)"
       />
 
+      <app-documents-section
+        [developmentId]="development.id"
+        title="Documentos do empreendimento"
+      />
+
       @if (canWriteDevelopments && editOpen()) {
         <app-development-form-modal
           [development]="development"

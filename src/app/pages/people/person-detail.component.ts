@@ -12,6 +12,7 @@ import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { Interaction } from '../../core/models/interaction.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { PersonService } from '../../core/services/person.service';
+import { DocumentsSectionComponent } from '../documents/documents-section.component';
 import { InteractionFormModalComponent } from '../interactions/interaction-form-modal.component';
 import { formatDate as formatCalendarDate } from '../../shared/utils/development';
 import { extractError, isEmailValid } from '../../shared/utils/http-error';
@@ -37,6 +38,7 @@ interface EditForm {
   standalone: true,
   imports: [
     CommonModule,
+    DocumentsSectionComponent,
     FormsModule,
     InteractionFormModalComponent,
     RouterLink,
@@ -295,6 +297,11 @@ interface EditForm {
                 </ol>
               }
             </section>
+
+            <app-documents-section
+              [personId]="p.id"
+              title="Documentos da pessoa"
+            />
           </div>
         </div>
 

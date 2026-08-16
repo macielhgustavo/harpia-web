@@ -31,6 +31,7 @@ import {
   formatDate,
 } from '../../shared/utils/development';
 import { extractError } from '../../shared/utils/http-error';
+import { DocumentsSectionComponent } from '../documents/documents-section.component';
 import { DevelopmentFormModalComponent } from './development-form-modal.component';
 import { PriceTablesSectionComponent } from './price-tables-section.component';
 import { UnitTypesSectionComponent } from './unit-types-section.component';
@@ -41,6 +42,7 @@ import { UnitsSectionComponent } from './units-section.component';
   standalone: true,
   imports: [
     CommonModule,
+    DocumentsSectionComponent,
     RouterLink,
     LucideAngularModule,
     DevelopmentFormModalComponent,

@@ -5,6 +5,7 @@ import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { Unit, UnitListItem } from '../../core/models/unit.model';
 import { UnitType } from '../../core/models/unit-type.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
+import { DocumentService } from '../../core/services/document.service';
 import { UnitService } from '../../core/services/unit.service';
 import { UnitsSectionComponent } from './units-section.component';
 
@@ -112,11 +113,16 @@ class AuthorizationServiceMock {
   readonly hasPermission = jasmine.createSpy().and.returnValue(true);
 }
 
+class DocumentServiceMock {
+  readonly list = jasmine.createSpy().and.returnValue(of([]));
+}
+
 describe('UnitsSectionComponent', () => {
   let fixture: ComponentFixture<UnitsSectionComponent>;
   let component: UnitsSectionComponent;
   let service: UnitServiceMock;
   let authorization: AuthorizationServiceMock;
+  let documentService: DocumentServiceMock;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -124,12 +130,16 @@ describe('UnitsSectionComponent', () => {
       providers: [
         { provide: UnitService, useClass: UnitServiceMock },
         { provide: AuthorizationService, useClass: AuthorizationServiceMock },
+        { provide: DocumentService, useClass: DocumentServiceMock },
       ],
     }).compileComponents();
     service = TestBed.inject(UnitService) as unknown as UnitServiceMock;
     authorization = TestBed.inject(
       AuthorizationService,
     ) as unknown as AuthorizationServiceMock;
+    documentService = TestBed.inject(
+      DocumentService,
+    ) as unknown as DocumentServiceMock;
   });
 
   function render(): void {
@@ -155,6 +165,18 @@ describe('UnitsSectionComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Apto 101');
     expect(fixture.nativeElement.textContent).toContain('Sala comercial');
     expect(fixture.nativeElement.textContent).not.toContain('undefined');
+  });
+
+  it('abre os documentos usando apenas o vínculo da unidade', () => {
+    render();
+    component.openDocuments(UNITS[0]);
+    fixture.detectChanges();
+    expect(component.documentsTarget()).toBe(UNITS[0]);
+    expect(documentService.list).toHaveBeenCalledOnceWith({
+      unitId: UNITS[0].id,
+    });
+    component.closeDocuments();
+    expect(component.documentsTarget()).toBeNull();
   });
 
   it('exibe erro e permite retry', () => {

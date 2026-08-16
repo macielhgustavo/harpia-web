@@ -7,6 +7,7 @@ import { DevelopmentDetail } from '../../core/models/development.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { CompanyService } from '../../core/services/company.service';
 import { DevelopmentService } from '../../core/services/development.service';
+import { DocumentService } from '../../core/services/document.service';
 import { PriceTableService } from '../../core/services/price-table.service';
 import { UnitTypeService } from '../../core/services/unit-type.service';
 import { UnitService } from '../../core/services/unit.service';
@@ -78,6 +79,10 @@ class PriceTableServiceMock {
   readonly remove = jasmine.createSpy().and.returnValue(of(undefined));
 }
 
+class DocumentServiceMock {
+  readonly list = jasmine.createSpy().and.returnValue(of([]));
+}
+
 class AuthorizationServiceMock {
   readonly hasPermission = jasmine.createSpy().and.returnValue(true);
 }
@@ -89,6 +94,7 @@ describe('DevelopmentDetailComponent', () => {
   let companyService: CompanyServiceMock;
   let router: Router;
   let authorization: AuthorizationServiceMock;
+  let documentService: DocumentServiceMock;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -99,6 +105,7 @@ describe('DevelopmentDetailComponent', () => {
         { provide: UnitTypeService, useClass: UnitTypeServiceMock },
         { provide: UnitService, useClass: UnitServiceMock },
         { provide: PriceTableService, useClass: PriceTableServiceMock },
+        { provide: DocumentService, useClass: DocumentServiceMock },
         { provide: AuthorizationService, useClass: AuthorizationServiceMock },
         provideRouter([]),
         {
@@ -117,6 +124,9 @@ describe('DevelopmentDetailComponent', () => {
     authorization = TestBed.inject(
       AuthorizationService,
     ) as unknown as AuthorizationServiceMock;
+    documentService = TestBed.inject(
+      DocumentService,
+    ) as unknown as DocumentServiceMock;
     spyOn(router, 'navigate').and.resolveTo(true);
   });
 
@@ -133,6 +143,9 @@ describe('DevelopmentDetailComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('2Q Standard');
     expect(fixture.nativeElement.textContent).toContain('Apto 101');
     expect(fixture.nativeElement.textContent).toContain('Tabela Captação');
+    expect(documentService.list).toHaveBeenCalledOnceWith({
+      developmentId: 'dev-aurora',
+    });
   });
 
   it('trata empreendimento não encontrado', () => {

@@ -16,6 +16,7 @@ import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AlertTriangle,
+  Files,
   House,
   LucideAngularModule,
   Pencil,
@@ -44,6 +45,7 @@ import {
   unitStatusLabel,
 } from '../../shared/utils/development';
 import { extractError } from '../../shared/utils/http-error';
+import { DocumentsSectionComponent } from '../documents/documents-section.component';
 import { UnitFormModalComponent } from './unit-form-modal.component';
 
 @Component({
@@ -51,6 +53,7 @@ import { UnitFormModalComponent } from './unit-form-modal.component';
   standalone: true,
   imports: [
     DialogFocusDirective,
+    DocumentsSectionComponent,
     FormsModule,
     LucideAngularModule,
     UnitFormModalComponent,
@@ -88,6 +91,7 @@ export class UnitsSectionComponent implements OnInit {
   readonly statusSaving = signal(false);
   readonly statusError = signal('');
   readonly deleteTarget = signal<UnitListItem | null>(null);
+  readonly documentsTarget = signal<UnitListItem | null>(null);
   readonly deleting = signal(false);
   readonly deleteError = signal('');
 
@@ -104,6 +108,7 @@ export class UnitsSectionComponent implements OnInit {
   readonly AddIcon = Plus;
   readonly EditIcon = Pencil;
   readonly DeleteIcon = Trash2;
+  readonly DocumentsIcon = Files;
   readonly RetryIcon = RefreshCw;
   readonly ResetIcon = RotateCcw;
   readonly SearchIcon = Search;
@@ -225,6 +230,14 @@ export class UnitsSectionComponent implements OnInit {
     this.feedback.set('');
     this.editing.set(unit);
     this.formOpen.set(true);
+  }
+
+  openDocuments(unit: UnitListItem): void {
+    this.documentsTarget.set(unit);
+  }
+
+  closeDocuments(): void {
+    this.documentsTarget.set(null);
   }
 
   closeForm(): void {

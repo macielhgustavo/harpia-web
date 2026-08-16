@@ -6,6 +6,7 @@ import { InvestmentDetail } from '../../core/models/investment.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { AllocationService } from '../../core/services/allocation.service';
 import { DevelopmentService } from '../../core/services/development.service';
+import { DocumentService } from '../../core/services/document.service';
 import { InvestmentService } from '../../core/services/investment.service';
 import { InvestmentDetailComponent } from './investment-detail.component';
 
@@ -16,6 +17,7 @@ describe('InvestmentDetailComponent', () => {
   let authorization: jasmine.SpyObj<AuthorizationService>;
   let allocationService: jasmine.SpyObj<AllocationService>;
   let developmentService: jasmine.SpyObj<DevelopmentService>;
+  let documentService: jasmine.SpyObj<DocumentService>;
 
   const detail: InvestmentDetail = {
     id: 'investment-1',
@@ -77,10 +79,17 @@ describe('InvestmentDetailComponent', () => {
       'DevelopmentService',
       ['list'],
     );
+    documentService = jasmine.createSpyObj<DocumentService>('DocumentService', [
+      'list',
+      'upload',
+      'download',
+      'remove',
+    ]);
     service.getById.and.returnValue(of(detail));
     service.remove.and.returnValue(of(detail));
     allocationService.remove.and.returnValue(of(detail.allocations[0]));
     developmentService.list.and.returnValue(of([]));
+    documentService.list.and.returnValue(of([]));
     authorization.hasPermission.and.returnValue(true);
     TestBed.configureTestingModule({
       imports: [InvestmentDetailComponent],
@@ -89,6 +98,7 @@ describe('InvestmentDetailComponent', () => {
         { provide: AuthorizationService, useValue: authorization },
         { provide: AllocationService, useValue: allocationService },
         { provide: DevelopmentService, useValue: developmentService },
+        { provide: DocumentService, useValue: documentService },
         provideRouter([]),
         {
           provide: ActivatedRoute,
@@ -110,6 +120,9 @@ describe('InvestmentDetailComponent', () => {
     expect(component.returns().length).toBe(1);
     expect(component.expectedReturns()).toBe(10000);
     expect(fixture.nativeElement.textContent).toContain('Aurora');
+    expect(documentService.list).toHaveBeenCalledOnceWith({
+      investmentId: 'investment-1',
+    });
   });
 
   it('calcula caixa geral, percentual e atraso apenas na apresentação', () => {

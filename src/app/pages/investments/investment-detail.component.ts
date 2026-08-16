@@ -47,6 +47,7 @@ import {
   isReturnOverdue,
 } from '../../shared/utils/investment';
 import { extractError } from '../../shared/utils/http-error';
+import { DocumentsSectionComponent } from '../documents/documents-section.component';
 import { InvestmentFormModalComponent } from './investment-form-modal.component';
 import { AllocationFormModalComponent } from './allocation-form-modal.component';
 
@@ -56,6 +57,7 @@ import { AllocationFormModalComponent } from './allocation-form-modal.component'
   imports: [
     DialogFocusDirective,
     AllocationFormModalComponent,
+    DocumentsSectionComponent,
     InvestmentFormModalComponent,
     LucideAngularModule,
     RouterLink,

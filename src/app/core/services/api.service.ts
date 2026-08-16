@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -10,6 +10,13 @@ export class ApiService {
 
   get<T>(path: string, params?: HttpParams): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params });
+  }
+
+  getBlob(path: string): Observable<HttpResponse<Blob>> {
+    return this.http.get(`${this.baseUrl}${path}`, {
+      observe: 'response',
+      responseType: 'blob',
+    });
   }
 
   post<T>(path: string, body: unknown): Observable<T> {
