@@ -58,7 +58,13 @@ describe('SidebarComponent', () => {
     expect(text).toContain('Usuários');
     expect(text).toContain('Convites');
     expect(text).toContain('Auditoria');
+    expect(text).toContain('Gestão');
     expect(text).toContain('Relatórios');
+    expect(
+      fixture.componentInstance.navigation
+        .find((group) => group.label === 'Gestão')
+        ?.items.map((item) => item.route),
+    ).toEqual(['/reports']);
     expect(text).toContain('owner@harpia.com');
     expect(text).toContain('Proprietário');
     expect(
@@ -74,6 +80,7 @@ describe('SidebarComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Pessoas');
     expect(text).not.toContain('Administração');
+    expect(text).not.toContain('Gestão');
     expect(text).not.toContain('Auditoria');
     expect(text).not.toContain('Dashboard');
   });

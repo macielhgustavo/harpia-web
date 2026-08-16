@@ -77,6 +77,11 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'Coins',
         permission: APP_PERMISSIONS.RETURNS_READ,
       },
+    ],
+  },
+  {
+    label: 'Gestão',
+    items: [
       {
         label: 'Relatórios',
         route: '/reports',

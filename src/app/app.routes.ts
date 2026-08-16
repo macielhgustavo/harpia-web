@@ -3,14 +3,12 @@ import { APP_PERMISSIONS } from './core/config/rbac.config';
 import { authGuard } from './core/guards/auth.guard';
 import { homeRedirectGuard } from './core/guards/home-redirect.guard';
 import { permissionGuard } from './core/guards/permission.guard';
-import { PlaceholderComponent } from './shared/components/placeholder/placeholder.component';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
     canActivate: [homeRedirectGuard],
-    component: PlaceholderComponent,
   },
   {
     path: 'login',

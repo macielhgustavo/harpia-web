@@ -1,7 +1,18 @@
 import { authGuard } from './core/guards/auth.guard';
 import { APP_PERMISSIONS } from './core/config/rbac.config';
+import { homeRedirectGuard } from './core/guards/home-redirect.guard';
 import { permissionGuard } from './core/guards/permission.guard';
 import { routes } from './app.routes';
+
+describe('Rota inicial', () => {
+  it('redireciona por perfil sem renderizar componente provisório', () => {
+    const route = routes.find((item) => item.path === '');
+
+    expect(route?.canActivate).toContain(homeRedirectGuard);
+    expect(route?.component).toBeUndefined();
+    expect(route?.loadComponent).toBeUndefined();
+  });
+});
 
 describe('Rotas de empreendimentos', () => {
   it('protege e carrega de forma lazy a lista e o detalhe', () => {
