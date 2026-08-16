@@ -7,6 +7,7 @@ import { DevelopmentDetail } from '../../core/models/development.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { CompanyService } from '../../core/services/company.service';
 import { DevelopmentService } from '../../core/services/development.service';
+import { PriceTableService } from '../../core/services/price-table.service';
 import { UnitTypeService } from '../../core/services/unit-type.service';
 import { UnitService } from '../../core/services/unit.service';
 import {
@@ -57,6 +58,26 @@ class UnitServiceMock {
   readonly update = jasmine.createSpy().and.returnValue(of(undefined));
 }
 
+class PriceTableServiceMock {
+  readonly list = jasmine.createSpy().and.returnValue(
+    of(
+      DEVELOPMENT_DETAIL_FIXTURE.priceTables.map((table) => ({
+        ...table,
+        _count: { unitPrices: 0 },
+      })),
+    ),
+  );
+  readonly getById = jasmine.createSpy().and.callFake((id: string) =>
+    of({
+      ...DEVELOPMENT_DETAIL_FIXTURE.priceTables.find(
+        (table) => table.id === id,
+      )!,
+      unitPrices: [],
+    }),
+  );
+  readonly remove = jasmine.createSpy().and.returnValue(of(undefined));
+}
+
 class AuthorizationServiceMock {
   readonly hasPermission = jasmine.createSpy().and.returnValue(true);
 }
@@ -77,6 +98,7 @@ describe('DevelopmentDetailComponent', () => {
         { provide: CompanyService, useClass: CompanyServiceMock },
         { provide: UnitTypeService, useClass: UnitTypeServiceMock },
         { provide: UnitService, useClass: UnitServiceMock },
+        { provide: PriceTableService, useClass: PriceTableServiceMock },
         { provide: AuthorizationService, useClass: AuthorizationServiceMock },
         provideRouter([]),
         {
@@ -237,6 +259,17 @@ describe('DevelopmentDetailComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain(
       'gestão completa de unidades será adicionada',
     );
+  });
+
+  it('integra tabelas de preço e atualiza somente o resumo do empreendimento', () => {
+    render();
+
+    component.onPriceTablesChanged('Preço individual salvo com sucesso.');
+
+    expect(component.feedback()).toBe('Preço individual salvo com sucesso.');
+    expect(service.getById).toHaveBeenCalledTimes(2);
+    expect(companyService.list).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.textContent).toContain('Tabelas de preço');
   });
 
   it('preserva a página e o sucesso se apenas a atualização dos resumos falhar', () => {

@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-16 — Tabelas de preço por unidade:** implementada a gestão real de `PriceTable` e `UnitPrice` dentro do empreendimento, com cadastro, edição, ativação e exclusão de tabelas; contagem de unidades precificadas; mínimo, máximo e média calculados apenas quando existem preços; visão detalhada por unidade com busca e filtros; preços ausentes explícitos; edição rápida individual e salvamento sequencial de múltiplas alterações, preservando falhas sem confundir preço de unidade com tipologia.
+
 - **2026-08-16 — Gestão de unidades por empreendimento:** substituída a prévia estática por uma seção completa com indicadores, busca, filtros por status, categoria, tipologia e agrupamento, tabela densa no desktop, cards responsivos, criação, edição, alteração rápida de status e exclusão com aviso sobre preços e documentos. Models e serviço foram reconciliados com os endpoints reais de unidades, incluindo tipologia, preços individuais, campos nulos e permissões `UNITS_READ`/`UNITS_WRITE`.
 
 - **2026-08-09 — Tipologias por empreendimento:** adicionado CRUD completo dentro do detalhe do empreendimento, com contagem autoritativa de unidades, criação e edição validadas, limpeza explícita de campos opcionais, exclusão com aviso de unidades que ficarão sem tipologia, permissões de leitura/escrita, estados responsivos e diálogos acessíveis. A auditoria do backend registra as mutações e os efeitos da desvinculação de unidades.

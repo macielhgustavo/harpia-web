@@ -226,53 +226,10 @@
         (changed)="onUnitsChanged($event)"
       />
 
-      <section
-        class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
-      >
-        <div
-          class="flex items-center justify-between border-b border-border bg-surface-warm px-5 py-4"
-        >
-          <div class="flex items-center gap-2">
-            <lucide-icon
-              [img]="PriceIcon"
-              [size]="19"
-              class="text-primary"
-            ></lucide-icon>
-            <h2 class="font-semibold text-ink">Tabelas de preço</h2>
-          </div>
-          <span
-            class="rounded-full bg-card px-2.5 py-1 text-xs font-medium text-muted"
-            >{{ development.priceTables.length }}</span
-          >
-        </div>
-        @if (development.priceTables.length === 0) {
-          <p class="p-5 text-sm text-muted">
-            Nenhuma tabela de preço cadastrada.
-          </p>
-        } @else {
-          <div class="divide-y divide-border">
-            @for (table of development.priceTables; track table.id) {
-              <article
-                class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <h3 class="font-medium text-ink">{{ table.name }}</h3>
-                  <p class="mt-1 text-sm text-muted">Fase: {{ table.phase }}</p>
-                </div>
-                <span
-                  class="self-start rounded-full px-2.5 py-1 text-xs font-medium"
-                  [class]="
-                    table.active
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-slate-100 text-slate-700'
-                  "
-                  >{{ table.active ? "Ativa" : "Inativa" }}</span
-                >
-              </article>
-            }
-          </div>
-        }
-      </section>
+      <app-price-tables-section
+        [developmentId]="development.id"
+        (changed)="onPriceTablesChanged($event)"
+      />
 
       @if (canWriteDevelopments && editOpen()) {
         <app-development-form-modal

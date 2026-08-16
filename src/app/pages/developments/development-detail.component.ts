@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Building2,
   CalendarDays,
-  ChartNoAxesColumnIncreasing,
   LucideAngularModule,
   MapPin,
   Pencil,
@@ -33,6 +32,7 @@ import {
 } from '../../shared/utils/development';
 import { extractError } from '../../shared/utils/http-error';
 import { DevelopmentFormModalComponent } from './development-form-modal.component';
+import { PriceTablesSectionComponent } from './price-tables-section.component';
 import { UnitTypesSectionComponent } from './unit-types-section.component';
 import { UnitsSectionComponent } from './units-section.component';
 
@@ -44,6 +44,7 @@ import { UnitsSectionComponent } from './units-section.component';
     RouterLink,
     LucideAngularModule,
     DevelopmentFormModalComponent,
+    PriceTablesSectionComponent,
     UnitTypesSectionComponent,
     UnitsSectionComponent,
   ],
@@ -84,7 +85,6 @@ export class DevelopmentDetailComponent implements OnInit {
   readonly BuildingIcon = Building2;
   readonly MapIcon = MapPin;
   readonly CalendarIcon = CalendarDays;
-  readonly PriceIcon = ChartNoAxesColumnIncreasing;
   readonly WarningIcon = AlertTriangle;
   readonly RefreshIcon = RefreshCw;
   readonly XIcon = X;
@@ -167,6 +167,26 @@ export class DevelopmentDetailComponent implements OnInit {
   }
 
   onUnitsChanged(message: string): void {
+    this.feedback.set(message);
+    const sequence = ++this.developmentRefreshSequence;
+    this.developmentService.getById(this.developmentId).subscribe({
+      next: (development) => {
+        if (sequence !== this.developmentRefreshSequence) return;
+        this.development.set(development);
+      },
+      error: (error: unknown) => {
+        if (sequence !== this.developmentRefreshSequence) return;
+        this.feedback.set(
+          `${message} ${extractError(
+            error,
+            'Não foi possível atualizar os resumos do empreendimento.',
+          )}`,
+        );
+      },
+    });
+  }
+
+  onPriceTablesChanged(message: string): void {
     this.feedback.set(message);
     const sequence = ++this.developmentRefreshSequence;
     this.developmentService.getById(this.developmentId).subscribe({
