@@ -55,7 +55,7 @@ describe('AuthorizationService', () => {
         APP_PERMISSIONS.USERS_MANAGE,
       ]),
     ).toBeFalse();
-    expect(service.firstAccessibleRoute()).toBe('/people');
+    expect(service.firstAccessibleRoute()).toBe('/crm');
   });
 
   it('fails closed when claims are missing or carry an unknown role', () => {

@@ -74,6 +74,7 @@ describe('RBAC configuration', () => {
       APP_PERMISSIONS.DOCUMENTS_WRITE,
       APP_PERMISSIONS.INTERACTIONS_READ,
       APP_PERMISSIONS.INTERACTIONS_WRITE,
+      APP_PERMISSIONS.CRM_READ,
     ]);
     expect(ROLE_PERMISSIONS.LEITURA).toEqual([
       APP_PERMISSIONS.PEOPLE_READ,
@@ -83,6 +84,7 @@ describe('RBAC configuration', () => {
       APP_PERMISSIONS.PRICES_READ,
       APP_PERMISSIONS.DOCUMENTS_READ,
       APP_PERMISSIONS.INTERACTIONS_READ,
+      APP_PERMISSIONS.CRM_READ,
     ]);
   });
 
@@ -90,9 +92,9 @@ describe('RBAC configuration', () => {
     expect(firstAccessibleRouteForRole('OWNER')).toBe('/dashboard');
     expect(firstAccessibleRouteForRole('ADMIN')).toBe('/dashboard');
     expect(firstAccessibleRouteForRole('FINANCEIRO')).toBe('/dashboard');
-    expect(firstAccessibleRouteForRole('COMERCIAL')).toBe('/people');
-    expect(firstAccessibleRouteForRole('OPERACIONAL')).toBe('/people');
-    expect(firstAccessibleRouteForRole('LEITURA')).toBe('/people');
+    expect(firstAccessibleRouteForRole('COMERCIAL')).toBe('/crm');
+    expect(firstAccessibleRouteForRole('OPERACIONAL')).toBe('/crm');
+    expect(firstAccessibleRouteForRole('LEITURA')).toBe('/crm');
     expect(firstAccessibleRouteForRole(null)).toBe(ACCESS_DENIED_ROUTE);
   });
 });

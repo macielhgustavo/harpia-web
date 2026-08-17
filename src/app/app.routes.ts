@@ -80,6 +80,22 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'crm',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.CRM_READ },
+    loadComponent: () =>
+      import('./pages/crm/crm.component').then((m) => m.CrmComponent),
+  },
+  {
+    path: 'crm/opportunities/:id',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.CRM_READ },
+    loadComponent: () =>
+      import('./pages/crm/opportunity-detail.component').then(
+        (m) => m.OpportunityDetailComponent,
+      ),
+  },
+  {
     path: 'developments',
     canActivate: [authGuard, permissionGuard],
     data: { permission: APP_PERMISSIONS.DEVELOPMENTS_READ },

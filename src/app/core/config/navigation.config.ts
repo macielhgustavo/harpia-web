@@ -38,6 +38,12 @@ export const NAVIGATION: NavGroup[] = [
     label: 'Comercial',
     items: [
       {
+        label: 'CRM',
+        route: '/crm',
+        icon: 'Columns3',
+        permission: APP_PERMISSIONS.CRM_READ,
+      },
+      {
         label: 'Pessoas',
         route: '/people',
         icon: 'Users',

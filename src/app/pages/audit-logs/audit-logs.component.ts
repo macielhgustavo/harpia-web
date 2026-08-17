@@ -65,6 +65,16 @@ export class AuditLogsComponent implements OnInit {
     'DOCUMENT_DOWNLOADED',
     'DOCUMENT_DELETED',
     'REPORT_EXPORTED',
+    'CRM_PIPELINE_CREATED',
+    'OPPORTUNITY_CREATED',
+    'OPPORTUNITY_UPDATED',
+    'OPPORTUNITY_DELETED',
+    'OPPORTUNITY_STAGE_CHANGED',
+    'OPPORTUNITY_WON',
+    'OPPORTUNITY_LOST',
+    'SALES_ACTIVITY_CREATED',
+    'SALES_ACTIVITY_UPDATED',
+    'SALES_ACTIVITY_DELETED',
   ] as const;
 
   readonly knownEntityTypes = [
@@ -83,6 +93,9 @@ export class AuditLogsComponent implements OnInit {
     'RETURN',
     'DOCUMENT',
     'REPORT',
+    'SALES_PIPELINE',
+    'OPPORTUNITY',
+    'SALES_ACTIVITY',
   ] as const;
 
   private readonly dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {

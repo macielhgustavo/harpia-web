@@ -1,0 +1,221 @@
+<div
+  class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+  role="presentation"
+  (click)="requestClose()"
+>
+  <section
+    appDialogFocus
+    (dialogEscape)="requestClose()"
+    (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="opportunity-form-title"
+    class="my-auto max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-6"
+  >
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <h2 id="opportunity-form-title" class="text-xl font-semibold text-ink">
+          {{ isEditing ? "Editar oportunidade" : "Nova oportunidade" }}
+        </h2>
+        <p class="mt-1 text-sm text-muted">
+          Registre o lead, o interesse e o próximo passo comercial.
+        </p>
+      </div>
+      <button
+        type="button"
+        (click)="requestClose()"
+        [disabled]="saving()"
+        class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+        aria-label="Fechar"
+      >
+        ×
+      </button>
+    </div>
+
+    <form class="mt-5 space-y-4" (ngSubmit)="save()">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="text-sm font-medium text-ink"
+          >Pessoa *
+          <select
+            data-dialog-initial-focus
+            name="personId"
+            [(ngModel)]="form.personId"
+            required
+            [attr.aria-invalid]="submitted() && !form.personId"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 outline-none focus:border-primary"
+          >
+            <option value="">Selecione</option>
+            @for (person of people; track person.id) {
+              <option [value]="person.id">{{ person.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="text-sm font-medium text-ink"
+          >Responsável
+          <select
+            name="assignedUserId"
+            [(ngModel)]="form.assignedUserId"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 outline-none focus:border-primary"
+          >
+            <option value="">Sem responsável</option>
+            @for (user of users; track user.id) {
+              <option [value]="user.id">{{ user.name }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      @if (!isEditing) {
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Pipeline *
+            <select
+              name="pipelineId"
+              [(ngModel)]="form.pipelineId"
+              (ngModelChange)="onPipelineChange()"
+              required
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Selecione</option>
+              @for (pipeline of pipelines; track pipeline.id) {
+                <option [value]="pipeline.id">{{ pipeline.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="text-sm font-medium text-ink"
+            >Etapa inicial *
+            <select
+              name="stageId"
+              [(ngModel)]="form.stageId"
+              required
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Selecione</option>
+              @for (stage of selectedPipeline?.stages ?? []; track stage.id) {
+                @if (!stage.isWon && !stage.isLost) {
+                  <option [value]="stage.id">{{ stage.name }}</option>
+                }
+              }
+            </select>
+          </label>
+        </div>
+      }
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="text-sm font-medium text-ink"
+          >Empreendimento
+          <select
+            name="developmentId"
+            [(ngModel)]="form.developmentId"
+            (ngModelChange)="onDevelopmentChange()"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          >
+            <option value="">Sem vínculo</option>
+            @for (development of developments; track development.id) {
+              <option [value]="development.id">{{ development.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="text-sm font-medium text-ink"
+          >Unidade de interesse
+          <select
+            name="unitId"
+            [(ngModel)]="form.unitId"
+            [disabled]="!form.developmentId"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 disabled:opacity-60"
+          >
+            <option value="">Sem unidade</option>
+            @for (unit of units; track unit.id) {
+              <option [value]="unit.id">{{ unit.identifier }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <label class="text-sm font-medium text-ink"
+          >Origem<input
+            name="source"
+            [(ngModel)]="form.source"
+            maxlength="120"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            placeholder="Indicação, site..."
+        /></label>
+        <label class="text-sm font-medium text-ink"
+          >Valor estimado<input
+            name="estimatedValue"
+            [(ngModel)]="form.estimatedValue"
+            inputmode="decimal"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            placeholder="0,00"
+        /></label>
+        <label class="text-sm font-medium text-ink"
+          >Probabilidade (%)<input
+            name="probability"
+            [(ngModel)]="form.probability"
+            type="number"
+            min="0"
+            max="100"
+            step="1"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        /></label>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <label class="text-sm font-medium text-ink"
+          >Próximo contato<input
+            name="nextContactAt"
+            [(ngModel)]="form.nextContactAt"
+            type="datetime-local"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        /></label>
+        <label class="text-sm font-medium text-ink"
+          >Fechamento esperado<input
+            name="expectedCloseDate"
+            [(ngModel)]="form.expectedCloseDate"
+            type="date"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        /></label>
+      </div>
+      <label class="block text-sm font-medium text-ink"
+        >Observações<textarea
+          name="notes"
+          [(ngModel)]="form.notes"
+          rows="3"
+          maxlength="4000"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        ></textarea>
+      </label>
+
+      @if (submitted() && !isValid()) {
+        <p class="text-sm text-red-700" role="alert">
+          Revise os campos obrigatórios, o valor e a probabilidade.
+        </p>
+      }
+      @if (error()) {
+        <p
+          class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ error() }}
+        </p>
+      }
+      <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="requestClose()"
+          [disabled]="saving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+        >
+          Cancelar</button
+        ><button
+          type="submit"
+          [disabled]="saving()"
+          class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {{ saving() ? "Salvando..." : "Salvar oportunidade" }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

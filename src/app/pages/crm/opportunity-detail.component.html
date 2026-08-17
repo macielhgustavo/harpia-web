@@ -1,0 +1,478 @@
+<div class="space-y-6">
+  <a
+    routerLink="/crm"
+    class="inline-flex items-center gap-2 text-sm font-medium text-primary"
+    ><lucide-icon [img]="BackIcon" [size]="17"></lucide-icon>Voltar ao CRM</a
+  >
+  @if (loading()) {
+    <div
+      class="flex min-h-64 items-center justify-center rounded-xl border border-border bg-card text-sm text-muted"
+    >
+      Carregando oportunidade...
+    </div>
+  } @else if (loadError()) {
+    <div class="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+      <p role="alert" class="text-sm text-red-800">{{ loadError() }}</p>
+      <button
+        type="button"
+        (click)="load()"
+        class="mt-3 rounded-lg border border-border px-3 py-2 text-sm"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  } @else {
+    @if (opportunity(); as item) {
+      <header
+        class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+      >
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-2xl font-bold text-ink">{{ item.person.name }}</h1>
+            <span
+              class="rounded-full bg-gold-light px-3 py-1 text-xs font-semibold text-gold-dark"
+              >{{ item.stage.name }}</span
+            >
+          </div>
+          <p class="mt-1 text-sm text-muted">
+            {{ item.pipeline.name }} · criada em
+            {{ formatDateTime(item.createdAt) }}
+          </p>
+        </div>
+        @if (canWrite) {
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              (click)="openMove()"
+              class="rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary"
+            >
+              Mover etapa</button
+            ><button
+              type="button"
+              (click)="editing.set(true); loadUnits(item.developmentId || '')"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+            >
+              <lucide-icon [img]="EditIcon" [size]="16"></lucide-icon
+              >Editar</button
+            ><button
+              type="button"
+              (click)="deleteOpen.set(true)"
+              class="rounded-lg border border-red-200 px-3 py-2.5 text-red-700"
+              aria-label="Excluir oportunidade"
+            >
+              <lucide-icon [img]="TrashIcon" [size]="17"></lucide-icon>
+            </button>
+          </div>
+        }
+      </header>
+      @if (feedback()) {
+        <p
+          class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+          role="status"
+        >
+          {{ feedback() }}
+        </p>
+      }
+      @if (actionError()) {
+        <p
+          class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          {{ actionError() }}
+        </p>
+      }
+
+      <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card lg:col-span-2"
+        >
+          <h2 class="font-semibold text-ink">Resumo comercial</h2>
+          <dl class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <dt class="text-xs uppercase text-muted">Contato</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{ item.person.email || "E-mail não informado" }}<br />{{
+                  item.person.phone || "Telefone não informado"
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Responsável</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{ item.assignedUser?.name || "Sem responsável" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Interesse</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{ item.development?.name || "Sem empreendimento" }}<br />{{
+                  item.unit ? "Unidade " + item.unit.identifier : "Sem unidade"
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Origem</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{ item.source || "Não informada" }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Valor estimado</dt>
+              <dd class="mt-1 text-sm font-semibold text-primary">
+                {{ formatMoney(item.estimatedValue) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Probabilidade</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{
+                  item.probability == null
+                    ? "Não informada"
+                    : item.probability + "%"
+                }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Próximo contato</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{ formatDateTime(item.nextContactAt) }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-xs uppercase text-muted">Fechamento esperado</dt>
+              <dd class="mt-1 text-sm text-ink">
+                {{ formatDateTime(item.expectedCloseDate) }}
+              </dd>
+            </div>
+          </dl>
+          @if (item.notes) {
+            <div class="mt-4 border-t border-border pt-4">
+              <h3 class="text-xs uppercase text-muted">Observações</h3>
+              <p class="mt-1 whitespace-pre-wrap text-sm text-ink">
+                {{ item.notes }}
+              </p>
+            </div>
+          }
+          @if (item.lostReason) {
+            <div class="mt-4 rounded-lg bg-red-50 p-3">
+              <h3 class="text-xs font-semibold uppercase text-red-700">
+                Motivo da perda
+              </h3>
+              <p class="mt-1 text-sm text-red-800">{{ item.lostReason }}</p>
+            </div>
+          }
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card"
+        >
+          <h2 class="font-semibold text-ink">Histórico de etapas</h2>
+          <ol class="mt-4 space-y-4">
+            @for (entry of history(); track entry.id) {
+              <li class="border-l-2 border-gold pl-3">
+                <p class="text-sm font-medium text-ink">
+                  {{ entry.fromStage?.name || "Criação" }} →
+                  {{ entry.toStage.name }}
+                </p>
+                <p class="mt-1 text-xs text-muted">
+                  {{ entry.changedByUser.name }} ·
+                  {{ formatDateTime(entry.changedAt) }}
+                </p>
+              </li>
+            } @empty {
+              <li class="text-sm text-muted">Sem histórico.</li>
+            }
+          </ol>
+        </article>
+      </section>
+
+      <section class="rounded-xl border border-border bg-card shadow-card">
+        <header
+          class="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <h2 class="font-semibold text-ink">Atividades comerciais</h2>
+            <p class="mt-1 text-sm text-muted">
+              {{ activities().pagination.total }} registro(s)
+            </p>
+          </div>
+          @if (canWrite) {
+            <button
+              type="button"
+              (click)="activityOpen.set(true)"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+            >
+              <lucide-icon [img]="PlusIcon" [size]="17"></lucide-icon>Registrar
+              atividade
+            </button>
+          }
+        </header>
+        <div class="divide-y divide-border">
+          @for (activity of activities().data; track activity.id) {
+            <article
+              class="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between"
+            >
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span
+                    class="rounded-full bg-surface-warm px-2.5 py-1 text-xs font-semibold text-ink"
+                    >{{ activityLabel(activity.type) }}</span
+                  ><span class="text-xs text-muted">{{
+                    formatDateTime(
+                      activity.completedAt ||
+                        activity.scheduledAt ||
+                        activity.createdAt
+                    )
+                  }}</span>
+                </div>
+                <p class="mt-2 text-sm font-medium text-ink">
+                  {{ activity.summary || "Sem resumo" }}
+                </p>
+                @if (activity.notes) {
+                  <p class="mt-1 whitespace-pre-wrap text-sm text-muted">
+                    {{ activity.notes }}
+                  </p>
+                }
+                <p class="mt-2 text-xs text-muted">
+                  Responsável:
+                  {{ activity.assignedUser?.name || "Não definido" }}
+                </p>
+              </div>
+              @if (canWrite) {
+                <button
+                  type="button"
+                  (click)="removeActivity(activity)"
+                  [disabled]="!!deletingActivityId()"
+                  class="self-start rounded-lg p-2 text-red-700 hover:bg-red-50"
+                  aria-label="Excluir atividade"
+                >
+                  <lucide-icon [img]="TrashIcon" [size]="16"></lucide-icon>
+                </button>
+              }
+            </article>
+          } @empty {
+            <p class="p-6 text-center text-sm text-muted">
+              Nenhuma atividade registrada.
+            </p>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>
+
+@if (editing() && opportunity(); as item) {
+  <app-opportunity-form-modal
+    [opportunity]="item"
+    [pipelines]="pipelines()"
+    [people]="people()"
+    [users]="users()"
+    [developments]="developments()"
+    [units]="units()"
+    (developmentChanged)="loadUnits($event)"
+    (closed)="editing.set(false)"
+    (saved)="onEdited()"
+  />
+}
+
+@if (activityOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+    role="presentation"
+    (click)="activityOpen.set(false)"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="activityOpen.set(false)"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="activity-title"
+      class="w-full max-w-xl rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="activity-title" class="text-lg font-semibold text-ink">
+        Registrar atividade
+      </h2>
+      <form class="mt-4 space-y-4" (ngSubmit)="createActivity()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Tipo *<select
+              data-dialog-initial-focus
+              name="activityType"
+              [(ngModel)]="activityType"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              @for (type of activityTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink"
+            >Responsável<select
+              name="activityOwner"
+              [(ngModel)]="activityAssignedUserId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Sem responsável</option>
+              @for (user of users(); track user.id) {
+                <option [value]="user.id">{{ user.name }}</option>
+              }
+            </select></label
+          >
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Agendada para<input
+              name="scheduled"
+              [(ngModel)]="activityScheduledAt"
+              type="datetime-local"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+          ><label class="text-sm font-medium text-ink"
+            >Concluída em<input
+              name="completed"
+              [(ngModel)]="activityCompletedAt"
+              type="datetime-local"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          /></label>
+        </div>
+        <label class="block text-sm font-medium text-ink"
+          >Resumo<input
+            name="summary"
+            [(ngModel)]="activitySummary"
+            maxlength="300"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+        ><label class="block text-sm font-medium text-ink"
+          >Notas<textarea
+            name="activityNotes"
+            [(ngModel)]="activityNotes"
+            maxlength="4000"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="activityOpen.set(false)"
+            [disabled]="savingActivity()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="savingActivity()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ savingActivity() ? "Salvando..." : "Registrar" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (moveOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="moveOpen.set(false)"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="moveOpen.set(false)"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-move-title"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="detail-move-title" class="text-lg font-semibold text-ink">
+        Mover oportunidade
+      </h2>
+      <label class="mt-4 block text-sm font-medium text-ink"
+        >Nova etapa<select
+          data-dialog-initial-focus
+          [ngModel]="selectedStageId()"
+          (ngModelChange)="selectedStageId.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          @for (stage of currentPipeline?.stages ?? []; track stage.id) {
+            <option [value]="stage.id">{{ stage.name }}</option>
+          }
+        </select></label
+      >
+      @if (selectedStage?.isLost) {
+        <label class="mt-4 block text-sm font-medium text-ink"
+          >Motivo da perda *<textarea
+            [ngModel]="lostReason()"
+            (ngModelChange)="lostReason.set($event)"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+      }
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="moveOpen.set(false)"
+          [disabled]="moving()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm"
+        >
+          Cancelar</button
+        ><button
+          type="button"
+          (click)="confirmMove()"
+          [disabled]="
+            moving() ||
+            selectedStageId() === opportunity()?.stageId ||
+            (!!selectedStage?.isLost && !lostReason().trim())
+          "
+          class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {{ moving() ? "Movendo..." : "Confirmar" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (deleteOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="deleteOpen.set(false)"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="deleteOpen.set(false)"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-opportunity-title"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="delete-opportunity-title" class="text-lg font-semibold text-ink">
+        Excluir oportunidade?
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        O histórico comercial e as atividades vinculadas também serão removidos.
+        A auditoria da exclusão permanecerá.
+      </p>
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="deleteOpen.set(false)"
+          [disabled]="deletingOpportunity()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm"
+        >
+          Cancelar</button
+        ><button
+          type="button"
+          (click)="confirmDelete()"
+          [disabled]="deletingOpportunity()"
+          class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {{ deletingOpportunity() ? "Excluindo..." : "Excluir" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

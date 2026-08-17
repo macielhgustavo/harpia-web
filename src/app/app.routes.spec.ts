@@ -68,6 +68,19 @@ describe('Rota de interações', () => {
   });
 });
 
+describe('Rotas do CRM', () => {
+  it('protege lista e detalhe por CRM_READ e carrega ambos de forma lazy', () => {
+    const crm = routes.find((item) => item.path === 'crm');
+    const detail = routes.find((item) => item.path === 'crm/opportunities/:id');
+    for (const route of [crm, detail]) {
+      expect(route?.canActivate).toContain(authGuard);
+      expect(route?.canActivate).toContain(permissionGuard);
+      expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.CRM_READ);
+      expect(route?.loadComponent).toBeDefined();
+    }
+  });
+});
+
 describe('Rota de contas bancárias', () => {
   it('substitui o placeholder por página lazy protegida', () => {
     const route = routes.find((item) => item.path === 'bank-accounts');

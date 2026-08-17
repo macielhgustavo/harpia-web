@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-08-16 — CRM comercial e funil de oportunidades:** adicionadas as rotas protegidas `/crm` e `/crm/opportunities/:id`, com visão em funil ou lista, busca, filtros e paginação do servidor. O fluxo registra e edita oportunidades vinculadas a pessoas, responsáveis, empreendimentos e unidades; movimenta etapas com confirmação e motivo de perda; exibe valor, probabilidade, próximo contato, histórico comercial e atividades. As ações respeitam `CRM_WRITE`, a navegação respeita `CRM_READ`, estados vazios/erros/retry são responsivos e os diálogos preservam navegação por teclado.
+
 - **2026-08-16 — Relatórios financeiros:** adicionada a área protegida por `REPORTS_EXPORT` para captação, retornos, retornos em atraso e posição por investidor, com filtros reais de período, referência, investidor, empreendimento e status; exportação autenticada em PDF/XLSX por `Blob`, feedback de processamento e preservação do nome do arquivo.
 
 - **2026-08-16 — Dashboard por perfil:** substituído o placeholder por uma visão real da organização, restrita a `DASHBOARD_READ`, com atenção imediata a retornos vencidos, captação, alocação, caixa geral, investidores, retornos, portfólio de empreendimentos e unidades, captação por empreendimento e últimas interações com próximos passos.

@@ -95,6 +95,7 @@ export const ROLE_PERMISSIONS = {
     APP_PERMISSIONS.DOCUMENTS_WRITE,
     APP_PERMISSIONS.INTERACTIONS_READ,
     APP_PERMISSIONS.INTERACTIONS_WRITE,
+    APP_PERMISSIONS.CRM_READ,
   ],
   LEITURA: [
     APP_PERMISSIONS.PEOPLE_READ,
@@ -104,6 +105,7 @@ export const ROLE_PERMISSIONS = {
     APP_PERMISSIONS.PRICES_READ,
     APP_PERMISSIONS.DOCUMENTS_READ,
     APP_PERMISSIONS.INTERACTIONS_READ,
+    APP_PERMISSIONS.CRM_READ,
   ],
 } as const satisfies Readonly<Record<UserRole, readonly AppPermission[]>>;
 
@@ -115,6 +117,7 @@ export interface PermissionRoute {
 /** Ordered fallbacks used after login and when a role cannot see Dashboard. */
 export const PERMISSION_ROUTES = [
   { route: '/dashboard', permission: APP_PERMISSIONS.DASHBOARD_READ },
+  { route: '/crm', permission: APP_PERMISSIONS.CRM_READ },
   { route: '/people', permission: APP_PERMISSIONS.PEOPLE_READ },
   { route: '/developments', permission: APP_PERMISSIONS.DEVELOPMENTS_READ },
   { route: '/companies', permission: APP_PERMISSIONS.COMPANIES_READ },
