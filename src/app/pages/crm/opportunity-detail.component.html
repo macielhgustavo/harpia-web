@@ -193,6 +193,14 @@
         (changed)="onReservationChanged($event)"
       />
 
+      <app-proposals-section
+        [developmentId]="item.developmentId || ''"
+        [opportunityId]="item.id"
+        [personId]="item.personId"
+        [unitId]="item.unitId || ''"
+        (changed)="onProposalChanged($event)"
+      />
+
       <section class="rounded-xl border border-border bg-card shadow-card">
         <header
           class="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between"

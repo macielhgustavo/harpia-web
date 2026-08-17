@@ -1,0 +1,638 @@
+@if (canRead) {
+  <section class="rounded-xl border border-border bg-card shadow-card">
+    <header
+      class="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <h2 class="font-semibold text-ink">Propostas comerciais</h2>
+        <p class="mt-1 text-sm text-muted">
+          {{ proposals().length }} proposta(s), com histórico imutável de
+          versões
+        </p>
+      </div>
+      @if (canWrite) {
+        <button
+          type="button"
+          (click)="openCreate()"
+          [disabled]="loading()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          <lucide-icon [img]="PlusIcon" [size]="17"></lucide-icon>Nova proposta
+        </button>
+      }
+    </header>
+
+    @if (feedback()) {
+      <p
+        class="mx-5 mt-4 rounded-lg border border-primary bg-surface px-3 py-2 text-sm text-primary"
+        role="status"
+      >
+        {{ feedback() }}
+      </p>
+    }
+    @if (loading()) {
+      <p class="p-6 text-center text-sm text-muted">Carregando propostas...</p>
+    } @else if (error()) {
+      <div class="p-5 text-center">
+        <p class="text-sm text-red-800" role="alert">{{ error() }}</p>
+        <button
+          type="button"
+          (click)="load()"
+          class="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+        >
+          <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>Tentar
+          novamente
+        </button>
+      </div>
+    } @else {
+      <div class="space-y-4 p-5">
+        @for (proposal of proposals(); track proposal.id) {
+          <article class="rounded-xl border border-border bg-surface p-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="font-semibold text-ink">
+                    Unidade {{ proposal.unit.identifier }}
+                  </h3>
+                  <span
+                    class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                    [ngClass]="statusClass(proposal.status)"
+                    >{{ statusLabel(proposal.status) }}</span
+                  >
+                </div>
+                <p class="mt-1 text-sm text-muted">
+                  {{ proposal.unit.development.name }} · versão
+                  {{ proposal.currentVersion?.version || 0 }} ·
+                  {{ formatDate(proposal.validUntil) }}
+                </p>
+              </div>
+              @if (proposal.currentVersion; as current) {
+                <div class="sm:text-right">
+                  <p class="text-xs uppercase text-muted">Valor final</p>
+                  <p class="text-lg font-bold text-primary">
+                    {{ formatMoney(current.finalPrice) }}
+                  </p>
+                  @if (hasDiscount(current.discount)) {
+                    <p class="text-xs text-muted">
+                      desconto de {{ formatMoney(current.discount) }}
+                    </p>
+                  }
+                </div>
+              }
+            </div>
+
+            @if (proposal.rejectionReason) {
+              <p
+                class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                Motivo da recusa: {{ proposal.rejectionReason }}
+              </p>
+            }
+
+            <details class="mt-4 border-t border-border pt-3">
+              <summary class="cursor-pointer text-sm font-medium text-primary">
+                Ver histórico de {{ proposal.versions.length }} versão(ões)
+              </summary>
+              <ol class="mt-3 space-y-3">
+                @for (
+                  version of proposal.versions;
+                  track version.id;
+                  let index = $index
+                ) {
+                  <li class="rounded-lg border border-border bg-card p-3">
+                    <div class="flex flex-wrap justify-between gap-2">
+                      <div>
+                        <p class="text-sm font-semibold text-ink">
+                          Versão {{ version.version }} ·
+                          {{ formatMoney(version.finalPrice) }}
+                        </p>
+                        <p class="mt-0.5 text-xs text-muted">
+                          {{
+                            difference(version, proposal.versions[index + 1])
+                          }}
+                        </p>
+                      </div>
+                      <p class="text-xs text-muted">
+                        {{ formatDate(version.createdAt) }} ·
+                        {{ version.createdByUser.name }}
+                      </p>
+                    </div>
+                    <dl
+                      class="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3"
+                    >
+                      <div>
+                        <dt class="text-muted">Preço base congelado</dt>
+                        <dd class="font-medium text-ink">
+                          {{ formatMoney(version.basePrice) }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt class="text-muted">Entrada</dt>
+                        <dd class="font-medium text-ink">
+                          {{ formatMoney(version.downPayment) }}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt class="text-muted">Tabela de origem</dt>
+                        <dd class="font-medium text-ink">
+                          {{ version.sourcePriceTableName || "Não informada" }}
+                        </dd>
+                      </div>
+                    </dl>
+                    @if (version.notes) {
+                      <p class="mt-2 whitespace-pre-wrap text-xs text-muted">
+                        {{ version.notes }}
+                      </p>
+                    }
+                  </li>
+                }
+              </ol>
+            </details>
+
+            @if (canWrite) {
+              <div
+                class="mt-4 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:flex-wrap sm:justify-end"
+              >
+                @if (
+                  proposal.status === "RASCUNHO" ||
+                  proposal.status === "EM_NEGOCIACAO" ||
+                  proposal.status === "ENVIADA"
+                ) {
+                  <button
+                    type="button"
+                    (click)="openVersion(proposal)"
+                    [disabled]="!!actionId()"
+                    class="rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink disabled:opacity-60"
+                  >
+                    Nova versão
+                  </button>
+                }
+                @if (
+                  proposal.status === "RASCUNHO" ||
+                  proposal.status === "EM_NEGOCIACAO"
+                ) {
+                  <button
+                    type="button"
+                    (click)="send(proposal)"
+                    [disabled]="!!actionId()"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary disabled:opacity-60"
+                  >
+                    <lucide-icon [img]="SendIcon" [size]="15"></lucide-icon
+                    >Enviar
+                  </button>
+                }
+                @if (
+                  proposal.status === "ENVIADA" ||
+                  proposal.status === "EM_NEGOCIACAO"
+                ) {
+                  <button
+                    type="button"
+                    (click)="openReject(proposal)"
+                    [disabled]="!!actionId()"
+                    class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 disabled:opacity-60"
+                  >
+                    Recusar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="requestAccept(proposal)"
+                    [disabled]="!!actionId()"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    <lucide-icon [img]="AcceptIcon" [size]="15"></lucide-icon
+                    >Aceitar proposta
+                  </button>
+                }
+              </div>
+            }
+          </article>
+        } @empty {
+          <div class="p-6 text-center">
+            <p class="text-sm font-medium text-ink">
+              Nenhuma proposta registrada.
+            </p>
+            <p class="mt-1 text-sm text-muted">
+              @if (canWrite) {
+                Crie a primeira proposta com preço e condições versionados.
+              } @else {
+                As propostas desta oportunidade aparecerão aqui.
+              }
+            </p>
+          </div>
+        }
+      </div>
+    }
+  </section>
+}
+
+@if (wizardOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+    role="presentation"
+    (click)="closeWizard()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeWizard()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="proposal-wizard-title"
+      class="my-auto w-full max-w-3xl rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="proposal-wizard-title" class="text-lg font-semibold text-ink">
+            {{ versionTarget() ? "Nova versão" : "Nova proposta" }}
+          </h2>
+          <p class="mt-1 text-sm text-muted">Etapa {{ step() }} de 4</p>
+        </div>
+        <button
+          type="button"
+          (click)="closeWizard()"
+          [disabled]="saving()"
+          aria-label="Fechar formulário"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      <ol class="mt-5 grid grid-cols-4 gap-2" aria-label="Etapas da proposta">
+        @for (
+          label of ["Unidade", "Valores", "Pagamento", "Resumo"];
+          track label;
+          let index = $index
+        ) {
+          <li
+            class="rounded-lg px-2 py-2 text-center text-xs font-medium"
+            [ngClass]="
+              index + 1 <= step()
+                ? 'bg-primary text-white'
+                : 'bg-surface-warm text-muted'
+            "
+          >
+            {{ index + 1 }}. <span class="hidden sm:inline">{{ label }}</span>
+          </li>
+        }
+      </ol>
+
+      <form class="mt-5" (ngSubmit)="save()">
+        @if (step() === 1) {
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-ink">Unidade e preço base</h3>
+              <p class="mt-1 text-sm text-muted">
+                O preço da tabela ativa será congelado nesta versão.
+              </p>
+            </div>
+            <label class="block text-sm font-medium text-ink">
+              Unidade *
+              <select
+                data-dialog-initial-focus
+                required
+                name="proposalUnit"
+                [(ngModel)]="formUnitId"
+                (ngModelChange)="loadPrice()"
+                [disabled]="
+                  !!versionTarget() || !!formReservationId || saving()
+                "
+                class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+              >
+                <option value="">Selecione</option>
+                @for (unit of availableUnits(); track unit.id) {
+                  <option [value]="unit.id">
+                    Unidade {{ unit.identifier }}
+                  </option>
+                }
+              </select>
+            </label>
+            @if (priceLoading()) {
+              <p class="text-sm text-muted">Consultando tabela ativa...</p>
+            } @else if (priceError()) {
+              <p role="alert" class="text-sm text-red-800">
+                {{ priceError() }}
+              </p>
+            } @else if (formUnitId) {
+              <div class="rounded-xl border border-border bg-surface p-4">
+                <p class="text-xs uppercase text-muted">Preço base</p>
+                <p class="mt-1 text-xl font-bold text-primary">
+                  {{ formatMoney(basePrice()) }}
+                </p>
+                <p class="mt-1 text-xs text-muted">{{ priceTableName() }}</p>
+              </div>
+            }
+          </div>
+        } @else if (step() === 2) {
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-ink">Desconto e valor final</h3>
+              <p class="mt-1 text-sm text-muted">
+                Informe o desconto total concedido nesta versão.
+              </p>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="rounded-xl border border-border bg-surface p-4">
+                <p class="text-xs uppercase text-muted">Preço base</p>
+                <p class="mt-1 font-semibold text-ink">
+                  {{ formatMoney(basePrice()) }}
+                </p>
+              </div>
+              <label class="text-sm font-medium text-ink">
+                Desconto
+                <input
+                  inputmode="decimal"
+                  name="proposalDiscount"
+                  [(ngModel)]="discount"
+                  [disabled]="saving()"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+            </div>
+            <div class="rounded-xl bg-primary p-4 text-white">
+              <p class="text-xs uppercase text-white/70">Valor final</p>
+              <p class="mt-1 text-2xl font-bold">
+                {{ formatMoney(finalPrice()) }}
+              </p>
+            </div>
+          </div>
+        } @else if (step() === 3) {
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-ink">Condições de pagamento</h3>
+              <p class="mt-1 text-sm text-muted">
+                Distribua integralmente {{ formatMoney(finalPrice()) }}.
+              </p>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label class="text-sm font-medium text-ink">
+                Entrada
+                <input
+                  inputmode="decimal"
+                  name="proposalEntry"
+                  [(ngModel)]="entryAmount"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+              <label class="text-sm font-medium text-ink">
+                Total parcelado
+                <input
+                  inputmode="decimal"
+                  name="proposalInstallmentAmount"
+                  [(ngModel)]="installmentAmount"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+              <label class="text-sm font-medium text-ink">
+                Número de parcelas
+                <input
+                  type="number"
+                  min="1"
+                  name="proposalInstallments"
+                  [(ngModel)]="installments"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+              <label class="text-sm font-medium text-ink">
+                Primeira parcela
+                <input
+                  type="date"
+                  name="proposalFirstDueDate"
+                  [(ngModel)]="firstDueDate"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+              <label class="text-sm font-medium text-ink sm:col-span-2">
+                Saldo nas chaves
+                <input
+                  inputmode="decimal"
+                  name="proposalBalance"
+                  [(ngModel)]="balanceAmount"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+            </div>
+            <div
+              class="flex flex-col gap-1 rounded-lg px-3 py-2 text-sm sm:flex-row sm:justify-between"
+              [ngClass]="
+                cents(paymentTotal()) === cents(finalPrice())
+                  ? 'bg-emerald-50 text-emerald-800'
+                  : 'bg-red-50 text-red-800'
+              "
+            >
+              <span>Distribuído: {{ formatMoney(paymentTotal()) }}</span>
+              <span>Final: {{ formatMoney(finalPrice()) }}</span>
+            </div>
+          </div>
+        } @else {
+          <div class="space-y-4">
+            <div>
+              <h3 class="font-semibold text-ink">Validade e resumo</h3>
+              <p class="mt-1 text-sm text-muted">
+                Revise antes de salvar. A venda não será criada nesta etapa.
+              </p>
+            </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label class="text-sm font-medium text-ink">
+                Válida até
+                <input
+                  type="date"
+                  name="proposalValidUntil"
+                  [(ngModel)]="validUntil"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
+              </label>
+              <div class="rounded-xl border border-border bg-surface p-4">
+                <p class="text-xs uppercase text-muted">Valor final</p>
+                <p class="mt-1 text-xl font-bold text-primary">
+                  {{ formatMoney(finalPrice()) }}
+                </p>
+              </div>
+            </div>
+            <label class="block text-sm font-medium text-ink">
+              Observações
+              <textarea
+                name="proposalNotes"
+                [(ngModel)]="notes"
+                maxlength="4000"
+                rows="4"
+                class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+              ></textarea>
+            </label>
+            <div
+              class="rounded-xl border border-gold bg-gold-light/40 p-4 text-sm text-ink"
+            >
+              <p><strong>Unidade:</strong> {{ formUnitId }}</p>
+              <p class="mt-1">
+                <strong>Preço base:</strong> {{ formatMoney(basePrice()) }}
+              </p>
+              <p class="mt-1">
+                <strong>Desconto:</strong> {{ formatMoney(apiMoney(discount)) }}
+              </p>
+              <p class="mt-1">
+                <strong>Pagamento:</strong>
+                {{ formatMoney(paymentTotal()) }} distribuídos
+              </p>
+            </div>
+          </div>
+        }
+
+        @if (formError()) {
+          <p
+            class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            role="alert"
+          >
+            {{ formError() }}
+          </p>
+        }
+        <div
+          class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between"
+        >
+          <button
+            type="button"
+            (click)="step() === 1 ? closeWizard() : previousStep()"
+            [disabled]="saving()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+          >
+            @if (step() > 1) {
+              <lucide-icon [img]="PreviousIcon" [size]="16"></lucide-icon>
+            }
+            {{ step() === 1 ? "Cancelar" : "Voltar" }}
+          </button>
+          @if (step() < 4) {
+            <button
+              type="button"
+              (click)="nextStep()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+            >
+              Continuar<lucide-icon [img]="NextIcon" [size]="16"></lucide-icon>
+            </button>
+          } @else {
+            <button
+              type="submit"
+              [disabled]="saving()"
+              class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+            >
+              {{
+                saving()
+                  ? "Salvando..."
+                  : versionTarget()
+                    ? "Criar versão"
+                    : "Criar proposta"
+              }}
+            </button>
+          }
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (acceptTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeAccept()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeAccept()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="proposal-accept-title"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="proposal-accept-title" class="text-lg font-semibold text-ink">
+        Aceitar proposta
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        A proposta da unidade {{ target.unit.identifier }} será aceita, a
+        reserva será convertida e a oportunidade avançará para ganho. A venda
+        ainda não será criada.
+      </p>
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          data-dialog-initial-focus
+          (click)="closeAccept()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm"
+        >
+          Voltar
+        </button>
+        <button
+          type="button"
+          (click)="confirmAccept()"
+          class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+        >
+          Confirmar aceite
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (rejectTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeReject()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeReject()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="proposal-reject-title"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="proposal-reject-title" class="text-lg font-semibold text-ink">
+        Recusar proposta
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        Registre o motivo da recusa da proposta da unidade
+        {{ target.unit.identifier }}.
+      </p>
+      <label class="mt-4 block text-sm font-medium text-ink">
+        Motivo *
+        <textarea
+          data-dialog-initial-focus
+          required
+          [ngModel]="rejectionReason()"
+          (ngModelChange)="rejectionReason.set($event)"
+          [disabled]="rejecting()"
+          maxlength="1000"
+          rows="4"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        ></textarea>
+      </label>
+      @if (formError()) {
+        <p
+          class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ formError() }}
+        </p>
+      }
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeReject()"
+          [disabled]="rejecting()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm"
+        >
+          Voltar
+        </button>
+        <button
+          type="button"
+          (click)="confirmReject()"
+          [disabled]="rejecting()"
+          class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {{ rejecting() ? "Recusando..." : "Confirmar recusa" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

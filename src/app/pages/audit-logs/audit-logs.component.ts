@@ -79,6 +79,12 @@ export class AuditLogsComponent implements OnInit {
     'UNIT_RESERVATION_CANCELLED',
     'UNIT_RESERVATION_EXPIRED',
     'UNIT_RESERVATION_CONVERTED',
+    'PROPOSAL_CREATED',
+    'PROPOSAL_VERSION_CREATED',
+    'PROPOSAL_SENT',
+    'PROPOSAL_ACCEPTED',
+    'PROPOSAL_REJECTED',
+    'PROPOSAL_EXPIRED',
   ] as const;
 
   readonly knownEntityTypes = [
@@ -101,6 +107,8 @@ export class AuditLogsComponent implements OnInit {
     'OPPORTUNITY',
     'SALES_ACTIVITY',
     'UNIT_RESERVATION',
+    'SALES_PROPOSAL',
+    'PROPOSAL_VERSION',
   ] as const;
 
   private readonly dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {

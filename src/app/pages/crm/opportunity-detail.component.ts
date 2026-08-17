@@ -35,6 +35,7 @@ import { DialogFocusDirective } from '../../shared/directives/dialog-focus.direc
 import { extractError } from '../../shared/utils/http-error';
 import { OpportunityFormModalComponent } from './opportunity-form-modal.component';
 import { ReservationsSectionComponent } from '../reservations/reservations-section.component';
+import { ProposalsSectionComponent } from '../proposals/proposals-section.component';
 
 const EMPTY_ACTIVITIES: SalesActivityPage = {
   data: [],
@@ -52,6 +53,7 @@ const EMPTY_ACTIVITIES: SalesActivityPage = {
     DialogFocusDirective,
     OpportunityFormModalComponent,
     ReservationsSectionComponent,
+    ProposalsSectionComponent,
   ],
   templateUrl: './opportunity-detail.component.html',
 })
@@ -218,6 +220,10 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
     this.feedback.set(message);
     const developmentId = this.opportunity()?.developmentId;
     if (developmentId) this.loadUnits(developmentId);
+  }
+
+  onProposalChanged(message: string): void {
+    this.refreshCommercialData(message);
   }
 
   openMove(): void {
