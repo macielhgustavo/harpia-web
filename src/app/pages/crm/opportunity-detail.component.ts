@@ -34,6 +34,7 @@ import { UserManagementService } from '../../core/services/user-management.servi
 import { DialogFocusDirective } from '../../shared/directives/dialog-focus.directive';
 import { extractError } from '../../shared/utils/http-error';
 import { OpportunityFormModalComponent } from './opportunity-form-modal.component';
+import { ReservationsSectionComponent } from '../reservations/reservations-section.component';
 
 const EMPTY_ACTIVITIES: SalesActivityPage = {
   data: [],
@@ -50,6 +51,7 @@ const EMPTY_ACTIVITIES: SalesActivityPage = {
     LucideAngularModule,
     DialogFocusDirective,
     OpportunityFormModalComponent,
+    ReservationsSectionComponent,
   ],
   templateUrl: './opportunity-detail.component.html',
 })
@@ -210,6 +212,12 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
   onEdited(): void {
     this.editing.set(false);
     this.refreshCommercialData('Oportunidade atualizada com sucesso.');
+  }
+
+  onReservationChanged(message: string): void {
+    this.feedback.set(message);
+    const developmentId = this.opportunity()?.developmentId;
+    if (developmentId) this.loadUnits(developmentId);
   }
 
   openMove(): void {

@@ -6,9 +6,12 @@ import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { DevelopmentDetail } from '../../core/models/development.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { CompanyService } from '../../core/services/company.service';
+import { CrmService } from '../../core/services/crm.service';
 import { DevelopmentService } from '../../core/services/development.service';
 import { DocumentService } from '../../core/services/document.service';
 import { PriceTableService } from '../../core/services/price-table.service';
+import { PersonService } from '../../core/services/person.service';
+import { ReservationService } from '../../core/services/reservation.service';
 import { UnitTypeService } from '../../core/services/unit-type.service';
 import { UnitService } from '../../core/services/unit.service';
 import {
@@ -83,6 +86,28 @@ class DocumentServiceMock {
   readonly list = jasmine.createSpy().and.returnValue(of([]));
 }
 
+class ReservationServiceMock {
+  readonly list = jasmine.createSpy().and.returnValue(
+    of({
+      data: [],
+      pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 },
+    }),
+  );
+}
+
+class PersonServiceMock {
+  readonly list = jasmine.createSpy().and.returnValue(of([]));
+}
+
+class CrmServiceMock {
+  readonly listOpportunities = jasmine.createSpy().and.returnValue(
+    of({
+      data: [],
+      pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 },
+    }),
+  );
+}
+
 class AuthorizationServiceMock {
   readonly hasPermission = jasmine.createSpy().and.returnValue(true);
 }
@@ -106,6 +131,9 @@ describe('DevelopmentDetailComponent', () => {
         { provide: UnitService, useClass: UnitServiceMock },
         { provide: PriceTableService, useClass: PriceTableServiceMock },
         { provide: DocumentService, useClass: DocumentServiceMock },
+        { provide: ReservationService, useClass: ReservationServiceMock },
+        { provide: PersonService, useClass: PersonServiceMock },
+        { provide: CrmService, useClass: CrmServiceMock },
         { provide: AuthorizationService, useClass: AuthorizationServiceMock },
         provideRouter([]),
         {

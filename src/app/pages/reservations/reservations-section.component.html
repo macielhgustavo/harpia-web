@@ -1,0 +1,345 @@
+@if (canRead) {
+  <section class="rounded-xl border border-border bg-card shadow-card">
+    <header
+      class="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <h2 class="font-semibold text-ink">Reservas de unidades</h2>
+        <p class="mt-1 text-sm text-muted">
+          {{ page().pagination.total }} reserva(s) neste contexto
+        </p>
+      </div>
+      @if (canWrite) {
+        <button
+          type="button"
+          (click)="openCreate()"
+          [disabled]="loading()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          <lucide-icon [img]="PlusIcon" [size]="17"></lucide-icon>Reservar
+          unidade
+        </button>
+      }
+    </header>
+
+    @if (feedback()) {
+      <p
+        class="mx-5 mt-4 rounded-lg border border-primary bg-surface px-3 py-2 text-sm text-primary"
+        role="status"
+      >
+        {{ feedback() }}
+      </p>
+    }
+    @if (loading()) {
+      <p class="p-6 text-center text-sm text-muted">Carregando reservas...</p>
+    } @else if (error()) {
+      <div class="p-5 text-center">
+        <p class="text-sm text-red-800" role="alert">{{ error() }}</p>
+        <button
+          type="button"
+          (click)="load()"
+          class="mt-3 inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+        >
+          <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>Tentar
+          novamente
+        </button>
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 gap-4 p-5 lg:grid-cols-2">
+        @for (reservation of page().data; track reservation.id) {
+          <article class="rounded-xl border border-border bg-surface p-4">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p class="font-semibold text-ink">
+                  Unidade {{ reservation.unit.identifier }}
+                </p>
+                <p class="mt-0.5 text-sm text-muted">
+                  {{ reservation.unit.development.name }}
+                </p>
+              </div>
+              <span
+                class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                [ngClass]="statusClass(reservation.status)"
+                >{{ statusLabel(reservation.status) }}</span
+              >
+            </div>
+            <dl class="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt class="text-xs uppercase text-muted">Cliente</dt>
+                <dd class="mt-1 font-medium text-ink">
+                  {{ reservation.person.name }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase text-muted">Responsável</dt>
+                <dd class="mt-1 text-ink">
+                  {{ reservation.createdByUser.name }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase text-muted">Validade</dt>
+                <dd class="mt-1 text-ink">
+                  {{ formatDateTime(reservation.expiresAt) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs uppercase text-muted">Prazo</dt>
+                <dd class="mt-1 inline-flex items-center gap-1.5 text-ink">
+                  <lucide-icon [img]="ClockIcon" [size]="14"></lucide-icon>
+                  {{ remaining(reservation) }}
+                </dd>
+              </div>
+              <div class="sm:col-span-2">
+                <dt class="text-xs uppercase text-muted">Oportunidade</dt>
+                <dd class="mt-1 text-ink">
+                  @if (reservation.opportunity) {
+                    {{ reservation.opportunity.stage.name }} ·
+                    {{ reservation.opportunity.source || "Sem origem" }}
+                  } @else {
+                    Não vinculada
+                  }
+                </dd>
+              </div>
+            </dl>
+            @if (reservation.notes) {
+              <p class="mt-3 whitespace-pre-wrap text-sm text-muted">
+                {{ reservation.notes }}
+              </p>
+            }
+            @if (reservation.status === "CANCELADA") {
+              <p
+                class="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"
+              >
+                Motivo: {{ reservation.cancellationReason }}
+              </p>
+            }
+            @if (canWrite && reservation.status === "ATIVA") {
+              <div class="mt-4 border-t border-border pt-3 text-right">
+                <button
+                  type="button"
+                  (click)="requestCancel(reservation)"
+                  class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
+                >
+                  Cancelar reserva
+                </button>
+              </div>
+            }
+          </article>
+        } @empty {
+          <div class="p-6 text-center lg:col-span-2">
+            <p class="text-sm font-medium text-ink">
+              Nenhuma reserva registrada.
+            </p>
+            <p class="mt-1 text-sm text-muted">
+              @if (canWrite) {
+                Reserve uma unidade disponível para um cliente.
+              } @else {
+                As reservas aparecerão aqui quando forem registradas.
+              }
+            </p>
+          </div>
+        }
+      </div>
+    }
+  </section>
+}
+
+@if (createOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+    role="presentation"
+    (click)="closeCreate()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeCreate()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reservation-create-title"
+      class="w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2
+            id="reservation-create-title"
+            class="text-lg font-semibold text-ink"
+          >
+            Reservar unidade
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            A unidade ficará indisponível até o cancelamento, conversão ou
+            expiração.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeCreate()"
+          [disabled]="saving()"
+          aria-label="Fechar formulário"
+          class="rounded-lg p-2 text-muted hover:bg-surface-warm"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="save()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Unidade *<select
+              data-dialog-initial-focus
+              required
+              name="reservationUnit"
+              [(ngModel)]="formUnitId"
+              [disabled]="!!unitId || saving()"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Selecione</option>
+              @for (unit of availableUnits(); track unit.id) {
+                <option [value]="unit.id">Unidade {{ unit.identifier }}</option>
+              }
+              @if (unitId && availableUnits().length === 0) {
+                <option [value]="unitId">Unidade vinculada</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink"
+            >Cliente *<select
+              required
+              name="reservationPerson"
+              [(ngModel)]="formPersonId"
+              [disabled]="!!personId || saving()"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Selecione</option>
+              @for (person of people(); track person.id) {
+                <option [value]="person.id">{{ person.name }}</option>
+              }
+            </select></label
+          >
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Oportunidade<select
+              name="reservationOpportunity"
+              [(ngModel)]="formOpportunityId"
+              [disabled]="!!opportunityId || saving()"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Sem vínculo</option>
+              @for (opportunity of opportunities(); track opportunity.id) {
+                <option [value]="opportunity.id">
+                  {{ opportunity.person.name }} · {{ opportunity.stage.name }}
+                </option>
+              }
+              @if (opportunityId) {
+                <option [value]="opportunityId">Oportunidade atual</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink"
+            >Válida até *<input
+              required
+              type="datetime-local"
+              name="reservationExpiresAt"
+              [(ngModel)]="formExpiresAt"
+              [disabled]="saving()"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          /></label>
+        </div>
+        <label class="block text-sm font-medium text-ink"
+          >Observações<textarea
+            name="reservationNotes"
+            [(ngModel)]="formNotes"
+            [disabled]="saving()"
+            maxlength="1000"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        @if (formError()) {
+          <p
+            class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            role="alert"
+          >
+            {{ formError() }}
+          </p>
+        }
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeCreate()"
+            [disabled]="saving()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="saving()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ saving() ? "Reservando..." : "Confirmar reserva" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (cancelTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeCancel()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeCancel()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reservation-cancel-title"
+      class="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="reservation-cancel-title" class="text-lg font-semibold text-ink">
+        Cancelar reserva
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        A unidade {{ target.unit.identifier }} voltará a ficar disponível.
+      </p>
+      <label class="mt-4 block text-sm font-medium text-ink"
+        >Motivo *<textarea
+          data-dialog-initial-focus
+          required
+          [(ngModel)]="cancellationReason"
+          [disabled]="cancelling()"
+          maxlength="500"
+          rows="3"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        ></textarea>
+      </label>
+      @if (cancelError()) {
+        <p
+          class="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          role="alert"
+        >
+          {{ cancelError() }}
+        </p>
+      }
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeCancel()"
+          [disabled]="cancelling()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm"
+        >
+          Voltar</button
+        ><button
+          type="button"
+          (click)="confirmCancel()"
+          [disabled]="cancelling()"
+          class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {{ cancelling() ? "Cancelando..." : "Cancelar reserva" }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

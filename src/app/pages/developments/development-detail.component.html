@@ -226,6 +226,11 @@
         (changed)="onUnitsChanged($event)"
       />
 
+      <app-reservations-section
+        [developmentId]="development.id"
+        (changed)="onUnitsChanged($event)"
+      />
+
       <app-price-tables-section
         [developmentId]="development.id"
         (changed)="onPriceTablesChanged($event)"

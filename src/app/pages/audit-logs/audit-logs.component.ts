@@ -75,6 +75,10 @@ export class AuditLogsComponent implements OnInit {
     'SALES_ACTIVITY_CREATED',
     'SALES_ACTIVITY_UPDATED',
     'SALES_ACTIVITY_DELETED',
+    'UNIT_RESERVED',
+    'UNIT_RESERVATION_CANCELLED',
+    'UNIT_RESERVATION_EXPIRED',
+    'UNIT_RESERVATION_CONVERTED',
   ] as const;
 
   readonly knownEntityTypes = [
@@ -96,6 +100,7 @@ export class AuditLogsComponent implements OnInit {
     'SALES_PIPELINE',
     'OPPORTUNITY',
     'SALES_ACTIVITY',
+    'UNIT_RESERVATION',
   ] as const;
 
   private readonly dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {

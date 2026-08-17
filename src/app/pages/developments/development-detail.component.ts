@@ -32,6 +32,7 @@ import {
 } from '../../shared/utils/development';
 import { extractError } from '../../shared/utils/http-error';
 import { DocumentsSectionComponent } from '../documents/documents-section.component';
+import { ReservationsSectionComponent } from '../reservations/reservations-section.component';
 import { DevelopmentFormModalComponent } from './development-form-modal.component';
 import { PriceTablesSectionComponent } from './price-tables-section.component';
 import { UnitTypesSectionComponent } from './unit-types-section.component';
@@ -49,6 +50,7 @@ import { UnitsSectionComponent } from './units-section.component';
     PriceTablesSectionComponent,
     UnitTypesSectionComponent,
     UnitsSectionComponent,
+    ReservationsSectionComponent,
   ],
   templateUrl: './development-detail.component.html',
 })
