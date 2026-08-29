@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   Building2,
+  CircleDollarSign,
   Coins,
   Columns3,
   FileSpreadsheet,
@@ -116,6 +117,7 @@ export class SidebarComponent {
     UserCog,
     UserPlus,
     ScrollText,
+    CircleDollarSign,
   };
 
   iconOf(name: string): LucideIconData {

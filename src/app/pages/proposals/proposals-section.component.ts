@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import {
   Check,
   ChevronLeft,
@@ -34,6 +35,7 @@ import {
   SalesProposalStatus,
 } from '../../core/models/proposal.model';
 import { UnitReservation } from '../../core/models/reservation.model';
+import { SaleDetail } from '../../core/models/sale.model';
 import { UnitListItem } from '../../core/models/unit.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { ProposalService } from '../../core/services/proposal.service';
@@ -41,6 +43,7 @@ import { ReservationService } from '../../core/services/reservation.service';
 import { UnitService } from '../../core/services/unit.service';
 import { DialogFocusDirective } from '../../shared/directives/dialog-focus.directive';
 import { extractError } from '../../shared/utils/http-error';
+import { SaleConversionModalComponent } from './sale-conversion-modal.component';
 
 const STATUS_LABELS: Record<SalesProposalStatus, string> = {
   RASCUNHO: 'Rascunho',
@@ -60,6 +63,8 @@ const STATUS_LABELS: Record<SalesProposalStatus, string> = {
     FormsModule,
     LucideAngularModule,
     DialogFocusDirective,
+    SaleConversionModalComponent,
+    RouterLink,
   ],
   templateUrl: './proposals-section.component.html',
 })
@@ -68,6 +73,7 @@ export class ProposalsSectionComponent implements OnChanges, OnDestroy {
   private readonly reservationsService = inject(ReservationService);
   private readonly unitsService = inject(UnitService);
   private readonly authorization = inject(AuthorizationService);
+  private readonly router = inject(Router);
   private loadSequence = 0;
   private priceSequence = 0;
 
@@ -100,6 +106,7 @@ export class ProposalsSectionComponent implements OnChanges, OnDestroy {
   readonly versionTarget = signal<SalesProposal | null>(null);
   readonly rejectTarget = signal<SalesProposal | null>(null);
   readonly acceptTarget = signal<SalesProposal | null>(null);
+  readonly conversionTarget = signal<SalesProposal | null>(null);
   readonly rejectionReason = signal('');
   readonly rejecting = signal(false);
   readonly actionId = signal('');
@@ -331,6 +338,30 @@ export class ProposalsSectionComponent implements OnChanges, OnDestroy {
     if (!target) return;
     this.acceptTarget.set(null);
     this.accept(target);
+  }
+
+  openConversion(proposal: SalesProposal): void {
+    if (
+      !this.canWrite ||
+      proposal.status !== 'ACEITA' ||
+      proposal.sale ||
+      this.actionId()
+    ) {
+      return;
+    }
+    this.conversionTarget.set(proposal);
+  }
+
+  closeConversion(): void {
+    this.conversionTarget.set(null);
+  }
+
+  onConverted(sale: SaleDetail): void {
+    this.conversionTarget.set(null);
+    this.changed.emit('Venda formalizada com sucesso.');
+    void this.router.navigate(['/sales', sale.id], {
+      queryParams: { feedback: 'created' },
+    });
   }
 
   openReject(proposal: SalesProposal): void {

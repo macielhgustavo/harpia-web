@@ -1,0 +1,543 @@
+<div class="space-y-6">
+  <button
+    type="button"
+    (click)="back()"
+    class="inline-flex items-center gap-2 text-sm font-medium text-primary"
+  >
+    <lucide-icon [img]="BackIcon" [size]="17"></lucide-icon>Voltar para vendas
+  </button>
+  @if (feedback()) {
+    <div
+      role="status"
+      class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+    >
+      {{ feedback() }}
+    </div>
+  }
+  @if (actionError()) {
+    <div
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
+      {{ actionError() }}
+    </div>
+  }
+  @if (loading()) {
+    <div class="flex min-h-64 items-center justify-center text-sm text-muted">
+      Carregando venda...
+    </div>
+  } @else if (error()) {
+    <div
+      class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center"
+    >
+      <p role="alert" class="text-sm text-red-800">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="load()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
+  } @else {
+    @if (sale(); as item) {
+      <header
+        class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+      >
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <h1 class="text-2xl font-bold text-ink">
+              Venda {{ item.saleNumber }}
+            </h1>
+            <span
+              class="rounded-full px-2.5 py-1 text-xs font-medium"
+              [class]="statusClass(item.status)"
+              >{{ statusLabel(item.status) }}</span
+            >
+          </div>
+          <p class="mt-1 text-sm text-muted">
+            Formalizada em {{ formatDate(item.saleDate) }} por
+            {{ item.createdByUser.name }}
+          </p>
+        </div>
+        @if (canWrite) {
+          <button
+            type="button"
+            (click)="openEdit()"
+            class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary"
+          >
+            <lucide-icon [img]="EditIcon" [size]="17"></lucide-icon>Editar dados
+          </button>
+        }
+      </header>
+
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Valor bruto</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(item.grossAmount) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Desconto</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(item.discountAmount) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Valor líquido</p>
+          <p class="mt-2 text-xl font-bold text-primary">
+            {{ formatCurrency(item.netAmount) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Saldo contratual</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ formatCurrency(item.outstandingBalance) }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            Sem baixa de recebíveis nesta fase.
+          </p>
+        </article>
+      </section>
+
+      <section class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card xl:col-span-2"
+        >
+          <h2 class="font-semibold text-ink">Imóvel e origem comercial</h2>
+          <dl class="mt-4 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt class="text-muted">Empreendimento</dt>
+              <dd class="mt-1 font-medium text-ink">
+                {{ item.development.name }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">Unidade</dt>
+              <dd class="mt-1 font-medium text-ink">
+                {{ item.unit.grouping ? item.unit.grouping + " · " : ""
+                }}{{ item.unit.identifier }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">Proposta de origem</dt>
+              <dd class="mt-1">
+                @if (item.proposalId) {
+                  <span class="font-medium text-ink">{{
+                    item.proposalId
+                  }}</span>
+                } @else {
+                  <span class="text-muted">Não vinculada</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">Oportunidade</dt>
+              <dd class="mt-1">
+                @if (item.opportunity) {
+                  <a
+                    [routerLink]="['/crm/opportunities', item.opportunity.id]"
+                    class="font-medium text-primary"
+                    >{{ item.opportunity.stage.name }}</a
+                  >
+                } @else {
+                  <span class="text-muted">Venda direta</span>
+                }
+              </dd>
+            </div>
+          </dl>
+          @if (item.notes) {
+            <div class="mt-4 border-t border-border pt-4">
+              <p class="text-xs uppercase text-muted">Observações</p>
+              <p class="mt-1 whitespace-pre-wrap text-sm text-ink">
+                {{ item.notes }}
+              </p>
+            </div>
+          }
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card"
+        >
+          <h2 class="font-semibold text-ink">Compradores</h2>
+          <div class="mt-4 space-y-3">
+            @for (buyer of item.buyers; track buyer.id) {
+              <div class="rounded-lg bg-surface-warm p-3">
+                <div class="flex items-start justify-between gap-2">
+                  <a
+                    [routerLink]="['/people', buyer.person.id]"
+                    class="font-medium text-primary"
+                    >{{ buyer.person.name }}</a
+                  >
+                  @if (buyer.isPrimary) {
+                    <span
+                      class="rounded-full bg-gold-light px-2 py-0.5 text-xs text-gold-dark"
+                      >Principal</span
+                    >
+                  }
+                </div>
+                <p class="mt-1 text-xs text-muted">
+                  {{
+                    buyer.person.document ||
+                      buyer.person.email ||
+                      "Sem documento informado"
+                  }}
+                </p>
+                @if (buyer.participationPercentage) {
+                  <p class="mt-1 text-xs font-medium text-ink">
+                    {{ buyer.participationPercentage }}% de participação
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        </article>
+      </section>
+
+      <section class="rounded-xl border border-border bg-card shadow-card">
+        <div class="border-b border-border px-5 py-4">
+          <h2 class="font-semibold text-ink">Plano de pagamento contratado</h2>
+          <p class="mt-1 text-sm text-muted">
+            Cópia imutável das condições da proposta aceita.
+          </p>
+        </div>
+        <div class="divide-y divide-border">
+          @for (condition of item.paymentPlan; track condition.id) {
+            <div
+              class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+            >
+              <div>
+                <p class="font-medium text-ink">
+                  {{ conditionLabel(condition.type) }}
+                </p>
+                <p class="mt-1 text-sm text-muted">
+                  @if (condition.installments) {
+                    {{ condition.installments }} parcela(s)
+                  }
+                  @if (condition.firstDueDate) {
+                    · primeira em {{ formatDate(condition.firstDueDate) }}
+                  }
+                  {{ condition.description }}
+                </p>
+              </div>
+              <p class="font-semibold text-ink">
+                {{ formatCurrency(condition.amount) }}
+              </p>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section class="rounded-xl border border-border bg-card shadow-card">
+        <div
+          class="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <h2 class="font-semibold text-ink">Comissões</h2>
+            <p class="mt-1 text-sm text-muted">
+              Estrutura inicial; pagamento e automações entram em fases
+              financeiras posteriores.
+            </p>
+          </div>
+          @if (canWrite && item.status === "ATIVA") {
+            <button
+              type="button"
+              (click)="openCommission()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary"
+            >
+              <lucide-icon [img]="AddIcon" [size]="16"></lucide-icon>Adicionar
+              comissão
+            </button>
+          }
+        </div>
+        @if (item.commissions.length === 0) {
+          <p class="p-5 text-sm text-muted">Nenhuma comissão registrada.</p>
+        } @else {
+          <div class="divide-y divide-border">
+            @for (commission of item.commissions; track commission.id) {
+              <div
+                class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-3 sm:items-center"
+              >
+                <div>
+                  <p class="font-medium text-ink">
+                    {{ beneficiaryName(commission.person, commission.user) }}
+                  </p>
+                  <p class="text-xs text-muted">
+                    {{ commission.person ? "Pessoa" : "Usuário interno" }}
+                  </p>
+                </div>
+                <div>
+                  <p class="font-medium text-ink">
+                    {{ formatCurrency(commission.amount) }}
+                  </p>
+                  <p class="text-xs text-muted">
+                    {{
+                      commission.percentage
+                        ? commission.percentage + "%"
+                        : "Sem percentual"
+                    }}
+                  </p>
+                </div>
+                <span
+                  class="w-fit rounded-full bg-surface-warm px-2 py-1 text-xs font-medium text-ink"
+                  >{{ commissionLabel(commission.status) }}</span
+                >
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <article class="rounded-xl border border-border bg-card shadow-card">
+          <div class="border-b border-border px-5 py-4">
+            <h2 class="font-semibold text-ink">Documentos relacionados</h2>
+            <p class="mt-1 text-sm text-muted">
+              Documentos da unidade, empreendimento e compradores.
+            </p>
+          </div>
+          @if (item.documents.length === 0) {
+            <p class="p-5 text-sm text-muted">Nenhum documento relacionado.</p>
+          } @else {
+            <div class="divide-y divide-border">
+              @for (document of item.documents; track document.id) {
+                <div class="flex items-center justify-between gap-3 px-5 py-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <lucide-icon
+                      [img]="DocumentIcon"
+                      [size]="19"
+                      class="shrink-0 text-primary"
+                    ></lucide-icon>
+                    <div class="min-w-0">
+                      <p class="truncate text-sm font-medium text-ink">
+                        {{ document.name }}
+                      </p>
+                      <p class="text-xs text-muted">
+                        {{ document.category }} ·
+                        {{ formatSize(document.size) }}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    (click)="download(document)"
+                    [disabled]="!!downloadingId()"
+                    [attr.aria-label]="'Baixar ' + document.name"
+                    class="rounded-lg border border-border p-2 text-primary disabled:opacity-50"
+                  >
+                    <lucide-icon [img]="DownloadIcon" [size]="16"></lucide-icon>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </article>
+        <article class="rounded-xl border border-border bg-card shadow-card">
+          <div class="border-b border-border px-5 py-4">
+            <h2 class="font-semibold text-ink">Histórico de auditoria</h2>
+            <p class="mt-1 text-sm text-muted">Últimos eventos desta venda.</p>
+          </div>
+          @if (item.audit.length === 0) {
+            <p class="p-5 text-sm text-muted">Nenhum evento encontrado.</p>
+          } @else {
+            <ol class="divide-y divide-border">
+              @for (event of item.audit; track event.id) {
+                <li class="px-5 py-3">
+                  <p class="text-sm font-medium text-ink">
+                    {{ auditLabel(event.action) }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted">
+                    {{ formatDate(event.createdAt) }} ·
+                    {{ event.actor?.name || "Sistema" }}
+                  </p>
+                </li>
+              }
+            </ol>
+          }
+        </article>
+      </section>
+    }
+  }
+</div>
+
+@if (editOpen() && sale(); as item) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeEdit()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeEdit()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sale-edit-title"
+      class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <h2 id="sale-edit-title" class="text-lg font-semibold text-ink">
+          Editar dados da venda
+        </h2>
+        <button
+          type="button"
+          (click)="closeEdit()"
+          aria-label="Fechar"
+          class="rounded-lg p-2 text-muted"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="saveEdit()">
+        <label class="block text-sm font-medium text-ink"
+          >Número *<input
+            data-dialog-initial-focus
+            required
+            name="editSaleNumber"
+            [(ngModel)]="editSaleNumber"
+            maxlength="50"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+        ><label class="block text-sm font-medium text-ink"
+          >Data *<input
+            type="date"
+            required
+            name="editSaleDate"
+            [(ngModel)]="editSaleDate"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+        ><label class="block text-sm font-medium text-ink"
+          >Observações<textarea
+            name="editNotes"
+            [(ngModel)]="editNotes"
+            maxlength="4000"
+            rows="4"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeEdit()"
+            [disabled]="saving()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="saving()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ saving() ? "Salvando..." : "Salvar" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (commissionOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="closeCommission()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeCommission()"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="commission-create-title"
+      class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2
+            id="commission-create-title"
+            class="text-lg font-semibold text-ink"
+          >
+            Adicionar comissão
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            Registre o beneficiário e o valor previsto.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeCommission()"
+          aria-label="Fechar"
+          class="rounded-lg p-2 text-muted"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="saveCommission()">
+        <label class="block text-sm font-medium text-ink"
+          >Beneficiário *<select
+            data-dialog-initial-focus
+            required
+            name="commissionPerson"
+            [(ngModel)]="commissionPersonId"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          >
+            <option value="">Selecione</option>
+            @for (person of people(); track person.id) {
+              <option [value]="person.id">{{ person.name }}</option>
+            }
+          </select></label
+        >
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Valor *<input
+              required
+              inputmode="decimal"
+              name="commissionAmount"
+              [(ngModel)]="commissionAmount"
+              placeholder="0,00"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+          ><label class="text-sm font-medium text-ink"
+            >Percentual<input
+              inputmode="decimal"
+              name="commissionPercentage"
+              [(ngModel)]="commissionPercentage"
+              placeholder="Opcional"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          /></label>
+        </div>
+        <label class="block text-sm font-medium text-ink"
+          >Observações<textarea
+            name="commissionNotes"
+            [(ngModel)]="commissionNotes"
+            maxlength="1000"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeCommission()"
+            [disabled]="saving()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="saving()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ saving() ? "Adicionando..." : "Adicionar" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

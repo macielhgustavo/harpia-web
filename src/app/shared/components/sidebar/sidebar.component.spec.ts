@@ -51,6 +51,7 @@ describe('SidebarComponent', () => {
       APP_PERMISSIONS.REPORTS_EXPORT,
       APP_PERMISSIONS.USERS_MANAGE,
       APP_PERMISSIONS.AUDIT_READ,
+      APP_PERMISSIONS.SALES_READ,
     ]);
 
     const text = fixture.nativeElement.textContent as string;
@@ -60,6 +61,7 @@ describe('SidebarComponent', () => {
     expect(text).toContain('Auditoria');
     expect(text).toContain('Gestão');
     expect(text).toContain('Relatórios');
+    expect(text).toContain('Vendas');
     expect(
       fixture.componentInstance.navigation
         .find((group) => group.label === 'Gestão')

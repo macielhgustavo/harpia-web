@@ -55,6 +55,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'MessageSquare',
         permission: APP_PERMISSIONS.INTERACTIONS_READ,
       },
+      {
+        label: 'Vendas',
+        route: '/sales',
+        icon: 'CircleDollarSign',
+        permission: APP_PERMISSIONS.SALES_READ,
+      },
     ],
   },
   {

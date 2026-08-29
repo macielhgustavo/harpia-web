@@ -50,6 +50,7 @@ export interface SalesProposal {
   acceptedAt: string | null;
   rejectedAt: string | null;
   rejectionReason: string | null;
+  convertedToSaleAt: string | null;
   createdAt: string;
   updatedAt: string;
   person: {
@@ -73,6 +74,7 @@ export interface SalesProposal {
   sentByUser: { id: string; name: string } | null;
   acceptedByUser: { id: string; name: string } | null;
   rejectedByUser: { id: string; name: string } | null;
+  sale: { id: string; saleNumber: string; status: string } | null;
   currentVersion: ProposalVersion | null;
   versions: ProposalVersion[];
 }

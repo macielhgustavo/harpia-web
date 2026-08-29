@@ -85,6 +85,11 @@ export class AuditLogsComponent implements OnInit {
     'PROPOSAL_ACCEPTED',
     'PROPOSAL_REJECTED',
     'PROPOSAL_EXPIRED',
+    'SALE_CREATED',
+    'SALE_UPDATED',
+    'SALE_BUYER_ADDED',
+    'SALE_COMMISSION_CREATED',
+    'PROPOSAL_CONVERTED_TO_SALE',
   ] as const;
 
   readonly knownEntityTypes = [

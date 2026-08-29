@@ -203,6 +203,24 @@
                     >Aceitar proposta
                   </button>
                 }
+                @if (proposal.status === "ACEITA" && !proposal.sale) {
+                  <button
+                    type="button"
+                    (click)="openConversion(proposal)"
+                    [disabled]="!!actionId()"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+                  >
+                    Formalizar venda
+                  </button>
+                }
+                @if (proposal.sale) {
+                  <a
+                    [routerLink]="['/sales', proposal.sale.id]"
+                    class="inline-flex items-center justify-center rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary"
+                  >
+                    Ver venda {{ proposal.sale.saleNumber }}
+                  </a>
+                }
               </div>
             }
           </article>
@@ -223,6 +241,14 @@
       </div>
     }
   </section>
+}
+
+@if (conversionTarget(); as proposal) {
+  <app-sale-conversion-modal
+    [proposal]="proposal"
+    (closed)="closeConversion()"
+    (converted)="onConverted($event)"
+  />
 }
 
 @if (wizardOpen()) {

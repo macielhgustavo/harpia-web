@@ -9,6 +9,7 @@ describe('Rota inicial', () => {
     const route = routes.find((item) => item.path === '');
 
     expect(route?.canActivate).toContain(homeRedirectGuard);
+    expect(route?.children).toEqual([]);
     expect(route?.component).toBeUndefined();
     expect(route?.loadComponent).toBeUndefined();
   });
@@ -76,6 +77,19 @@ describe('Rotas do CRM', () => {
       expect(route?.canActivate).toContain(authGuard);
       expect(route?.canActivate).toContain(permissionGuard);
       expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.CRM_READ);
+      expect(route?.loadComponent).toBeDefined();
+    }
+  });
+});
+
+describe('Rotas de vendas', () => {
+  it('protege lista e detalhe por SALES_READ e carrega ambos de forma lazy', () => {
+    const list = routes.find((item) => item.path === 'sales');
+    const detail = routes.find((item) => item.path === 'sales/:id');
+    for (const route of [list, detail]) {
+      expect(route?.canActivate).toContain(authGuard);
+      expect(route?.canActivate).toContain(permissionGuard);
+      expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.SALES_READ);
       expect(route?.loadComponent).toBeDefined();
     }
   });

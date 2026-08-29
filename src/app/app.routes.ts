@@ -9,6 +9,7 @@ export const routes: Routes = [
     path: '',
     pathMatch: 'full',
     canActivate: [homeRedirectGuard],
+    children: [],
   },
   {
     path: 'login',
@@ -138,6 +139,22 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/returns/returns.component').then(
         (m) => m.ReturnsComponent,
+      ),
+  },
+  {
+    path: 'sales',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.SALES_READ },
+    loadComponent: () =>
+      import('./pages/sales/sales.component').then((m) => m.SalesComponent),
+  },
+  {
+    path: 'sales/:id',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.SALES_READ },
+    loadComponent: () =>
+      import('./pages/sales/sale-detail.component').then(
+        (m) => m.SaleDetailComponent,
       ),
   },
   {

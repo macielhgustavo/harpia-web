@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ProposalPage, SalesProposal } from '../../core/models/proposal.model';
 import { ReservationPage } from '../../core/models/reservation.model';
@@ -136,6 +137,7 @@ describe('ProposalsSectionComponent', () => {
         { provide: ReservationService, useValue: reservations },
         { provide: UnitService, useValue: units },
         { provide: AuthorizationService, useValue: authorization },
+        provideRouter([]),
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(ProposalsSectionComponent);

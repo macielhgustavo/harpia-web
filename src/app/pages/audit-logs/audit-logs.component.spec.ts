@@ -57,6 +57,8 @@ describe('AuditLogsComponent', () => {
     );
     expect(component.knownActions).toContain('USER_ACTIVATED');
     expect(component.knownActions).toContain('USER_DEACTIVATED');
+    expect(component.knownActions).toContain('SALE_CREATED');
+    expect(component.knownActions).toContain('SALE_COMMISSION_CREATED');
     expect(component.knownEntityTypes).toContain('UNIT_TYPE');
   });
 
