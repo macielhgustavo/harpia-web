@@ -1,0 +1,271 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Financeiro</h1>
+      <p class="mt-1 max-w-3xl text-sm text-muted">
+        Caixa realizado, compromissos e projeção financeira por entidade.
+      </p>
+    </div>
+    <label class="text-sm font-medium text-ink">
+      Posição
+      <select
+        [ngModel]="companyId()"
+        (ngModelChange)="companyId.set($event); load()"
+        class="ml-2 rounded-lg border border-border bg-card px-3 py-2.5"
+      >
+        <option value="">Consolidado</option>
+        @for (company of companies(); track company.id) {
+          <option [value]="company.id">{{ company.name }}</option>
+        }
+      </select>
+    </label>
+  </header>
+
+  @if (loading()) {
+    <div class="flex min-h-64 items-center justify-center text-sm text-muted">
+      Consolidando posição financeira...
+    </div>
+  } @else if (error()) {
+    <div
+      class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center"
+    >
+      <p class="text-sm text-red-800" role="alert">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="load()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
+  } @else {
+    <section
+      class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5"
+      aria-label="Indicadores financeiros"
+    >
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-muted">Saldo realizado</p>
+          <lucide-icon
+            [img]="BalanceIcon"
+            [size]="18"
+            class="text-primary"
+          ></lucide-icon>
+        </div>
+        <p
+          class="mt-2 text-xl font-bold"
+          [class]="projectionClass(summary().cashBalance)"
+        >
+          {{ formatCurrency(summary().cashBalance) }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-muted">A receber</p>
+          <lucide-icon
+            [img]="ReceivableIcon"
+            [size]="18"
+            class="text-emerald-700"
+          ></lucide-icon>
+        </div>
+        <p class="mt-2 text-xl font-bold text-ink">
+          {{ formatCurrency(summary().receivablesPending) }}
+        </p>
+        <p class="mt-1 text-xs text-red-700">
+          {{ formatCurrency(summary().receivablesOverdue) }} em atraso
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-muted">A pagar</p>
+          <lucide-icon
+            [img]="PayableIcon"
+            [size]="18"
+            class="text-red-700"
+          ></lucide-icon>
+        </div>
+        <p class="mt-2 text-xl font-bold text-ink">
+          {{ formatCurrency(summary().payablesPending) }}
+        </p>
+        <p class="mt-1 text-xs text-red-700">
+          {{ formatCurrency(summary().payablesOverdue) }} em atraso
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Entradas em 30 dias</p>
+        <p class="mt-2 text-xl font-bold text-emerald-800">
+          {{ formatCurrency(summary().expectedInflows30d) }}
+        </p>
+        <p class="mt-1 text-xs text-muted">
+          Saídas: {{ formatCurrency(summary().expectedOutflows30d) }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <div class="flex items-center justify-between">
+          <p class="text-sm text-muted">Projeção 30 dias</p>
+          <lucide-icon [img]="ProjectionIcon" [size]="18"></lucide-icon>
+        </div>
+        <p
+          class="mt-2 text-xl font-bold"
+          [class]="projectionClass(summary().projected30d)"
+        >
+          {{ formatCurrency(summary().projected30d) }}
+        </p>
+      </article>
+    </section>
+
+    <section class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+      <article
+        class="rounded-xl border border-border bg-card shadow-card xl:col-span-2"
+      >
+        <div
+          class="flex items-center justify-between border-b border-border px-5 py-4"
+        >
+          <div>
+            <h2 class="font-semibold text-ink">Fluxo projetado · 30 dias</h2>
+            <p class="mt-1 text-sm text-muted">
+              Entradas e saídas agrupadas por semana.
+            </p>
+          </div>
+          <a
+            routerLink="/finance/cash-flow"
+            class="text-sm font-medium text-primary"
+            >Ver fluxo completo</a
+          >
+        </div>
+        @if (!flow()?.data?.length) {
+          <p class="p-5 text-sm text-muted">
+            Sem movimentos projetados no período.
+          </p>
+        } @else {
+          <div class="divide-y divide-border">
+            @for (row of flow()?.data; track row.date) {
+              <div
+                class="grid grid-cols-[90px_minmax(0,1fr)] gap-4 px-5 py-3 sm:grid-cols-[100px_minmax(0,1fr)_140px] sm:items-center"
+              >
+                <p class="text-sm font-medium text-ink">
+                  {{ formatDate(row.date) }}
+                </p>
+                <div class="space-y-1.5">
+                  <div class="h-2 rounded-full bg-surface">
+                    <div
+                      class="h-2 rounded-full bg-emerald-500"
+                      [style.width.%]="barWidth(row.inflows, row.outflows)"
+                    ></div>
+                  </div>
+                  <div class="h-2 rounded-full bg-surface">
+                    <div
+                      class="h-2 rounded-full bg-red-400"
+                      [style.width.%]="barWidth(row.outflows, row.inflows)"
+                    ></div>
+                  </div>
+                </div>
+                <div
+                  class="col-span-2 flex gap-3 text-xs sm:col-span-1 sm:block sm:text-right"
+                >
+                  <p class="text-emerald-800">
+                    + {{ formatCurrency(row.inflows) }}
+                  </p>
+                  <p class="text-red-700">
+                    − {{ formatCurrency(row.outflows) }}
+                  </p>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="rounded-xl border border-border bg-card shadow-card">
+        <div class="border-b border-border px-5 py-4">
+          <h2 class="font-semibold text-ink">Próximos vencimentos</h2>
+        </div>
+        @if (summary().upcoming.length === 0) {
+          <p class="p-5 text-sm text-muted">Nenhum vencimento próximo.</p>
+        } @else {
+          <div class="divide-y divide-border">
+            @for (item of summary().upcoming; track item.kind + item.id) {
+              <a
+                [routerLink]="
+                  item.kind === 'RECEIVABLE'
+                    ? '/finance/receivables'
+                    : '/finance/payables'
+                "
+                class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-warm"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-ink">
+                    {{ item.counterparty || item.description }}
+                  </p>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ formatDate(item.dueDate) }} ·
+                    {{ item.kind === "RECEIVABLE" ? "Entrada" : "Saída" }}
+                  </p>
+                </div>
+                <p
+                  class="shrink-0 text-sm font-semibold"
+                  [class.text-emerald-800]="item.kind === 'RECEIVABLE'"
+                  [class.text-red-700]="item.kind === 'PAYABLE'"
+                >
+                  {{ formatCurrency(item.amount) }}
+                </p>
+              </a>
+            }
+          </div>
+        }
+      </article>
+    </section>
+
+    <section class="rounded-xl border border-border bg-card shadow-card">
+      <div class="border-b border-border px-5 py-4">
+        <h2 class="font-semibold text-ink">Posição por empresa / SPE</h2>
+        <p class="mt-1 text-sm text-muted">
+          Valores futuros não são misturados silenciosamente.
+        </p>
+      </div>
+      @if (summary().positionByCompany.length === 0) {
+        <p class="p-5 text-sm text-muted">Nenhuma empresa cadastrada.</p>
+      } @else {
+        <div
+          class="grid grid-cols-1 divide-y divide-border md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-3"
+        >
+          @for (company of summary().positionByCompany; track company.id) {
+            <article class="p-5">
+              <div class="flex items-center gap-2">
+                <lucide-icon
+                  [img]="CompanyIcon"
+                  [size]="17"
+                  class="text-primary"
+                ></lucide-icon>
+                <h3 class="font-semibold text-ink">{{ company.name }}</h3>
+              </div>
+              <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <dt class="text-xs text-muted">A receber</dt>
+                  <dd class="mt-1 text-emerald-800">
+                    {{ formatCurrency(company.receivables) }}
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs text-muted">A pagar</dt>
+                  <dd class="mt-1 text-red-700">
+                    {{ formatCurrency(company.payables) }}
+                  </dd>
+                </div>
+              </dl>
+              <p
+                class="mt-4 border-t border-border pt-3 text-sm font-semibold"
+                [class]="projectionClass(company.projectedPosition)"
+              >
+                Posição {{ formatCurrency(company.projectedPosition) }}
+              </p>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</div>

@@ -259,7 +259,7 @@
               </td>
               <td class="px-4 py-3">
                 <div class="flex justify-end gap-1">
-                  @if (canWrite && item.status !== "PAGO") {
+                  @if (canFinanceWrite && item.status !== "PAGO") {
                     <button
                       type="button"
                       (click)="openPayment(item)"
@@ -367,14 +367,14 @@
             <div
               class="mt-4 flex flex-col gap-2 border-t border-border pt-3 sm:flex-row"
             >
-              @if (item.status !== "PAGO") {
+              @if (canFinanceWrite && item.status !== "PAGO") {
                 <button
                   type="button"
                   (click)="openPayment(item)"
                   class="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white"
                 >
-                  <lucide-icon [img]="PaidIcon" [size]="16"></lucide-icon>Marcar
-                  como pago
+                  <lucide-icon [img]="PaidIcon" [size]="16"></lucide-icon>Pagar
+                  no financeiro como pago
                 </button>
               }
               <button

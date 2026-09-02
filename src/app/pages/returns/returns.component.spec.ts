@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { AllocationListItem } from '../../core/models/allocation.model';
@@ -18,6 +18,7 @@ describe('ReturnsComponent', () => {
   let allocationService: jasmine.SpyObj<AllocationService>;
   let investmentService: jasmine.SpyObj<InvestmentService>;
   let authorization: jasmine.SpyObj<AuthorizationService>;
+  let router: Router;
 
   const pending: ReturnListItem = {
     id: 'return-1',
@@ -130,6 +131,8 @@ describe('ReturnsComponent', () => {
         provideRouter([]),
       ],
     });
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate').and.resolveTo(true);
   });
 
   function render(): void {
@@ -162,11 +165,11 @@ describe('ReturnsComponent', () => {
   it('abre a ação principal de pagamento apenas para não pagos', () => {
     render();
     component.openPayment(pending);
-    expect(component.formMode()).toBe('pay');
-    expect(component.formOpen()).toBeTrue();
-    component.closeForm();
+    expect(router.navigate).toHaveBeenCalledOnceWith(['/finance/payables'], {
+      queryParams: { search: 'Ana Investidora' },
+    });
     component.openPayment(paid);
-    expect(component.formOpen()).toBeFalse();
+    expect(router.navigate).toHaveBeenCalledTimes(1);
   });
 
   it('oculta e bloqueia mutações sem RETURNS_WRITE', () => {

@@ -119,6 +119,7 @@ export const PERMISSION_ROUTES = [
   { route: '/dashboard', permission: APP_PERMISSIONS.DASHBOARD_READ },
   { route: '/crm', permission: APP_PERMISSIONS.CRM_READ },
   { route: '/sales', permission: APP_PERMISSIONS.SALES_READ },
+  { route: '/finance', permission: APP_PERMISSIONS.FINANCE_READ },
   { route: '/people', permission: APP_PERMISSIONS.PEOPLE_READ },
   { route: '/developments', permission: APP_PERMISSIONS.DEVELOPMENTS_READ },
   { route: '/companies', permission: APP_PERMISSIONS.COMPANIES_READ },

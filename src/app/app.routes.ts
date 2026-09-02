@@ -158,6 +158,43 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'finance',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/finance-dashboard.component').then(
+        (m) => m.FinanceDashboardComponent,
+      ),
+  },
+  {
+    path: 'finance/receivables',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/receivables/receivables.component').then(
+        (m) => m.ReceivablesComponent,
+      ),
+  },
+  {
+    path: 'finance/payables',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/payables.component').then(
+        (m) => m.PayablesComponent,
+      ),
+  },
+  {
+    path: 'finance/cash-flow',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/cash-flow.component').then(
+        (m) => m.CashFlowComponent,
+      ),
+  },
+  { path: 'receivables', redirectTo: 'finance/receivables', pathMatch: 'full' },
+  {
     path: 'reports',
     canActivate: [authGuard, permissionGuard],
     data: { permission: APP_PERMISSIONS.REPORTS_EXPORT },

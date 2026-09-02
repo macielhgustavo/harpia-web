@@ -86,4 +86,18 @@ describe('SidebarComponent', () => {
     expect(text).not.toContain('Auditoria');
     expect(text).not.toContain('Dashboard');
   });
+
+  it('agrupa as quatro areas financeiras para quem tem acesso', () => {
+    render([APP_PERMISSIONS.FINANCE_READ]);
+
+    const finance = fixture.componentInstance.navigation.find(
+      (group) => group.label === 'Financeiro',
+    );
+    expect(finance?.items.map((item) => item.route)).toEqual([
+      '/finance',
+      '/finance/receivables',
+      '/finance/payables',
+      '/finance/cash-flow',
+    ]);
+  });
 });

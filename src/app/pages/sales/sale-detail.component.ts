@@ -15,6 +15,7 @@ import {
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import { Person } from '../../core/models/person.model';
 import { ProposalPaymentConditionType } from '../../core/models/proposal.model';
+import { ReceivableStatus } from '../../core/models/receivable.model';
 import {
   SaleCommissionStatus,
   SaleDetail,
@@ -22,6 +23,7 @@ import {
 } from '../../core/models/sale.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { DocumentService } from '../../core/services/document.service';
+import { FinanceService } from '../../core/services/finance.service';
 import { PersonService } from '../../core/services/person.service';
 import { SaleService } from '../../core/services/sale.service';
 import { DialogFocusDirective } from '../../shared/directives/dialog-focus.directive';
@@ -63,6 +65,7 @@ export class SaleDetailComponent implements OnInit {
   private readonly salesService = inject(SaleService);
   private readonly peopleService = inject(PersonService);
   private readonly documentsService = inject(DocumentService);
+  private readonly financeService = inject(FinanceService);
   private readonly authorization = inject(AuthorizationService);
   private loadSequence = 0;
 
@@ -76,8 +79,15 @@ export class SaleDetailComponent implements OnInit {
   readonly commissionOpen = signal(false);
   readonly saving = signal(false);
   readonly downloadingId = signal('');
+  readonly markingCommissionId = signal('');
   readonly canWrite = this.authorization.hasPermission(
     APP_PERMISSIONS.SALES_WRITE,
+  );
+  readonly canFinanceRead = this.authorization.hasPermission(
+    APP_PERMISSIONS.FINANCE_READ,
+  );
+  readonly canFinanceWrite = this.authorization.hasPermission(
+    APP_PERMISSIONS.FINANCE_WRITE,
   );
 
   editSaleNumber = '';
@@ -275,8 +285,33 @@ export class SaleDetailComponent implements OnInit {
     });
   }
 
+  markCommissionDue(commissionId: string): void {
+    if (!this.canFinanceWrite || this.markingCommissionId()) return;
+    this.markingCommissionId.set(commissionId);
+    this.actionError.set('');
+    this.financeService.markCommissionDue(commissionId).subscribe({
+      next: () => {
+        this.markingCommissionId.set('');
+        this.feedback.set('Comissão enviada para contas a pagar.');
+        this.load();
+      },
+      error: (error: unknown) => {
+        this.markingCommissionId.set('');
+        this.actionError.set(
+          extractError(error, 'Não foi possível tornar a comissão devida.'),
+        );
+      },
+    });
+  }
+
   back(): void {
     void this.router.navigate(['/sales']);
+  }
+
+  openReceivable(saleId: string, receivableId?: string): void {
+    void this.router.navigate(['/finance/receivables'], {
+      queryParams: { saleId, ...(receivableId ? { receivableId } : {}) },
+    });
   }
 
   statusLabel(status: SaleStatus): string {
@@ -292,6 +327,24 @@ export class SaleDetailComponent implements OnInit {
   }
   commissionLabel(status: SaleCommissionStatus): string {
     return COMMISSION_LABELS[status];
+  }
+  receivableStatusLabel(status: ReceivableStatus): string {
+    return (
+      {
+        PENDENTE: 'Pendente',
+        PARCIAL: 'Parcial',
+        PAGO: 'Pago',
+        ATRASADO: 'Atrasado',
+        CANCELADO: 'Cancelado',
+      } as Record<ReceivableStatus, string>
+    )[status];
+  }
+  receivableStatusClass(status: ReceivableStatus): string {
+    if (status === 'PAGO') return 'bg-emerald-50 text-emerald-800';
+    if (status === 'PARCIAL') return 'bg-blue-50 text-blue-800';
+    if (status === 'ATRASADO') return 'bg-red-50 text-red-800';
+    if (status === 'CANCELADO') return 'bg-slate-100 text-slate-600';
+    return 'bg-amber-50 text-amber-800';
   }
   formatCurrency(value: string | number): string {
     return formatBrl(Number(value));
@@ -322,6 +375,10 @@ export class SaleDetailComponent implements OnInit {
           SALE_UPDATED: 'Venda atualizada',
           SALE_BUYER_ADDED: 'Comprador adicionado',
           SALE_COMMISSION_CREATED: 'Comissão criada',
+          RECEIVABLE_CREATED: 'Parcela gerada',
+          PAYMENT_RECORDED: 'Pagamento registrado',
+          PAYMENT_REVERSED: 'Pagamento estornado',
+          RECEIVABLE_CANCELLED: 'Parcela cancelada',
         } as Record<string, string>
       )[action] ?? action
     );

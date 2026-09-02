@@ -1,5 +1,13 @@
 # Progresso — Frontend Harpia
 
+- **2026-09-01 — Gestão financeira:** criado o grupo Financeiro com visão geral consolidada/por SPE, contas a receber, contas a pagar e fluxo de caixa realizado, projetado ou consolidado. A interface mostra saldo, compromissos, atrasos, projeção de 30 dias, posição por empresa e próximos vencimentos; permite contas manuais, pagamentos com conta bancária obrigatória, histórico, estorno e cancelamento, respeitando `FINANCE_READ`/`FINANCE_WRITE`. Retornos agora são pagos no financeiro e comissões previstas podem ser tornadas devidas.
+
+- **2026-09-01 — Parcelas e contas a receber:** adicionada a gestão paginada de recebíveis com indicadores, filtros por status, empresa, empreendimento, cliente, conta e período, histórico de pagamentos, baixa parcial/total, estorno e cancelamento. O detalhe da venda ganhou linha do tempo financeira e acesso direto à parcela, com estados responsivos, tratamento de concorrência e ações condicionadas às permissões financeiras.
+
+- **2026-09-01 — Vendas imobiliárias:** criadas lista e visão detalhada de vendas com compradores, imóvel, origem comercial, plano contratado, comissões, documentos e auditoria. A conversão de proposta aceita usa diálogo próprio, feedback determinístico e navegação para o contrato gerado; edição e comissões respeitam `SALES_WRITE`.
+
+- **2026-09-01 — Propostas comerciais:** implementado o ciclo completo de proposta na oportunidade, incluindo versões de preço e condições, envio, aceite, recusa, expiração e conversão em venda. A UI mantém histórico imutável, valida totais e estados, apresenta conflitos da API e protege ações por `SALES_WRITE`.
+
 - **2026-08-16 — CRM comercial e funil de oportunidades:** adicionadas as rotas protegidas `/crm` e `/crm/opportunities/:id`, com visão em funil ou lista, busca, filtros e paginação do servidor. O fluxo registra e edita oportunidades vinculadas a pessoas, responsáveis, empreendimentos e unidades; movimenta etapas com confirmação e motivo de perda; exibe valor, probabilidade, próximo contato, histórico comercial e atividades. As ações respeitam `CRM_WRITE`, a navegação respeita `CRM_READ`, estados vazios/erros/retry são responsivos e os diálogos preservam navegação por teclado.
 
 - **2026-08-16 — Relatórios financeiros:** adicionada a área protegida por `REPORTS_EXPORT` para captação, retornos, retornos em atraso e posição por investidor, com filtros reais de período, referência, investidor, empreendimento e status; exportação autenticada em PDF/XLSX por `Blob`, feedback de processamento e preservação do nome do arquivo.

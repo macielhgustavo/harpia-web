@@ -1,0 +1,799 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Contas a pagar</h1>
+      <p class="mt-1 max-w-3xl text-sm text-muted">
+        Despesas manuais e compromissos gerados por retornos e comissões.
+      </p>
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="openCreate()"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+      >
+        <lucide-icon [img]="AddIcon" [size]="17"></lucide-icon>Nova conta
+      </button>
+    }
+  </header>
+
+  @if (optionsError()) {
+    <div
+      class="flex justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+      role="alert"
+    >
+      <span>{{ optionsError() }}</span
+      ><button
+        type="button"
+        (click)="loadOptions()"
+        class="font-medium underline"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  }
+
+  <form
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    (ngSubmit)="load(1)"
+    aria-label="Filtros de contas a pagar"
+  >
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <label class="text-sm font-medium text-ink xl:col-span-2"
+        >Busca<span class="relative mt-1 block"
+          ><lucide-icon
+            [img]="SearchIcon"
+            [size]="16"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+          ></lucide-icon
+          ><input
+            type="search"
+            name="search"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            placeholder="Descrição ou destinatário"
+            class="w-full rounded-lg border border-border bg-surface py-2.5 pl-9 pr-3" /></span
+      ></label>
+      <label class="text-sm font-medium text-ink"
+        >Status<select
+          name="status"
+          [ngModel]="status()"
+          (ngModelChange)="status.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Categoria<select
+          name="category"
+          [ngModel]="categoryId()"
+          (ngModelChange)="categoryId.set($event)"
+          [disabled]="optionsLoading()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Empresa / SPE<select
+          name="company"
+          [ngModel]="companyId()"
+          (ngModelChange)="companyId.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          @for (company of companies(); track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Empreendimento<select
+          name="development"
+          [ngModel]="developmentId()"
+          (ngModelChange)="developmentId.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (development of developments(); track development.id) {
+            <option [value]="development.id">{{ development.name }}</option>
+          }
+        </select></label
+      >
+      <div class="grid grid-cols-2 gap-2">
+        <label class="text-sm font-medium text-ink"
+          >Vence de<input
+            type="date"
+            name="start"
+            [ngModel]="startDate()"
+            (ngModelChange)="startDate.set($event)"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-2.5" /></label
+        ><label class="text-sm font-medium text-ink"
+          >Até<input
+            type="date"
+            name="end"
+            [ngModel]="endDate()"
+            (ngModelChange)="endDate.set($event)"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-2.5"
+        /></label>
+      </div>
+    </div>
+    <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        (click)="clearFilters()"
+        class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+      >
+        Limpar</button
+      ><button
+        type="submit"
+        [disabled]="loading()"
+        class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+      >
+        Aplicar filtros
+      </button>
+    </div>
+  </form>
+
+  <section
+    class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+    aria-label="Lista de contas a pagar"
+  >
+    @if (loading()) {
+      <div class="flex min-h-52 items-center justify-center text-sm text-muted">
+        Carregando contas a pagar...
+      </div>
+    } @else if (error()) {
+      <div
+        class="flex min-h-52 flex-col items-center justify-center gap-3 p-6 text-center"
+      >
+        <p class="text-sm text-red-800" role="alert">{{ error() }}</p>
+        <button
+          type="button"
+          (click)="load(result().pagination.page)"
+          class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+        >
+          <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+          novamente
+        </button>
+      </div>
+    } @else if (result().data.length === 0) {
+      <div
+        class="flex min-h-52 flex-col items-center justify-center gap-2 p-6 text-center"
+      >
+        <lucide-icon
+          [img]="PayableIcon"
+          [size]="30"
+          class="text-muted"
+        ></lucide-icon>
+        <p class="font-medium text-ink">Nenhuma conta encontrada</p>
+        <p class="text-sm text-muted">
+          Retornos pendentes e comissões devidas aparecem aqui automaticamente.
+        </p>
+      </div>
+    } @else {
+      <div class="divide-y divide-border xl:hidden">
+        @for (payable of result().data; track payable.id) {
+          <article class="p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="font-semibold text-ink">{{ payable.recipient }}</p>
+                <p class="mt-1 text-sm text-muted">{{ payable.description }}</p>
+              </div>
+              <span
+                class="rounded-full px-2 py-1 text-xs font-medium"
+                [class]="statusClass(payable.status)"
+                >{{ statusLabel(payable.status) }}</span
+              >
+            </div>
+            <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt class="text-xs text-muted">Vencimento</dt>
+                <dd>{{ formatDate(payable.dueDate) }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Valor</dt>
+                <dd class="font-medium">
+                  {{ formatCurrency(payable.originalAmount) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Pago</dt>
+                <dd class="text-emerald-800">
+                  {{ formatCurrency(payable.paidAmount) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Saldo</dt>
+                <dd class="font-medium">
+                  {{ formatCurrency(payable.balance) }}
+                </dd>
+              </div>
+            </dl>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                (click)="toggleHistory(payable)"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium"
+              >
+                <lucide-icon [img]="HistoryIcon" [size]="14"></lucide-icon
+                >Histórico<lucide-icon
+                  [img]="
+                    expandedId() === payable.id ? CollapseIcon : ExpandIcon
+                  "
+                  [size]="14"
+                ></lucide-icon>
+              </button>
+              @if (
+                canWrite &&
+                payable.status !== "PAGO" &&
+                payable.status !== "CANCELADO"
+              ) {
+                <button
+                  type="button"
+                  (click)="openPayment(payable)"
+                  class="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white"
+                >
+                  Pagar
+                </button>
+              }
+              @if (canCancel(payable)) {
+                <button
+                  type="button"
+                  (click)="openCancel(payable)"
+                  class="rounded-lg px-3 py-2 text-xs font-medium text-red-700"
+                >
+                  Cancelar
+                </button>
+              }
+            </div>
+            @if (expandedId() === payable.id) {
+              <ng-container
+                [ngTemplateOutlet]="paymentHistory"
+                [ngTemplateOutletContext]="{ $implicit: payable }"
+              ></ng-container>
+            }
+          </article>
+        }
+      </div>
+      <div class="hidden overflow-x-auto xl:block">
+        <table class="w-full min-w-[1120px] text-left text-sm">
+          <thead
+            class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+          >
+            <tr>
+              <th class="px-4 py-3 font-medium">Fornecedor / destinatário</th>
+              <th class="px-4 py-3 font-medium">Categoria</th>
+              <th class="px-4 py-3 font-medium">Empresa / SPE</th>
+              <th class="px-4 py-3 font-medium">Empreendimento</th>
+              <th class="px-4 py-3 font-medium">Vencimento</th>
+              <th class="px-4 py-3 text-right font-medium">Valor</th>
+              <th class="px-4 py-3 text-right font-medium">Pago</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-4 py-3 text-right font-medium">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (payable of result().data; track payable.id) {
+              <tr class="align-top hover:bg-surface-warm">
+                <td class="px-4 py-3">
+                  <p class="font-medium text-ink">{{ payable.recipient }}</p>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ payable.description }}
+                  </p>
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ payable.category?.name || "—" }}
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ payable.company?.name || "—" }}
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ payable.development?.name || "—" }}
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ formatDate(payable.dueDate) }}
+                </td>
+                <td class="px-4 py-3 text-right font-medium text-ink">
+                  {{ formatCurrency(payable.originalAmount) }}
+                </td>
+                <td class="px-4 py-3 text-right text-emerald-800">
+                  {{ formatCurrency(payable.paidAmount) }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full px-2 py-1 text-xs font-medium"
+                    [class]="statusClass(payable.status)"
+                    >{{ statusLabel(payable.status) }}</span
+                  >
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end gap-1.5">
+                    <button
+                      type="button"
+                      (click)="toggleHistory(payable)"
+                      aria-label="Histórico"
+                      class="rounded-lg border border-border p-2 text-muted"
+                    >
+                      <lucide-icon
+                        [img]="
+                          expandedId() === payable.id
+                            ? CollapseIcon
+                            : HistoryIcon
+                        "
+                        [size]="16"
+                      ></lucide-icon>
+                    </button>
+                    @if (
+                      canWrite &&
+                      payable.status !== "PAGO" &&
+                      payable.status !== "CANCELADO"
+                    ) {
+                      <button
+                        type="button"
+                        (click)="openPayment(payable)"
+                        class="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white"
+                      >
+                        Pagar
+                      </button>
+                    }
+                    @if (canCancel(payable)) {
+                      <button
+                        type="button"
+                        (click)="openCancel(payable)"
+                        class="rounded-lg px-2 py-2 text-xs font-medium text-red-700"
+                      >
+                        Cancelar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+              @if (expandedId() === payable.id) {
+                <tr>
+                  <td colspan="9" class="bg-surface px-5 py-4">
+                    <ng-container
+                      [ngTemplateOutlet]="paymentHistory"
+                      [ngTemplateOutletContext]="{ $implicit: payable }"
+                    ></ng-container>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer
+        class="flex flex-col gap-3 border-t border-border px-4 py-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
+      >
+        <span>{{ result().pagination.total }} conta(s)</span>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="load(result().pagination.page - 1)"
+            [disabled]="result().pagination.page <= 1"
+            aria-label="Página anterior"
+            class="rounded-lg border border-border p-2 disabled:opacity-40"
+          >
+            <lucide-icon [img]="PreviousIcon" [size]="16"></lucide-icon></button
+          ><span
+            >Página {{ result().pagination.page }} de
+            {{ result().pagination.totalPages || 1 }}</span
+          ><button
+            type="button"
+            (click)="load(result().pagination.page + 1)"
+            [disabled]="
+              result().pagination.page >= result().pagination.totalPages
+            "
+            aria-label="Próxima página"
+            class="rounded-lg border border-border p-2 disabled:opacity-40"
+          >
+            <lucide-icon [img]="NextIcon" [size]="16"></lucide-icon>
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+<ng-template #paymentHistory let-payable
+  ><div class="mt-4 rounded-lg border border-border bg-surface p-3 xl:mt-0">
+    <h3 class="flex items-center gap-2 text-sm font-semibold text-ink">
+      <lucide-icon [img]="HistoryIcon" [size]="16"></lucide-icon>Histórico de
+      pagamentos
+    </h3>
+    @if (payable.payments.length === 0) {
+      <p class="mt-2 text-sm text-muted">Nenhum pagamento registrado.</p>
+    } @else {
+      <div class="mt-3 space-y-2">
+        @for (payment of payable.payments; track payment.id) {
+          <div
+            class="flex flex-col gap-2 rounded-lg bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p
+                class="text-sm font-medium"
+                [class.line-through]="payment.reversedAt"
+              >
+                {{ formatCurrency(payment.amount) }} em
+                {{ formatDate(payment.paidAt) }}
+              </p>
+              <p class="mt-0.5 text-xs text-muted">
+                {{ payment.bankAccount.bank }} ·
+                {{ payment.bankAccount.account }} ·
+                {{ payment.createdByUser.name }}
+              </p>
+              @if (payment.notes) {
+                <p class="mt-1 text-xs text-muted">{{ payment.notes }}</p>
+              }
+              @if (payment.reversedAt) {
+                <p class="mt-1 text-xs font-medium text-red-700">
+                  Estornado · {{ payment.reversalReason }}
+                </p>
+              }
+            </div>
+            @if (canWrite && !payment.reversedAt) {
+              <button
+                type="button"
+                (click)="openReversal(payable, payment)"
+                class="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-2 text-xs font-medium text-red-700"
+              >
+                <lucide-icon [img]="ReverseIcon" [size]="14"></lucide-icon
+                >Estornar
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div></ng-template
+>
+
+@if (createOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closeCreate()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeCreate()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-payable-title"
+      class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-card p-5 shadow-xl"
+    >
+      <div class="flex justify-between gap-3">
+        <div>
+          <h2 id="create-payable-title" class="text-lg font-bold text-ink">
+            Nova conta a pagar
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            Cadastre uma despesa que não veio de uma integração automática.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeCreate()"
+          aria-label="Fechar"
+          class="rounded-lg p-2 text-muted"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="saveCreate()">
+        <label class="block text-sm font-medium text-ink"
+          >Descrição *<input
+            data-dialog-initial-focus
+            required
+            name="description"
+            [(ngModel)]="description"
+            maxlength="200"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        /></label>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Vencimento *<input
+              required
+              type="date"
+              name="dueDate"
+              [(ngModel)]="dueDate"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+          ><label class="text-sm font-medium text-ink"
+            >Valor *<input
+              required
+              inputmode="decimal"
+              name="originalAmount"
+              [(ngModel)]="originalAmount"
+              placeholder="0,00"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+          ><label class="text-sm font-medium text-ink"
+            >Categoria<select
+              name="formCategory"
+              [(ngModel)]="formCategoryId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Selecione</option>
+              @for (category of categories(); track category.id) {
+                <option [value]="category.id">{{ category.name }}</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink"
+            >Fornecedor<select
+              name="formSupplier"
+              [(ngModel)]="formSupplierId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Não informado</option>
+              @for (supplier of suppliers(); track supplier.id) {
+                <option [value]="supplier.id">{{ supplier.name }}</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink"
+            >Empresa / SPE<select
+              name="formCompany"
+              [(ngModel)]="formCompanyId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Não informada</option>
+              @for (company of companies(); track company.id) {
+                <option [value]="company.id">{{ company.name }}</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink"
+            >Empreendimento<select
+              name="formDevelopment"
+              [(ngModel)]="formDevelopmentId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Não informado</option>
+              @for (development of developments(); track development.id) {
+                <option [value]="development.id">{{ development.name }}</option>
+              }
+            </select></label
+          ><label class="text-sm font-medium text-ink sm:col-span-2"
+            >Centro de custo<select
+              name="formCostCenter"
+              [(ngModel)]="formCostCenterId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Não informado</option>
+              @for (center of costCenters(); track center.id) {
+                <option [value]="center.id">{{ center.name }}</option>
+              }
+            </select></label
+          >
+        </div>
+        @if (actionError()) {
+          <p role="alert" class="text-sm text-red-700">{{ actionError() }}</p>
+        }
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeCreate()"
+            [disabled]="submitting()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ submitting() ? "Salvando..." : "Criar conta" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (paymentTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closePayment()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closePayment()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payable-payment-title"
+      class="w-full max-w-lg rounded-xl bg-card p-5 shadow-xl"
+    >
+      <h2 id="payable-payment-title" class="text-lg font-bold text-ink">
+        Registrar pagamento
+      </h2>
+      <p class="mt-1 text-sm text-muted">
+        {{ target.description }} · saldo {{ formatCurrency(target.balance) }}
+      </p>
+      <form class="mt-5 space-y-4" (ngSubmit)="savePayment()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Valor *<input
+              data-dialog-initial-focus
+              required
+              type="number"
+              min="0.01"
+              step="0.01"
+              name="paymentAmount"
+              [(ngModel)]="paymentAmount"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label
+          ><label class="text-sm font-medium text-ink"
+            >Data *<input
+              required
+              type="date"
+              name="paymentDate"
+              [(ngModel)]="paymentDate"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          /></label>
+        </div>
+        <label class="block text-sm font-medium text-ink"
+          >Conta bancária *<select
+            required
+            name="paymentBank"
+            [(ngModel)]="paymentBankAccountId"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          >
+            <option value="">Selecione</option>
+            @for (account of bankAccounts(); track account.id) {
+              <option [value]="account.id">{{ accountLabel(account) }}</option>
+            }
+          </select></label
+        ><label class="block text-sm font-medium text-ink"
+          >Observação<textarea
+            name="paymentNotes"
+            [(ngModel)]="paymentNotes"
+            rows="3"
+            maxlength="1000"
+            class="mt-1 w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        @if (actionError()) {
+          <p role="alert" class="text-sm text-red-700">{{ actionError() }}</p>
+        }
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closePayment()"
+            [disabled]="submitting()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Cancelar</button
+          ><button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ submitting() ? "Pagando..." : "Confirmar pagamento" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (reversalTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closeReversal()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeReversal()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payable-reversal-title"
+      class="w-full max-w-md rounded-xl bg-card p-5 shadow-xl"
+    >
+      <h2 id="payable-reversal-title" class="text-lg font-bold text-ink">
+        Estornar pagamento
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        O valor de {{ formatCurrency(target.payment.amount) }} voltará para o
+        saldo.
+      </p>
+      <form class="mt-5 space-y-4" (ngSubmit)="saveReversal()">
+        <label class="block text-sm font-medium text-ink"
+          >Motivo *<textarea
+            data-dialog-initial-focus
+            required
+            minlength="3"
+            name="reversalReason"
+            [(ngModel)]="reversalReason"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        @if (actionError()) {
+          <p role="alert" class="text-sm text-red-700">{{ actionError() }}</p>
+        }
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeReversal()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Voltar</button
+          ><button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            Confirmar estorno
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (cancelTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closeCancel()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeCancel()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payable-cancel-title"
+      class="w-full max-w-md rounded-xl bg-card p-5 shadow-xl"
+    >
+      <h2 id="payable-cancel-title" class="text-lg font-bold text-ink">
+        Cancelar conta
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        {{ target.description }} deixará de compor o saldo a pagar.
+      </p>
+      <form class="mt-5 space-y-4" (ngSubmit)="saveCancel()">
+        <label class="block text-sm font-medium text-ink"
+          >Motivo *<textarea
+            data-dialog-initial-focus
+            required
+            minlength="3"
+            name="cancelReason"
+            [(ngModel)]="cancelReason"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        @if (actionError()) {
+          <p role="alert" class="text-sm text-red-700">{{ actionError() }}</p>
+        }
+        <div class="flex justify-end gap-2">
+          <button
+            type="button"
+            (click)="closeCancel()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Voltar</button
+          ><button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            Cancelar conta
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

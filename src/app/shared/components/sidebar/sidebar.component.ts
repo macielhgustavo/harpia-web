@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   Building2,
   CircleDollarSign,
+  ChartNoAxesCombined,
   Coins,
   Columns3,
   FileSpreadsheet,
@@ -11,6 +12,8 @@ import {
   LucideAngularModule,
   LucideIconData,
   MessageSquare,
+  HandCoins,
+  ReceiptText,
   ScrollText,
   TrendingUp,
   UserCog,
@@ -118,6 +121,9 @@ export class SidebarComponent {
     UserPlus,
     ScrollText,
     CircleDollarSign,
+    ReceiptText,
+    HandCoins,
+    ChartNoAxesCombined,
   };
 
   iconOf(name: string): LucideIconData {

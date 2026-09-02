@@ -1,6 +1,7 @@
 import { AuditLog } from './audit-log.model';
 import { DocumentCategory } from './document.model';
 import { ProposalPaymentConditionType } from './proposal.model';
+import { Receivable } from './receivable.model';
 
 export type SaleStatus = 'ATIVA' | 'QUITADA' | 'CANCELADA' | 'DISTRATADA';
 export type SaleCommissionStatus = 'PREVISTA' | 'DEVIDA' | 'PAGA' | 'CANCELADA';
@@ -100,6 +101,7 @@ export interface SaleDocument {
 }
 
 export interface SaleDetail extends Sale {
+  receivables: Receivable[];
   documents: SaleDocument[];
   audit: AuditLog[];
 }

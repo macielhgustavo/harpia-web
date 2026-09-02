@@ -105,7 +105,7 @@
             {{ formatCurrency(item.outstandingBalance) }}
           </p>
           <p class="mt-1 text-xs text-muted">
-            Sem baixa de recebíveis nesta fase.
+            Atualizado pelos recebimentos registrados.
           </p>
         </article>
       </section>
@@ -203,6 +203,89 @@
         </article>
       </section>
 
+      @if (canFinanceRead) {
+        <section class="rounded-xl border border-border bg-card shadow-card">
+          <div
+            class="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <h2 class="font-semibold text-ink">Linha do tempo financeira</h2>
+              <p class="mt-1 text-sm text-muted">
+                Vencimentos, pagamentos e saldo de cada parcela contratada.
+              </p>
+            </div>
+            <button
+              type="button"
+              (click)="openReceivable(item.id)"
+              class="rounded-lg border border-primary px-3 py-2 text-sm font-medium text-primary"
+            >
+              Abrir contas a receber
+            </button>
+          </div>
+          @if (item.receivables.length === 0) {
+            <p class="p-5 text-sm text-muted">
+              Nenhuma parcela financeira foi gerada para esta venda.
+            </p>
+          } @else {
+            <ol class="divide-y divide-border">
+              @for (receivable of item.receivables; track receivable.id) {
+                <li
+                  class="grid grid-cols-1 gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+                >
+                  <div class="flex gap-3">
+                    <span
+                      class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                      [class.bg-emerald-600]="receivable.status === 'PAGO'"
+                      [class.bg-red-600]="receivable.status === 'ATRASADO'"
+                      [class.bg-blue-600]="receivable.status === 'PARCIAL'"
+                      [class.bg-amber-500]="receivable.status === 'PENDENTE'"
+                      [class.bg-slate-400]="receivable.status === 'CANCELADO'"
+                    ></span>
+                    <div>
+                      <p class="font-medium text-ink">
+                        {{ receivable.description }} · parcela
+                        {{ receivable.sourceSequence }}
+                      </p>
+                      <p class="mt-1 text-sm text-muted">
+                        Vence em {{ formatDate(receivable.dueDate) }} · pago
+                        {{ formatCurrency(receivable.paidAmount) }} de
+                        {{ formatCurrency(receivable.adjustedAmount) }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="sm:text-right">
+                    <p class="text-xs text-muted">Saldo</p>
+                    <p class="font-semibold text-ink">
+                      {{ formatCurrency(receivable.balance) }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2 sm:justify-end">
+                    <span
+                      class="rounded-full px-2 py-1 text-xs font-medium"
+                      [class]="receivableStatusClass(receivable.status)"
+                      >{{ receivableStatusLabel(receivable.status) }}</span
+                    >
+                    @if (
+                      canFinanceWrite &&
+                      receivable.status !== "PAGO" &&
+                      receivable.status !== "CANCELADO"
+                    ) {
+                      <button
+                        type="button"
+                        (click)="openReceivable(item.id, receivable.id)"
+                        class="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-primary"
+                      >
+                        Receber
+                      </button>
+                    }
+                  </div>
+                </li>
+              }
+            </ol>
+          }
+        </section>
+      }
+
       <section class="rounded-xl border border-border bg-card shadow-card">
         <div class="border-b border-border px-5 py-4">
           <h2 class="font-semibold text-ink">Plano de pagamento contratado</h2>
@@ -287,10 +370,26 @@
                     }}
                   </p>
                 </div>
-                <span
-                  class="w-fit rounded-full bg-surface-warm px-2 py-1 text-xs font-medium text-ink"
-                  >{{ commissionLabel(commission.status) }}</span
-                >
+                <div class="flex flex-wrap items-center gap-2">
+                  <span
+                    class="w-fit rounded-full bg-surface-warm px-2 py-1 text-xs font-medium text-ink"
+                    >{{ commissionLabel(commission.status) }}</span
+                  >
+                  @if (canFinanceWrite && commission.status === "PREVISTA") {
+                    <button
+                      type="button"
+                      (click)="markCommissionDue(commission.id)"
+                      [disabled]="!!markingCommissionId()"
+                      class="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-primary disabled:opacity-50"
+                    >
+                      {{
+                        markingCommissionId() === commission.id
+                          ? "Gerando..."
+                          : "Tornar devida"
+                      }}
+                    </button>
+                  }
+                </div>
               </div>
             }
           </div>

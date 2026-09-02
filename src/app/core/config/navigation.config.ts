@@ -75,6 +75,36 @@ export const NAVIGATION: NavGroup[] = [
     ],
   },
   {
+    label: 'Financeiro',
+    items: [
+      {
+        label: 'Visão geral',
+        route: '/finance',
+        icon: 'Landmark',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+        exact: true,
+      },
+      {
+        label: 'Contas a receber',
+        route: '/finance/receivables',
+        icon: 'ReceiptText',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+      },
+      {
+        label: 'Contas a pagar',
+        route: '/finance/payables',
+        icon: 'HandCoins',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+      },
+      {
+        label: 'Fluxo de caixa',
+        route: '/finance/cash-flow',
+        icon: 'ChartNoAxesCombined',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+      },
+    ],
+  },
+  {
     label: 'Investidores',
     items: [
       {

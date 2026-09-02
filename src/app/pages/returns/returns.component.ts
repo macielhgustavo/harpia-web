@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -55,6 +55,7 @@ export class ReturnsComponent implements OnInit {
   private readonly allocationService = inject(AllocationService);
   private readonly investmentService = inject(InvestmentService);
   private readonly authorization = inject(AuthorizationService);
+  private readonly router = inject(Router);
   private loadSequence = 0;
 
   readonly returns = signal<ReturnListItem[]>([]);
@@ -78,6 +79,9 @@ export class ReturnsComponent implements OnInit {
 
   readonly canWrite = this.authorization.hasPermission(
     APP_PERMISSIONS.RETURNS_WRITE,
+  );
+  readonly canFinanceWrite = this.authorization.hasPermission(
+    APP_PERMISSIONS.FINANCE_WRITE,
   );
   readonly formatCurrency = formatBrl;
   readonly formatDate = formatDate;
@@ -257,10 +261,10 @@ export class ReturnsComponent implements OnInit {
   }
 
   openPayment(item: ReturnListItem): void {
-    if (!this.canWrite || item.status === 'PAGO') return;
-    this.selectedReturn.set(item);
-    this.formMode.set('pay');
-    this.formOpen.set(true);
+    if (!this.canFinanceWrite || item.status === 'PAGO') return;
+    void this.router.navigate(['/finance/payables'], {
+      queryParams: { search: item.allocation.investment.investor.name },
+    });
   }
 
   closeForm(): void {

@@ -90,6 +90,15 @@ export class AuditLogsComponent implements OnInit {
     'SALE_BUYER_ADDED',
     'SALE_COMMISSION_CREATED',
     'PROPOSAL_CONVERTED_TO_SALE',
+    'RECEIVABLE_CREATED',
+    'PAYMENT_RECORDED',
+    'PAYMENT_REVERSED',
+    'RECEIVABLE_CANCELLED',
+    'PAYABLE_CREATED',
+    'PAYABLE_UPDATED',
+    'PAYABLE_PAID',
+    'PAYMENT_CREATED',
+    'FINANCIAL_TRANSACTION_CREATED',
   ] as const;
 
   readonly knownEntityTypes = [
@@ -114,6 +123,13 @@ export class AuditLogsComponent implements OnInit {
     'UNIT_RESERVATION',
     'SALES_PROPOSAL',
     'PROPOSAL_VERSION',
+    'SALE',
+    'RECEIVABLE',
+    'FINANCIAL_PAYMENT',
+    'FINANCIAL_CATEGORY',
+    'COST_CENTER',
+    'PAYABLE',
+    'FINANCIAL_TRANSACTION',
   ] as const;
 
   private readonly dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {

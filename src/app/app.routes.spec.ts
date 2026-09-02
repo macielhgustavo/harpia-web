@@ -108,6 +108,31 @@ describe('Rota de contas bancárias', () => {
   });
 });
 
+describe('Rotas financeiras', () => {
+  it('protege dashboard, contas e fluxo de caixa por FINANCE_READ', () => {
+    const paths = [
+      'finance',
+      'finance/receivables',
+      'finance/payables',
+      'finance/cash-flow',
+    ];
+
+    for (const path of paths) {
+      const route = routes.find((item) => item.path === path);
+      expect(route?.canActivate).toContain(authGuard);
+      expect(route?.canActivate).toContain(permissionGuard);
+      expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.FINANCE_READ);
+      expect(route?.loadComponent).toBeDefined();
+    }
+  });
+
+  it('mantem compatibilidade com o endereco antigo de contas a receber', () => {
+    const route = routes.find((item) => item.path === 'receivables');
+    expect(route?.redirectTo).toBe('finance/receivables');
+    expect(route?.pathMatch).toBe('full');
+  });
+});
+
 describe('Rota do dashboard', () => {
   it('substitui o placeholder por página lazy e protegida por permissão', () => {
     const route = routes.find((item) => item.path === 'dashboard');

@@ -1,0 +1,286 @@
+<div class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold text-ink">Fluxo de caixa</h1>
+    <p class="mt-1 max-w-3xl text-sm text-muted">
+      Compare movimentos realizados com entradas e saídas projetadas, sem
+      misturar entidades.
+    </p>
+  </header>
+
+  <form
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    (ngSubmit)="load()"
+    aria-label="Filtros do fluxo de caixa"
+  >
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <label class="text-sm font-medium text-ink"
+        >Modo<select
+          name="mode"
+          [ngModel]="mode()"
+          (ngModelChange)="mode.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="CONSOLIDADO">Consolidado</option>
+          <option value="REALIZADO">Realizado</option>
+          <option value="PROJETADO">Projetado</option>
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Agrupar por<select
+          name="groupBy"
+          [ngModel]="groupBy()"
+          (ngModelChange)="groupBy.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="DIA">Dia</option>
+          <option value="SEMANA">Semana</option>
+          <option value="MES">Mês</option>
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Empresa / SPE<select
+          name="company"
+          [ngModel]="companyId()"
+          (ngModelChange)="companyId.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Consolidado</option>
+          @for (company of companies(); track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Empreendimento<select
+          name="development"
+          [ngModel]="developmentId()"
+          (ngModelChange)="developmentId.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (development of developments(); track development.id) {
+            <option [value]="development.id">{{ development.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Centro de custo<select
+          name="costCenter"
+          [ngModel]="costCenterId()"
+          (ngModelChange)="costCenterId.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (center of costCenters(); track center.id) {
+            <option [value]="center.id">{{ center.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Data inicial<input
+          type="date"
+          name="startDate"
+          [ngModel]="startDate()"
+          (ngModelChange)="startDate.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+      /></label>
+      <label class="text-sm font-medium text-ink"
+        >Data final<input
+          type="date"
+          name="endDate"
+          [ngModel]="endDate()"
+          (ngModelChange)="endDate.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+      /></label>
+    </div>
+    <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        (click)="clear()"
+        class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+      >
+        Limpar</button
+      ><button
+        type="submit"
+        [disabled]="loading()"
+        class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+      >
+        Calcular fluxo
+      </button>
+    </div>
+  </form>
+
+  @if (loading()) {
+    <div class="flex min-h-52 items-center justify-center text-sm text-muted">
+      Calculando fluxo...
+    </div>
+  } @else if (error()) {
+    <div
+      class="flex min-h-52 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6"
+    >
+      <p role="alert" class="text-sm text-red-800">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="load()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
+  } @else {
+    @if (result(); as flow) {
+      <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Saldo inicial</p>
+          <p
+            class="mt-2 text-xl font-bold"
+            [class]="valueClass(flow.openingBalance)"
+          >
+            {{ formatCurrency(flow.openingBalance) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <div class="flex justify-between">
+            <p class="text-sm text-muted">Entradas</p>
+            <lucide-icon
+              [img]="InflowIcon"
+              [size]="18"
+              class="text-emerald-700"
+            ></lucide-icon>
+          </div>
+          <p class="mt-2 text-xl font-bold text-emerald-800">
+            {{ formatCurrency(total("inflows")) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <div class="flex justify-between">
+            <p class="text-sm text-muted">Saídas</p>
+            <lucide-icon
+              [img]="OutflowIcon"
+              [size]="18"
+              class="text-red-700"
+            ></lucide-icon>
+          </div>
+          <p class="mt-2 text-xl font-bold text-red-800">
+            {{ formatCurrency(total("outflows")) }}
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Saldo final</p>
+          <p
+            class="mt-2 text-xl font-bold"
+            [class]="valueClass(flow.closingBalance)"
+          >
+            {{ formatCurrency(flow.closingBalance) }}
+          </p>
+        </article>
+      </section>
+
+      <section
+        class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+      >
+        @if (flow.data.length === 0) {
+          <div
+            class="flex min-h-52 flex-col items-center justify-center gap-2 p-6 text-center"
+          >
+            <lucide-icon
+              [img]="DateIcon"
+              [size]="28"
+              class="text-muted"
+            ></lucide-icon>
+            <p class="font-medium text-ink">Nenhum movimento no período</p>
+            <p class="text-sm text-muted">
+              Ajuste o período ou o modo de visualização.
+            </p>
+          </div>
+        } @else {
+          <div class="divide-y divide-border md:hidden">
+            @for (row of flow.data; track row.date) {
+              <article class="p-4">
+                <div class="flex justify-between">
+                  <p class="font-semibold text-ink">
+                    {{ formatDate(row.date) }}
+                  </p>
+                  <p class="font-semibold" [class]="valueClass(row.net)">
+                    {{ formatCurrency(row.net) }}
+                  </p>
+                </div>
+                <dl class="mt-3 grid grid-cols-3 gap-2 text-sm">
+                  <div>
+                    <dt class="text-xs text-muted">Entradas</dt>
+                    <dd class="text-emerald-800">
+                      {{ formatCurrency(row.inflows) }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">Saídas</dt>
+                    <dd class="text-red-700">
+                      {{ formatCurrency(row.outflows) }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt class="text-xs text-muted">Saldo</dt>
+                    <dd class="text-ink">{{ formatCurrency(row.balance) }}</dd>
+                  </div>
+                </dl>
+              </article>
+            }
+          </div>
+          <div class="hidden overflow-x-auto md:block">
+            <table class="w-full min-w-[780px] text-left text-sm">
+              <thead
+                class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+              >
+                <tr>
+                  <th class="px-5 py-3 font-medium">Data</th>
+                  <th class="px-5 py-3 text-right font-medium">Entradas</th>
+                  <th class="px-5 py-3 text-right font-medium">Saídas</th>
+                  <th class="px-5 py-3 text-right font-medium">Resultado</th>
+                  <th class="px-5 py-3 text-right font-medium">
+                    Saldo acumulado
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border">
+                @for (row of flow.data; track row.date) {
+                  <tr>
+                    <td class="px-5 py-3 font-medium text-ink">
+                      {{ formatDate(row.date) }}
+                    </td>
+                    <td class="px-5 py-3 text-right text-emerald-800">
+                      {{ formatCurrency(row.inflows) }}
+                    </td>
+                    <td class="px-5 py-3 text-right text-red-700">
+                      {{ formatCurrency(row.outflows) }}
+                    </td>
+                    <td
+                      class="px-5 py-3 text-right font-medium"
+                      [class]="valueClass(row.net)"
+                    >
+                      {{ formatCurrency(row.net) }}
+                    </td>
+                    <td
+                      class="px-5 py-3 text-right font-semibold"
+                      [class]="valueClass(row.balance)"
+                    >
+                      {{ formatCurrency(row.balance) }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    }
+  }
+</div>

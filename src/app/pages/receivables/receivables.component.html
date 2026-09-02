@@ -1,0 +1,814 @@
+<div class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold text-ink">Contas a receber</h1>
+    <p class="mt-1 max-w-3xl text-sm text-muted">
+      Parcelas geradas pelas vendas, recebimentos realizados e valores que ainda
+      precisam ser cobrados.
+    </p>
+  </header>
+
+  <section
+    class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
+    aria-label="Resumo financeiro"
+  >
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm text-muted">Saldo a receber</p>
+        <lucide-icon
+          [img]="MoneyIcon"
+          [size]="19"
+          class="text-primary"
+        ></lucide-icon>
+      </div>
+      <p class="mt-2 text-xl font-bold text-ink">
+        {{ formatCurrency(result().summary.outstanding) }}
+      </p>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm text-muted">Recebido no período</p>
+        <lucide-icon
+          [img]="ReceivedIcon"
+          [size]="19"
+          class="text-emerald-700"
+        ></lucide-icon>
+      </div>
+      <p class="mt-2 text-xl font-bold text-emerald-800">
+        {{ formatCurrency(result().summary.receivedInPeriod) }}
+      </p>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm text-muted">Em atraso</p>
+        <lucide-icon
+          [img]="OverdueIcon"
+          [size]="19"
+          class="text-red-700"
+        ></lucide-icon>
+      </div>
+      <p class="mt-2 text-xl font-bold text-red-800">
+        {{ formatCurrency(result().summary.overdue) }}
+      </p>
+    </article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+      <div class="flex items-center justify-between gap-3">
+        <p class="text-sm text-muted">Próximos 30 dias</p>
+        <lucide-icon
+          [img]="NextDueIcon"
+          [size]="19"
+          class="text-gold-dark"
+        ></lucide-icon>
+      </div>
+      <p class="mt-2 text-xl font-bold text-ink">
+        {{ formatCurrency(result().summary.dueNext30Days) }}
+      </p>
+    </article>
+  </section>
+
+  @if (optionsError()) {
+    <div
+      class="flex flex-col gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <span>{{ optionsError() }}</span>
+      <button
+        type="button"
+        (click)="loadOptions()"
+        class="font-medium underline"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  }
+
+  <form
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    (ngSubmit)="applyFilters()"
+    aria-label="Filtros de contas a receber"
+  >
+    <div class="grid grid-cols-1 gap-3 lg:grid-cols-3 xl:grid-cols-4">
+      <label class="text-sm font-medium text-ink xl:col-span-2">
+        Busca
+        <span class="relative mt-1 block">
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="16"
+            class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+          ></lucide-icon>
+          <input
+            type="search"
+            name="search"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            placeholder="Cliente, venda, unidade ou parcela"
+            class="w-full rounded-lg border border-border bg-surface py-2.5 pl-9 pr-3"
+          />
+        </span>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Empreendimento
+        <select
+          name="development"
+          [ngModel]="developmentId()"
+          (ngModelChange)="developmentId.set($event)"
+          [disabled]="optionsLoading()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (development of developments(); track development.id) {
+            <option [value]="development.id">{{ development.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Cliente
+        <select
+          name="buyer"
+          [ngModel]="buyerId()"
+          (ngModelChange)="buyerId.set($event)"
+          [disabled]="optionsLoading()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (buyer of buyers(); track buyer.id) {
+            <option [value]="buyer.id">{{ buyer.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Status
+        <select
+          name="status"
+          [ngModel]="status()"
+          (ngModelChange)="status.set($event)"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (option of statusOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Empresa / SPE
+        <select
+          name="company"
+          [ngModel]="companyId()"
+          (ngModelChange)="companyId.set($event)"
+          [disabled]="optionsLoading()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          @for (company of companies(); track company.id) {
+            <option [value]="company.id">{{ company.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Conta bancária
+        <select
+          name="bankAccount"
+          [ngModel]="bankAccountId()"
+          (ngModelChange)="bankAccountId.set($event)"
+          [disabled]="optionsLoading()"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          @for (account of bankAccounts(); track account.id) {
+            <option [value]="account.id">{{ accountLabel(account) }}</option>
+          }
+        </select>
+      </label>
+      <div class="grid grid-cols-2 gap-2">
+        <label class="text-sm font-medium text-ink">
+          Vence de
+          <input
+            type="date"
+            name="startDate"
+            [ngModel]="startDate()"
+            (ngModelChange)="startDate.set($event)"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-2.5"
+          />
+        </label>
+        <label class="text-sm font-medium text-ink">
+          Até
+          <input
+            type="date"
+            name="endDate"
+            [ngModel]="endDate()"
+            (ngModelChange)="endDate.set($event)"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-2 py-2.5"
+          />
+        </label>
+      </div>
+    </div>
+    @if (saleId()) {
+      <p class="mt-3 text-xs text-muted">
+        Exibindo somente as parcelas da venda selecionada.
+      </p>
+    }
+    <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        (click)="resetFilters()"
+        class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+      >
+        Limpar
+      </button>
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+      >
+        Aplicar filtros
+      </button>
+    </div>
+  </form>
+
+  <section
+    class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+    aria-label="Lista de contas a receber"
+  >
+    @if (loading()) {
+      <div
+        class="flex min-h-52 items-center justify-center p-6 text-sm text-muted"
+      >
+        Carregando contas a receber...
+      </div>
+    } @else if (error()) {
+      <div
+        class="flex min-h-52 flex-col items-center justify-center gap-3 p-6 text-center"
+      >
+        <p class="text-sm text-red-800" role="alert">{{ error() }}</p>
+        <button
+          type="button"
+          (click)="load(result().pagination.page)"
+          class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium"
+        >
+          <lucide-icon [img]="RetryIcon" [size]="16"></lucide-icon>
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (result().data.length === 0) {
+      <div
+        class="flex min-h-52 flex-col items-center justify-center gap-2 p-6 text-center"
+      >
+        <lucide-icon
+          [img]="MoneyIcon"
+          [size]="30"
+          class="text-muted"
+        ></lucide-icon>
+        <p class="font-medium text-ink">Nenhuma parcela encontrada</p>
+        <p class="max-w-xl text-sm text-muted">
+          As contas a receber são criadas automaticamente quando uma proposta é
+          convertida em venda.
+        </p>
+      </div>
+    } @else {
+      <div class="divide-y divide-border xl:hidden">
+        @for (receivable of result().data; track receivable.id) {
+          <article [attr.id]="'receivable-' + receivable.id" class="p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <button
+                  type="button"
+                  (click)="openSale(receivable)"
+                  class="text-left font-semibold text-ink hover:underline"
+                >
+                  {{ primaryBuyer(receivable) }}
+                </button>
+                <p class="mt-1 text-sm text-muted">
+                  {{ receivable.sale?.saleNumber || "Sem venda" }} ·
+                  {{ installmentLabel(receivable) }}
+                </p>
+              </div>
+              <span
+                class="rounded-full px-2 py-1 text-xs font-medium"
+                [class]="statusClass(receivable.status)"
+                >{{ statusLabel(receivable.status) }}</span
+              >
+            </div>
+            <dl class="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt class="text-xs text-muted">Vencimento</dt>
+                <dd class="text-ink">{{ formatDate(receivable.dueDate) }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Valor</dt>
+                <dd class="font-medium text-ink">
+                  {{ formatCurrency(receivable.adjustedAmount) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Pago</dt>
+                <dd class="text-emerald-800">
+                  {{ formatCurrency(receivable.paidAmount) }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-muted">Saldo</dt>
+                <dd class="font-medium text-ink">
+                  {{ formatCurrency(receivable.balance) }}
+                </dd>
+              </div>
+            </dl>
+            <div class="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                (click)="toggleHistory(receivable)"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-ink"
+              >
+                <lucide-icon [img]="HistoryIcon" [size]="15"></lucide-icon>
+                Histórico
+                <lucide-icon
+                  [img]="
+                    expandedId() === receivable.id ? CollapseIcon : ExpandIcon
+                  "
+                  [size]="14"
+                ></lucide-icon>
+              </button>
+              @if (
+                canWrite &&
+                receivable.status !== "PAGO" &&
+                receivable.status !== "CANCELADO"
+              ) {
+                <button
+                  type="button"
+                  (click)="openPayment(receivable)"
+                  class="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white"
+                >
+                  Registrar pagamento
+                </button>
+              }
+              @if (canCancel(receivable)) {
+                <button
+                  type="button"
+                  (click)="openCancel(receivable)"
+                  class="rounded-lg px-3 py-2 text-xs font-medium text-red-700"
+                >
+                  Cancelar
+                </button>
+              }
+            </div>
+            @if (expandedId() === receivable.id) {
+              <ng-container
+                [ngTemplateOutlet]="paymentHistory"
+                [ngTemplateOutletContext]="{ $implicit: receivable }"
+              ></ng-container>
+            }
+          </article>
+        }
+      </div>
+
+      <div class="hidden overflow-x-auto xl:block">
+        <table class="w-full min-w-[1120px] text-left text-sm">
+          <thead
+            class="bg-surface-warm text-xs uppercase tracking-wide text-muted"
+          >
+            <tr>
+              <th class="px-4 py-3 font-medium">Cliente</th>
+              <th class="px-4 py-3 font-medium">Venda</th>
+              <th class="px-4 py-3 font-medium">Parcela</th>
+              <th class="px-4 py-3 font-medium">Vencimento</th>
+              <th class="px-4 py-3 text-right font-medium">Valor</th>
+              <th class="px-4 py-3 text-right font-medium">Pago</th>
+              <th class="px-4 py-3 text-right font-medium">Saldo</th>
+              <th class="px-4 py-3 font-medium">Status</th>
+              <th class="px-4 py-3 text-right font-medium">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            @for (receivable of result().data; track receivable.id) {
+              <tr
+                [attr.id]="'receivable-' + receivable.id"
+                class="align-top hover:bg-surface-warm"
+              >
+                <td class="px-4 py-3 font-medium text-ink">
+                  {{ primaryBuyer(receivable) }}
+                </td>
+                <td class="px-4 py-3">
+                  <button
+                    type="button"
+                    (click)="openSale(receivable)"
+                    class="font-medium text-primary hover:underline"
+                  >
+                    {{ receivable.sale?.saleNumber || "—" }}
+                  </button>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ receivable.sale?.development?.name }}
+                    @if (receivable.sale?.unit?.identifier) {
+                      · {{ receivable.sale?.unit?.identifier }}
+                    }
+                  </p>
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ installmentLabel(receivable) }}
+                </td>
+                <td class="px-4 py-3 text-ink">
+                  {{ formatDate(receivable.dueDate) }}
+                </td>
+                <td class="px-4 py-3 text-right font-medium text-ink">
+                  {{ formatCurrency(receivable.adjustedAmount) }}
+                </td>
+                <td class="px-4 py-3 text-right text-emerald-800">
+                  {{ formatCurrency(receivable.paidAmount) }}
+                </td>
+                <td class="px-4 py-3 text-right font-medium text-ink">
+                  {{ formatCurrency(receivable.balance) }}
+                </td>
+                <td class="px-4 py-3">
+                  <span
+                    class="rounded-full px-2 py-1 text-xs font-medium"
+                    [class]="statusClass(receivable.status)"
+                    >{{ statusLabel(receivable.status) }}</span
+                  >
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex justify-end gap-1.5">
+                    <button
+                      type="button"
+                      (click)="toggleHistory(receivable)"
+                      aria-label="Ver histórico de pagamentos"
+                      class="rounded-lg border border-border p-2 text-muted hover:text-ink"
+                    >
+                      <lucide-icon
+                        [img]="
+                          expandedId() === receivable.id
+                            ? CollapseIcon
+                            : HistoryIcon
+                        "
+                        [size]="16"
+                      ></lucide-icon>
+                    </button>
+                    @if (
+                      canWrite &&
+                      receivable.status !== "PAGO" &&
+                      receivable.status !== "CANCELADO"
+                    ) {
+                      <button
+                        type="button"
+                        (click)="openPayment(receivable)"
+                        class="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white"
+                      >
+                        Receber
+                      </button>
+                    }
+                    @if (canCancel(receivable)) {
+                      <button
+                        type="button"
+                        (click)="openCancel(receivable)"
+                        class="rounded-lg px-2 py-2 text-xs font-medium text-red-700"
+                      >
+                        Cancelar
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+              @if (expandedId() === receivable.id) {
+                <tr>
+                  <td colspan="9" class="bg-surface px-5 py-4">
+                    <ng-container
+                      [ngTemplateOutlet]="paymentHistory"
+                      [ngTemplateOutletContext]="{ $implicit: receivable }"
+                    ></ng-container>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer
+        class="flex flex-col gap-3 border-t border-border px-4 py-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
+      >
+        <span>{{ result().pagination.total }} parcela(s)</span>
+        <div class="flex items-center justify-between gap-2 sm:justify-end">
+          <button
+            type="button"
+            (click)="load(result().pagination.page - 1)"
+            [disabled]="result().pagination.page <= 1"
+            aria-label="Página anterior"
+            class="rounded-lg border border-border p-2 disabled:opacity-40"
+          >
+            <lucide-icon [img]="PreviousIcon" [size]="16"></lucide-icon>
+          </button>
+          <span
+            >Página {{ result().pagination.page }} de
+            {{ result().pagination.totalPages || 1 }}</span
+          >
+          <button
+            type="button"
+            (click)="load(result().pagination.page + 1)"
+            [disabled]="
+              result().pagination.page >= result().pagination.totalPages
+            "
+            aria-label="Próxima página"
+            class="rounded-lg border border-border p-2 disabled:opacity-40"
+          >
+            <lucide-icon [img]="NextIcon" [size]="16"></lucide-icon>
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</div>
+
+<ng-template #paymentHistory let-receivable>
+  <div class="mt-4 rounded-lg border border-border bg-surface p-3 xl:mt-0">
+    <div class="flex items-center gap-2 text-sm font-semibold text-ink">
+      <lucide-icon [img]="HistoryIcon" [size]="16"></lucide-icon>
+      Histórico de pagamentos
+    </div>
+    @if (receivable.payments.length === 0) {
+      <p class="mt-2 text-sm text-muted">Nenhum pagamento registrado.</p>
+    } @else {
+      <div class="mt-3 space-y-2">
+        @for (payment of receivable.payments; track payment.id) {
+          <div
+            class="flex flex-col gap-2 rounded-lg bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div>
+              <p
+                class="text-sm font-medium"
+                [class.line-through]="payment.reversedAt"
+              >
+                {{ formatCurrency(payment.amount) }} em
+                {{ formatDate(payment.paidAt) }}
+              </p>
+              <p class="mt-0.5 text-xs text-muted">
+                {{
+                  payment.bankAccount
+                    ? payment.bankAccount.bank +
+                      " · " +
+                      payment.bankAccount.account
+                    : "Conta não informada"
+                }}
+                · registrado por {{ payment.createdByUser.name }}
+              </p>
+              @if (payment.notes) {
+                <p class="mt-1 text-xs text-muted">{{ payment.notes }}</p>
+              }
+              @if (payment.reversedAt) {
+                <p class="mt-1 text-xs font-medium text-red-700">
+                  Estornado em {{ formatDate(payment.reversedAt) }} ·
+                  {{ payment.reversalReason }}
+                </p>
+              }
+            </div>
+            @if (canWrite && !payment.reversedAt) {
+              <button
+                type="button"
+                (click)="openReversal(receivable, payment)"
+                class="inline-flex items-center gap-1.5 self-start rounded-lg border border-border px-3 py-2 text-xs font-medium text-red-700 sm:self-auto"
+              >
+                <lucide-icon [img]="ReverseIcon" [size]="14"></lucide-icon>
+                Estornar
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</ng-template>
+
+@if (paymentTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closePayment()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closePayment()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-title"
+      class="w-full max-w-lg rounded-xl bg-card p-5 shadow-xl"
+    >
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h2 id="payment-title" class="text-lg font-bold text-ink">
+            Registrar pagamento
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            {{ target.description }} · saldo
+            {{ formatCurrency(target.balance) }}
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closePayment()"
+          aria-label="Fechar"
+          class="rounded-lg p-2 text-muted hover:bg-surface"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="submitPayment()">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink">
+            Valor
+            <input
+              data-dialog-initial-focus
+              type="number"
+              name="paymentAmount"
+              min="0.01"
+              step="0.01"
+              [max]="target.balance"
+              [ngModel]="paymentAmount()"
+              (ngModelChange)="paymentAmount.set($event)"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+              required
+            />
+          </label>
+          <label class="text-sm font-medium text-ink">
+            Data do pagamento
+            <input
+              type="date"
+              name="paymentDate"
+              [ngModel]="paymentDate()"
+              (ngModelChange)="paymentDate.set($event)"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+              required
+            />
+          </label>
+        </div>
+        <label class="block text-sm font-medium text-ink">
+          Conta bancária *
+          <select
+            name="paymentBankAccount"
+            [ngModel]="paymentBankAccountId()"
+            (ngModelChange)="paymentBankAccountId.set($event)"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            required
+          >
+            <option value="">Selecione</option>
+            @for (account of bankAccounts(); track account.id) {
+              <option [value]="account.id">{{ accountLabel(account) }}</option>
+            }
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-ink">
+          Observação
+          <textarea
+            name="paymentNotes"
+            rows="3"
+            maxlength="500"
+            [ngModel]="paymentNotes()"
+            (ngModelChange)="paymentNotes.set($event)"
+            class="mt-1 w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        @if (actionError()) {
+          <p class="text-sm text-red-700" role="alert">{{ actionError() }}</p>
+        }
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closePayment()"
+            [disabled]="submitting()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ submitting() ? "Salvando..." : "Confirmar recebimento" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (reversalTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closeReversal()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeReversal()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="reversal-title"
+      class="w-full max-w-md rounded-xl bg-card p-5 shadow-xl"
+    >
+      <h2 id="reversal-title" class="text-lg font-bold text-ink">
+        Estornar pagamento
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        O pagamento de {{ formatCurrency(target.payment.amount) }} voltará para
+        o saldo da parcela.
+      </p>
+      <form class="mt-5 space-y-4" (ngSubmit)="submitReversal()">
+        <label class="block text-sm font-medium text-ink">
+          Motivo
+          <textarea
+            data-dialog-initial-focus
+            name="reversalReason"
+            rows="3"
+            minlength="3"
+            maxlength="500"
+            [ngModel]="reversalReason()"
+            (ngModelChange)="reversalReason.set($event)"
+            class="mt-1 w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5"
+            required
+          ></textarea>
+        </label>
+        @if (actionError()) {
+          <p class="text-sm text-red-700" role="alert">{{ actionError() }}</p>
+        }
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeReversal()"
+            [disabled]="submitting()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+          >
+            Voltar
+          </button>
+          <button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ submitting() ? "Estornando..." : "Confirmar estorno" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (cancelTarget(); as target) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (mousedown)="closeCancel()"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="closeCancel()"
+      (mousedown)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cancel-title"
+      class="w-full max-w-md rounded-xl bg-card p-5 shadow-xl"
+    >
+      <h2 id="cancel-title" class="text-lg font-bold text-ink">
+        Cancelar parcela
+      </h2>
+      <p class="mt-2 text-sm text-muted">
+        {{ target.description }} no valor de
+        {{ formatCurrency(target.adjustedAmount) }} deixará de compor o saldo a
+        receber.
+      </p>
+      <form class="mt-5 space-y-4" (ngSubmit)="submitCancel()">
+        <label class="block text-sm font-medium text-ink">
+          Motivo
+          <textarea
+            data-dialog-initial-focus
+            name="cancelReason"
+            rows="3"
+            minlength="3"
+            maxlength="500"
+            [ngModel]="cancelReason()"
+            (ngModelChange)="cancelReason.set($event)"
+            class="mt-1 w-full resize-none rounded-lg border border-border bg-surface px-3 py-2.5"
+            required
+          ></textarea>
+        </label>
+        @if (actionError()) {
+          <p class="text-sm text-red-700" role="alert">{{ actionError() }}</p>
+        }
+        <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="closeCancel()"
+            [disabled]="submitting()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+          >
+            Voltar
+          </button>
+          <button
+            type="submit"
+            [disabled]="submitting()"
+            class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ submitting() ? "Cancelando..." : "Cancelar parcela" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

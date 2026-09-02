@@ -3,6 +3,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { AuthorizationService } from '../../core/services/authorization.service';
 import { DocumentService } from '../../core/services/document.service';
+import { FinanceService } from '../../core/services/finance.service';
 import { PersonService } from '../../core/services/person.service';
 import { SaleService } from '../../core/services/sale.service';
 import { SaleDetailComponent } from './sale-detail.component';
@@ -66,6 +67,7 @@ describe('SaleDetailComponent', () => {
         position: 0,
       },
     ],
+    receivables: [],
     commissions: [],
     documents: [],
     audit: [],
@@ -100,6 +102,9 @@ describe('SaleDetailComponent', () => {
     const documents = jasmine.createSpyObj<DocumentService>('DocumentService', [
       'download',
     ]);
+    const finance = jasmine.createSpyObj<FinanceService>('FinanceService', [
+      'markCommissionDue',
+    ]);
     const authorization = jasmine.createSpyObj<AuthorizationService>(
       'AuthorizationService',
       ['hasPermission'],
@@ -112,6 +117,7 @@ describe('SaleDetailComponent', () => {
         { provide: SaleService, useValue: sales },
         { provide: PersonService, useValue: people },
         { provide: DocumentService, useValue: documents },
+        { provide: FinanceService, useValue: finance },
         { provide: AuthorizationService, useValue: authorization },
         provideRouter([]),
         {
