@@ -114,6 +114,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'ChartNoAxesCombined',
         permission: APP_PERMISSIONS.FINANCE_READ,
       },
+      {
+        label: 'Cobrança automatizada',
+        route: '/finance/collections',
+        icon: 'MailCheck',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+      },
     ],
   },
   {

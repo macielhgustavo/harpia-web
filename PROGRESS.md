@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-09-02 — Cobrança automatizada:** criada central de réguas e envios com modelos seguros inicialmente pausados, ativação por perfis financeiros, processamento sob demanda, filtros, indicadores, histórico de tentativas, repetição de falhas e cancelamento. A interface diferencia claramente fila operacional de envio efetivo e avisa quando o provedor de e-mail ainda não está configurado.
+
 - **2026-09-02 — DRE gerencial:** criada visão financeira por competência ou caixa, com filtros por período, empresa/SPE, empreendimento e centro de custo. A tela compara receitas, despesas e resultado ao período anterior, calcula margem líquida e apresenta a composição das despesas por categoria.
 
 - **2026-09-02 — Conciliação bancária:** adicionada área financeira para importar extratos CSV de até 500 lançamentos, sem duplicar reimportações, com indicadores, busca, filtros, paginação e sugestões por conta, natureza, valor e proximidade de data. Usuários financeiros podem conciliar, desfazer, ignorar ou restaurar lançamentos; perfis de leitura apenas consultam o estado e a correspondência.

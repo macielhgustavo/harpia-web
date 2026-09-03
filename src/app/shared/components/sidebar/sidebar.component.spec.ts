@@ -100,6 +100,7 @@ describe('SidebarComponent', () => {
       '/finance/cash-flow',
       '/finance/reconciliation',
       '/finance/income-statement',
+      '/finance/collections',
     ]);
   });
 });

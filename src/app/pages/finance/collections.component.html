@@ -1,0 +1,443 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Cobrança automatizada</h1>
+      <p class="mt-1 text-sm text-muted">
+        Configure a régua, acompanhe os envios e trate exceções sem perder o
+        histórico.
+      </p>
+    </div>
+    @if (canWrite) {
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="openCreate()"
+          class="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-ink hover:bg-surface"
+        >
+          <lucide-icon [img]="AddIcon" [size]="16"></lucide-icon>
+          Nova régua
+        </button>
+        <button
+          type="button"
+          (click)="runNow()"
+          [disabled]="processing()"
+          class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          <lucide-icon [img]="RunIcon" [size]="16"></lucide-icon>
+          {{ processing() ? "Processando..." : "Processar agora" }}
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (notice()) {
+    <div
+      class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+    >
+      {{ notice() }}
+    </div>
+  }
+  @if (error()) {
+    <div
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
+      {{ error() }}
+    </div>
+  }
+
+  @if (page(); as data) {
+    @if (!data.summary.providerConfigured) {
+      <section
+        class="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"
+      >
+        <lucide-icon
+          class="mt-0.5 shrink-0"
+          [img]="AlertIcon"
+          [size]="18"
+        ></lucide-icon>
+        <div>
+          <strong>Envio de e-mail aguardando configuração.</strong>
+          A fila e as réguas já funcionam; os envios ficam registrados como
+          falha até que o administrador conecte o provedor no backend.
+        </div>
+      </section>
+    }
+
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Pendentes</p>
+        <p class="mt-2 text-2xl font-bold text-amber-800">
+          {{ data.summary.pending }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Enviadas</p>
+        <p class="mt-2 text-2xl font-bold text-emerald-800">
+          {{ data.summary.sent }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Com falha</p>
+        <p class="mt-2 text-2xl font-bold text-red-800">
+          {{ data.summary.failed }}
+        </p>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Canceladas</p>
+        <p class="mt-2 text-2xl font-bold text-slate-700">
+          {{ data.summary.cancelled }}
+        </p>
+      </article>
+    </section>
+  }
+
+  <section class="rounded-xl border border-border bg-card shadow-card">
+    <div
+      class="flex items-center justify-between border-b border-border px-5 py-4"
+    >
+      <div>
+        <h2 class="font-semibold text-ink">Régua de comunicação</h2>
+        <p class="mt-0.5 text-xs text-muted">
+          Os modelos iniciais começam pausados para evitar disparos acidentais.
+        </p>
+      </div>
+      <lucide-icon
+        [img]="MailIcon"
+        [size]="20"
+        class="text-muted"
+      ></lucide-icon>
+    </div>
+    <div class="grid gap-3 p-4 lg:grid-cols-3">
+      @for (rule of rules(); track rule.id) {
+        <article class="rounded-lg border border-border p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="font-medium text-ink">{{ rule.name }}</h3>
+              <p class="mt-1 text-xs text-muted">
+                {{ offsetLabel(rule.daysOffset) }}
+              </p>
+            </div>
+            <span
+              class="rounded-full px-2 py-1 text-xs font-medium"
+              [class.bg-emerald-100]="rule.active"
+              [class.text-emerald-800]="rule.active"
+              [class.bg-slate-100]="!rule.active"
+              [class.text-slate-700]="!rule.active"
+            >
+              {{ rule.active ? "Ativa" : "Pausada" }}
+            </span>
+          </div>
+          <p class="mt-3 line-clamp-2 text-sm text-muted">{{ rule.subject }}</p>
+          @if (canWrite) {
+            <div class="mt-4 flex gap-2">
+              <button
+                type="button"
+                (click)="toggleRule(rule)"
+                [disabled]="actingId() === rule.id"
+                class="flex-1 rounded-lg border border-border px-3 py-2 text-xs font-medium text-ink hover:bg-surface disabled:opacity-50"
+              >
+                {{ rule.active ? "Pausar" : "Ativar" }}
+              </button>
+              <button
+                type="button"
+                (click)="openEdit(rule)"
+                class="rounded-lg border border-border p-2 text-muted hover:bg-surface hover:text-ink"
+                aria-label="Editar régua"
+              >
+                <lucide-icon [img]="EditIcon" [size]="15"></lucide-icon>
+              </button>
+            </div>
+          }
+        </article>
+      }
+    </div>
+  </section>
+
+  <section
+    class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+  >
+    <form
+      (ngSubmit)="applyFilters()"
+      class="grid gap-3 border-b border-border p-4 md:grid-cols-4"
+    >
+      <label class="text-sm font-medium text-ink">
+        Status
+        <select
+          name="status"
+          [(ngModel)]="filterStatus"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          <option value="PENDENTE">Pendente</option>
+          <option value="ENVIANDO">Enviando</option>
+          <option value="ENVIADO">Enviado</option>
+          <option value="FALHOU">Falhou</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Régua
+        <select
+          name="rule"
+          [(ngModel)]="filterRuleId"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          @for (rule of rules(); track rule.id) {
+            <option [value]="rule.id">{{ rule.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink md:col-span-2">
+        Buscar cliente, destinatário ou assunto
+        <div class="mt-1 flex gap-2">
+          <input
+            name="search"
+            [(ngModel)]="search"
+            class="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2.5"
+          />
+          <button
+            type="submit"
+            class="rounded-lg border border-border px-4 text-sm font-medium text-ink hover:bg-surface"
+          >
+            Filtrar
+          </button>
+        </div>
+      </label>
+    </form>
+
+    @if (loading()) {
+      <div class="py-16 text-center text-sm text-muted">
+        Carregando cobranças...
+      </div>
+    } @else {
+      @if (page(); as data) {
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-border text-sm">
+            <thead
+              class="bg-surface text-left text-xs uppercase tracking-wide text-muted"
+            >
+              <tr>
+                <th class="px-4 py-3">Cliente / parcela</th>
+                <th class="px-4 py-3">Régua</th>
+                <th class="px-4 py-3">Agendamento</th>
+                <th class="px-4 py-3">Saldo</th>
+                <th class="px-4 py-3">Status</th>
+                <th class="px-4 py-3 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              @for (item of data.data; track item.id) {
+                <tr class="align-top">
+                  <td class="px-4 py-3">
+                    <p class="font-medium text-ink">
+                      {{ item.customer?.name || "Cliente não identificado" }}
+                    </p>
+                    <p class="mt-0.5 text-xs text-muted">
+                      {{ item.receivable.description }} ·
+                      {{ item.recipient || "Sem e-mail" }}
+                    </p>
+                    <p class="mt-1 max-w-md truncate text-xs text-muted">
+                      {{ item.subject }}
+                    </p>
+                    @if (item.failureReason) {
+                      <p class="mt-1 max-w-md text-xs text-red-700">
+                        {{ item.failureReason }}
+                      </p>
+                    }
+                  </td>
+                  <td class="px-4 py-3 text-muted">{{ item.rule.name }}</td>
+                  <td class="px-4 py-3 text-muted">
+                    {{ date(item.scheduledFor) }}
+                    @if (item.sentAt) {
+                      <p class="text-xs">Enviado em {{ date(item.sentAt) }}</p>
+                    }
+                  </td>
+                  <td class="px-4 py-3 font-medium text-ink">
+                    {{ money(item.balanceSnapshot) }}
+                  </td>
+                  <td class="px-4 py-3">
+                    <span
+                      class="rounded-full px-2 py-1 text-xs font-medium"
+                      [class]="statusClass(item.status)"
+                    >
+                      {{ statusLabel(item.status) }}
+                    </span>
+                    <p class="mt-1 text-xs text-muted">
+                      {{ item.attemptCount }} tentativa(s)
+                    </p>
+                  </td>
+                  <td class="px-4 py-3 text-right">
+                    @if (canWrite && item.status === "FALHOU") {
+                      <button
+                        type="button"
+                        (click)="retry(item)"
+                        [disabled]="!!actingId()"
+                        class="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-surface disabled:opacity-50"
+                      >
+                        <lucide-icon
+                          [img]="ResendIcon"
+                          [size]="14"
+                        ></lucide-icon
+                        >Repetir
+                      </button>
+                    }
+                    @if (
+                      canWrite &&
+                      (item.status === "PENDENTE" || item.status === "FALHOU")
+                    ) {
+                      <button
+                        type="button"
+                        (click)="cancel(item)"
+                        [disabled]="!!actingId()"
+                        class="ml-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="px-4 py-16 text-center text-muted">
+                    Nenhuma cobrança encontrada.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer
+          class="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted"
+        >
+          <span>{{ data.pagination.total }} registro(s)</span>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              (click)="goToPage(currentPage - 1)"
+              [disabled]="currentPage <= 1"
+              class="rounded border border-border px-3 py-1.5 disabled:opacity-40"
+            >
+              Anterior
+            </button>
+            <span
+              >{{ currentPage }} / {{ data.pagination.totalPages || 1 }}</span
+            >
+            <button
+              type="button"
+              (click)="goToPage(currentPage + 1)"
+              [disabled]="currentPage >= data.pagination.totalPages"
+              class="rounded border border-border px-3 py-1.5 disabled:opacity-40"
+            >
+              Próxima
+            </button>
+          </div>
+        </footer>
+      }
+    }
+  </section>
+</div>
+
+@if (modalOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    (click)="closeModal()"
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="collection-rule-title"
+      class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-card p-6 shadow-xl"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="collection-rule-title" class="text-lg font-semibold text-ink">
+            {{ editingId() ? "Editar régua" : "Nova régua" }}
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            Valores negativos significam antes do vencimento; positivos, depois.
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="closeModal()"
+          class="rounded p-1 text-muted hover:bg-surface"
+          aria-label="Fechar"
+        >
+          <lucide-icon [img]="CloseIcon" [size]="20"></lucide-icon>
+        </button>
+      </div>
+      <form (ngSubmit)="saveRule()" class="mt-5 space-y-4">
+        <div class="grid gap-4 sm:grid-cols-[1fr_180px]">
+          <label class="text-sm font-medium text-ink"
+            >Nome<input
+              name="name"
+              required
+              maxlength="100"
+              [(ngModel)]="form.name"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          /></label>
+          <label class="text-sm font-medium text-ink"
+            >Dias do vencimento<input
+              name="daysOffset"
+              type="number"
+              min="-365"
+              max="365"
+              required
+              [(ngModel)]="form.daysOffset"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          /></label>
+        </div>
+        <label class="block text-sm font-medium text-ink"
+          >Assunto<input
+            name="subject"
+            required
+            maxlength="200"
+            [(ngModel)]="form.subject"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        /></label>
+        <label class="block text-sm font-medium text-ink"
+          >Mensagem<textarea
+            name="message"
+            required
+            maxlength="4000"
+            rows="7"
+            [(ngModel)]="form.message"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <p class="text-xs text-muted">
+          Variáveis disponíveis: <code>{{ "{{cliente}}" }}</code>,
+          <code>{{ "{{vencimento}}" }}</code>, <code>{{ "{{valor}}" }}</code>,
+          <code>{{ "{{parcela}}" }}</code>, <code>{{ "{{venda}}" }}</code>,
+          <code>{{ "{{empreendimento}}" }}</code> e
+          <code>{{ "{{unidade}}" }}</code>.
+        </p>
+        <label class="flex items-center gap-2 text-sm text-ink"
+          ><input name="active" type="checkbox" [(ngModel)]="form.active" />
+          Ativar esta régua ao salvar</label
+        >
+        <div class="flex justify-end gap-2 border-t border-border pt-4">
+          <button
+            type="button"
+            (click)="closeModal()"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="saving()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {{ saving() ? "Salvando..." : "Salvar régua" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

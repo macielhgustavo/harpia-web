@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   Landmark,
   ListChecks,
+  MailCheck,
   LayoutDashboard,
   LucideAngularModule,
   LucideIconData,
@@ -126,6 +127,7 @@ export class SidebarComponent {
     HandCoins,
     ChartNoAxesCombined,
     ListChecks,
+    MailCheck,
   };
 
   iconOf(name: string): LucideIconData {

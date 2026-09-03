@@ -211,6 +211,15 @@ export const routes: Routes = [
         (m) => m.IncomeStatementComponent,
       ),
   },
+  {
+    path: 'finance/collections',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/collections.component').then(
+        (m) => m.CollectionsComponent,
+      ),
+  },
   { path: 'receivables', redirectTo: 'finance/receivables', pathMatch: 'full' },
   {
     path: 'reports',
