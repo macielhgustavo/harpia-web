@@ -1,0 +1,482 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Conciliação bancária</h1>
+      <p class="mt-1 max-w-3xl text-sm text-muted">
+        Compare o extrato do banco com os pagamentos registrados no Harpia sem
+        alterar o movimento financeiro original.
+      </p>
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="openImport()"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+      >
+        <lucide-icon [img]="ImportIcon" [size]="17"></lucide-icon>
+        Importar extrato
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <div
+      role="status"
+      class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+    >
+      {{ feedback() }}
+    </div>
+  }
+
+  @if (result(); as list) {
+    <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Pendentes</p>
+        <div class="mt-2 flex items-end justify-between gap-3">
+          <p class="text-xl font-bold text-amber-800">
+            {{ list.summary.pending.count }}
+          </p>
+          <p class="text-sm font-medium text-ink">
+            {{ formatCurrency(list.summary.pending.amount) }}
+          </p>
+        </div>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Conciliados</p>
+        <div class="mt-2 flex items-end justify-between gap-3">
+          <p class="text-xl font-bold text-emerald-800">
+            {{ list.summary.reconciled.count }}
+          </p>
+          <p class="text-sm font-medium text-ink">
+            {{ formatCurrency(list.summary.reconciled.amount) }}
+          </p>
+        </div>
+      </article>
+      <article class="rounded-xl border border-border bg-card p-4 shadow-card">
+        <p class="text-sm text-muted">Ignorados</p>
+        <div class="mt-2 flex items-end justify-between gap-3">
+          <p class="text-xl font-bold text-muted">
+            {{ list.summary.ignored.count }}
+          </p>
+          <p class="text-sm font-medium text-ink">
+            {{ formatCurrency(list.summary.ignored.amount) }}
+          </p>
+        </div>
+      </article>
+    </section>
+  }
+
+  <form
+    (ngSubmit)="load(true)"
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+    aria-label="Filtros da conciliação"
+  >
+    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <label class="text-sm font-medium text-ink">
+        Busca
+        <span class="relative mt-1 block">
+          <lucide-icon
+            [img]="SearchIcon"
+            [size]="16"
+            class="pointer-events-none absolute left-3 top-3 text-muted"
+          ></lucide-icon>
+          <input
+            name="search"
+            [(ngModel)]="search"
+            placeholder="Descrição ou identificador"
+            class="w-full rounded-lg border border-border bg-surface py-2.5 pl-9 pr-3"
+          />
+        </span>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Situação
+        <select
+          name="status"
+          [(ngModel)]="status"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          <option value="PENDENTE">Pendente</option>
+          <option value="CONCILIADO">Conciliado</option>
+          <option value="IGNORADO">Ignorado</option>
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Conta bancária
+        <select
+          name="bankAccount"
+          [(ngModel)]="bankAccountId"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todas</option>
+          @for (account of accounts(); track account.id) {
+            <option [value]="account.id">{{ accountLabel(account) }}</option>
+          }
+        </select>
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Data inicial
+        <input
+          type="date"
+          name="startDate"
+          [(ngModel)]="startDate"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        />
+      </label>
+      <label class="text-sm font-medium text-ink">
+        Data final
+        <input
+          type="date"
+          name="endDate"
+          [(ngModel)]="endDate"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        />
+      </label>
+    </div>
+    <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        (click)="clear()"
+        class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+      >
+        Limpar
+      </button>
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+      >
+        Aplicar filtros
+      </button>
+    </div>
+  </form>
+
+  @if (error()) {
+    <div
+      role="alert"
+      class="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
+      <span>{{ error() }}</span>
+      <button
+        type="button"
+        (click)="load()"
+        class="inline-flex items-center gap-1"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="15"></lucide-icon>Repetir
+      </button>
+    </div>
+  }
+
+  <section
+    class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+  >
+    @if (loading()) {
+      <div class="flex min-h-52 items-center justify-center text-sm text-muted">
+        Carregando lançamentos...
+      </div>
+    } @else {
+      @if (result(); as list) {
+        @if (list.data.length === 0) {
+          <div
+            class="flex min-h-52 flex-col items-center justify-center p-6 text-center"
+          >
+            <p class="font-medium text-ink">Nenhum lançamento encontrado</p>
+            <p class="mt-1 text-sm text-muted">
+              Importe um extrato ou ajuste os filtros.
+            </p>
+          </div>
+        } @else {
+          <div class="divide-y divide-border">
+            @for (entry of list.data; track entry.id) {
+              <article
+                class="grid gap-4 p-4 lg:grid-cols-[120px_minmax(0,1fr)_150px_auto] lg:items-center"
+              >
+                <div>
+                  <p class="text-sm font-medium text-ink">
+                    {{ formatDate(entry.date) }}
+                  </p>
+                  <span
+                    class="mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-medium"
+                    [class]="statusClass(entry.status)"
+                  >
+                    {{ statusLabel(entry.status) }}
+                  </span>
+                </div>
+                <div class="min-w-0">
+                  <p class="truncate font-medium text-ink">
+                    {{ entry.description }}
+                  </p>
+                  <p class="mt-1 truncate text-xs text-muted">
+                    {{ entry.bankAccount.bank }} · Ag.
+                    {{ entry.bankAccount.agency }} ·
+                    {{ entry.bankAccount.account }}
+                    @if (entry.externalId) {
+                      · ID {{ entry.externalId }}
+                    }
+                  </p>
+                  @if (entry.matchedTransaction) {
+                    <p class="mt-1 truncate text-xs text-emerald-800">
+                      Vinculado a {{ entry.matchedTransaction.description }} em
+                      {{ formatDate(entry.matchedTransaction.date) }}
+                    </p>
+                  }
+                </div>
+                <p
+                  class="font-semibold"
+                  [class.text-emerald-800]="entry.type === 'CREDITO'"
+                  [class.text-red-800]="entry.type === 'DEBITO'"
+                >
+                  {{ entry.type === "CREDITO" ? "+" : "−" }}
+                  {{ formatCurrency(entry.amount) }}
+                </p>
+                @if (canWrite) {
+                  <div class="flex flex-wrap gap-2 lg:justify-end">
+                    @if (entry.status === "PENDENTE") {
+                      <button
+                        type="button"
+                        (click)="openMatch(entry)"
+                        [disabled]="!!actionId()"
+                        class="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white disabled:opacity-60"
+                      >
+                        <lucide-icon
+                          [img]="MatchIcon"
+                          [size]="14"
+                        ></lucide-icon>
+                        Conciliar
+                      </button>
+                      <button
+                        type="button"
+                        (click)="ignore(entry)"
+                        [disabled]="!!actionId()"
+                        class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium disabled:opacity-60"
+                      >
+                        <lucide-icon
+                          [img]="IgnoreIcon"
+                          [size]="14"
+                        ></lucide-icon>
+                        Ignorar
+                      </button>
+                    } @else if (entry.status === "CONCILIADO") {
+                      <button
+                        type="button"
+                        (click)="unmatch(entry)"
+                        [disabled]="!!actionId()"
+                        class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium disabled:opacity-60"
+                      >
+                        <lucide-icon
+                          [img]="UnmatchIcon"
+                          [size]="14"
+                        ></lucide-icon>
+                        Desfazer
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        (click)="restore(entry)"
+                        [disabled]="!!actionId()"
+                        class="inline-flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-xs font-medium disabled:opacity-60"
+                      >
+                        <lucide-icon
+                          [img]="RestoreIcon"
+                          [size]="14"
+                        ></lucide-icon>
+                        Restaurar
+                      </button>
+                    }
+                  </div>
+                }
+              </article>
+            }
+          </div>
+          @if (list.pagination.totalPages > 1) {
+            <footer
+              class="flex items-center justify-between border-t border-border px-4 py-3"
+            >
+              <p class="text-xs text-muted">
+                Página {{ list.pagination.page }} de
+                {{ list.pagination.totalPages }} ·
+                {{ list.pagination.total }} lançamento(s)
+              </p>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  (click)="changePage(page - 1)"
+                  [disabled]="page <= 1"
+                  aria-label="Página anterior"
+                  class="rounded-lg border border-border p-2 disabled:opacity-40"
+                >
+                  <lucide-icon [img]="PreviousIcon" [size]="16"></lucide-icon>
+                </button>
+                <button
+                  type="button"
+                  (click)="changePage(page + 1)"
+                  [disabled]="page >= list.pagination.totalPages"
+                  aria-label="Próxima página"
+                  class="rounded-lg border border-border p-2 disabled:opacity-40"
+                >
+                  <lucide-icon [img]="NextIcon" [size]="16"></lucide-icon>
+                </button>
+              </div>
+            </footer>
+          }
+        }
+      }
+    }
+  </section>
+</div>
+
+@if (importOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="import-title"
+      class="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-card p-5 shadow-xl"
+    >
+      <header class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="import-title" class="text-lg font-semibold text-ink">
+            Importar extrato CSV
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            Use ponto e vírgula: data; descrição; tipo; valor; identificador.
+          </p>
+        </div>
+        <button type="button" (click)="closeImport()" aria-label="Fechar">
+          <lucide-icon [img]="CloseIcon" [size]="20"></lucide-icon>
+        </button>
+      </header>
+      <div class="mt-5 space-y-4">
+        <label class="block text-sm font-medium text-ink">
+          Conta bancária
+          <select
+            [(ngModel)]="importBankAccountId"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          >
+            <option value="">Selecione</option>
+            @for (account of accounts(); track account.id) {
+              <option [value]="account.id">{{ accountLabel(account) }}</option>
+            }
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-ink">
+          Arquivo CSV
+          <input
+            type="file"
+            accept=".csv,.txt,text/csv,text/plain"
+            (change)="readFile($event)"
+            class="mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
+          />
+        </label>
+        <label class="block text-sm font-medium text-ink">
+          Conteúdo do extrato
+          <textarea
+            [(ngModel)]="importText"
+            rows="9"
+            placeholder="data;descricao;tipo;valor;id&#10;02/09/2026;Recebimento cliente;credito;15.000,00;mov-001"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 font-mono text-sm"
+          ></textarea>
+        </label>
+        <p class="text-xs text-muted">
+          Valores negativos também são reconhecidos como débito quando a coluna
+          tipo estiver vazia. Reimportações são ignoradas com segurança.
+        </p>
+        @if (importError()) {
+          <p role="alert" class="text-sm text-red-800">{{ importError() }}</p>
+        }
+      </div>
+      <footer
+        class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+      >
+        <button
+          type="button"
+          (click)="closeImport()"
+          class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="importStatement()"
+          [disabled]="importing()"
+          class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {{ importing() ? "Importando..." : "Importar lançamentos" }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (selected(); as entry) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="match-title"
+      class="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-card p-5 shadow-xl"
+    >
+      <header class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="match-title" class="text-lg font-semibold text-ink">
+            Escolher correspondência
+          </h2>
+          <p class="mt-1 text-sm text-muted">
+            {{ entry.description }} · {{ formatCurrency(entry.amount) }} ·
+            {{ formatDate(entry.date) }}
+          </p>
+        </div>
+        <button type="button" (click)="closeMatch()" aria-label="Fechar">
+          <lucide-icon [img]="CloseIcon" [size]="20"></lucide-icon>
+        </button>
+      </header>
+      <div class="mt-5">
+        @if (candidatesLoading()) {
+          <p class="py-8 text-center text-sm text-muted">
+            Procurando por conta, valor e data...
+          </p>
+        } @else if (candidates().length === 0) {
+          <div
+            class="rounded-lg border border-border bg-surface-warm p-4 text-sm text-muted"
+          >
+            Nenhuma transação compatível foi encontrada na mesma conta, com o
+            mesmo valor e até três dias de diferença.
+          </div>
+        } @else {
+          <div class="divide-y divide-border rounded-lg border border-border">
+            @for (candidate of candidates(); track candidate.id) {
+              <article
+                class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div class="min-w-0">
+                  <p class="font-medium text-ink">
+                    {{ candidate.description }}
+                  </p>
+                  <p class="mt-1 text-xs text-muted">
+                    {{ formatDate(candidate.date) }} ·
+                    {{ formatCurrency(candidate.amount) }} ·
+                    {{ candidate.score }}% de compatibilidade
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  (click)="match(candidate)"
+                  [disabled]="!!actionId()"
+                  class="shrink-0 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
+                >
+                  Vincular
+                </button>
+              </article>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+}

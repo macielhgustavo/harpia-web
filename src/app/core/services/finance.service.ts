@@ -10,6 +10,14 @@ import {
   FinancialCategoryType,
 } from '../models/finance.model';
 import { ApiService } from './api.service';
+import {
+  BankStatementEntry,
+  ImportStatementInput,
+  ImportStatementResult,
+  ReconciliationCandidate,
+  ReconciliationFilters,
+  ReconciliationListResult,
+} from '../models/bank-reconciliation.model';
 
 @Injectable({ providedIn: 'root' })
 export class FinanceService {
@@ -42,7 +50,62 @@ export class FinanceService {
     return this.api.post(`/finance/commissions/${id}/mark-due`, {});
   }
 
-  private params(filters: FinanceFilters): HttpParams {
+  reconciliation(
+    filters: ReconciliationFilters = {},
+  ): Observable<ReconciliationListResult> {
+    return this.api.get<ReconciliationListResult>(
+      '/finance/reconciliation',
+      this.params(filters),
+    );
+  }
+
+  importStatement(
+    input: ImportStatementInput,
+  ): Observable<ImportStatementResult> {
+    return this.api.post<ImportStatementResult>(
+      '/finance/reconciliation/import',
+      input,
+    );
+  }
+
+  reconciliationCandidates(id: string): Observable<ReconciliationCandidate[]> {
+    return this.api.get<ReconciliationCandidate[]>(
+      `/finance/reconciliation/${id}/candidates`,
+    );
+  }
+
+  matchReconciliation(
+    id: string,
+    transactionId: string,
+  ): Observable<BankStatementEntry> {
+    return this.api.post<BankStatementEntry>(
+      `/finance/reconciliation/${id}/match`,
+      { transactionId },
+    );
+  }
+
+  unmatchReconciliation(id: string): Observable<BankStatementEntry> {
+    return this.api.post<BankStatementEntry>(
+      `/finance/reconciliation/${id}/unmatch`,
+      {},
+    );
+  }
+
+  ignoreReconciliation(id: string): Observable<BankStatementEntry> {
+    return this.api.post<BankStatementEntry>(
+      `/finance/reconciliation/${id}/ignore`,
+      {},
+    );
+  }
+
+  restoreReconciliation(id: string): Observable<BankStatementEntry> {
+    return this.api.post<BankStatementEntry>(
+      `/finance/reconciliation/${id}/restore`,
+      {},
+    );
+  }
+
+  private params(filters: FinanceFilters | ReconciliationFilters): HttpParams {
     return Object.entries(filters).reduce(
       (params, [key, value]) =>
         value === undefined || value === null || value === ''

@@ -102,6 +102,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'ChartNoAxesCombined',
         permission: APP_PERMISSIONS.FINANCE_READ,
       },
+      {
+        label: 'Conciliação bancária',
+        route: '/finance/reconciliation',
+        icon: 'ListChecks',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+      },
     ],
   },
   {

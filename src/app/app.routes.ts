@@ -193,6 +193,15 @@ export const routes: Routes = [
         (m) => m.CashFlowComponent,
       ),
   },
+  {
+    path: 'finance/reconciliation',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/bank-reconciliation.component').then(
+        (m) => m.BankReconciliationComponent,
+      ),
+  },
   { path: 'receivables', redirectTo: 'finance/receivables', pathMatch: 'full' },
   {
     path: 'reports',

@@ -99,6 +99,11 @@ export class AuditLogsComponent implements OnInit {
     'PAYABLE_PAID',
     'PAYMENT_CREATED',
     'FINANCIAL_TRANSACTION_CREATED',
+    'BANK_STATEMENT_IMPORTED',
+    'BANK_TRANSACTION_MATCHED',
+    'BANK_TRANSACTION_UNMATCHED',
+    'BANK_STATEMENT_IGNORED',
+    'BANK_STATEMENT_RESTORED',
   ] as const;
 
   readonly knownEntityTypes = [
@@ -130,6 +135,7 @@ export class AuditLogsComponent implements OnInit {
     'COST_CENTER',
     'PAYABLE',
     'FINANCIAL_TRANSACTION',
+    'BANK_STATEMENT_ENTRY',
   ] as const;
 
   private readonly dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {

@@ -8,6 +8,7 @@ import {
   Columns3,
   FileSpreadsheet,
   Landmark,
+  ListChecks,
   LayoutDashboard,
   LucideAngularModule,
   LucideIconData,
@@ -124,6 +125,7 @@ export class SidebarComponent {
     ReceiptText,
     HandCoins,
     ChartNoAxesCombined,
+    ListChecks,
   };
 
   iconOf(name: string): LucideIconData {

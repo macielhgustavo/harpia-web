@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-09-02 — Conciliação bancária:** adicionada área financeira para importar extratos CSV de até 500 lançamentos, sem duplicar reimportações, com indicadores, busca, filtros, paginação e sugestões por conta, natureza, valor e proximidade de data. Usuários financeiros podem conciliar, desfazer, ignorar ou restaurar lançamentos; perfis de leitura apenas consultam o estado e a correspondência.
+
 - **2026-09-01 — Gestão financeira:** criado o grupo Financeiro com visão geral consolidada/por SPE, contas a receber, contas a pagar e fluxo de caixa realizado, projetado ou consolidado. A interface mostra saldo, compromissos, atrasos, projeção de 30 dias, posição por empresa e próximos vencimentos; permite contas manuais, pagamentos com conta bancária obrigatória, histórico, estorno e cancelamento, respeitando `FINANCE_READ`/`FINANCE_WRITE`. Retornos agora são pagos no financeiro e comissões previstas podem ser tornadas devidas.
 
 - **2026-09-01 — Parcelas e contas a receber:** adicionada a gestão paginada de recebíveis com indicadores, filtros por status, empresa, empreendimento, cliente, conta e período, histórico de pagamentos, baixa parcial/total, estorno e cancelamento. O detalhe da venda ganhou linha do tempo financeira e acesso direto à parcela, com estados responsivos, tratamento de concorrência e ações condicionadas às permissões financeiras.

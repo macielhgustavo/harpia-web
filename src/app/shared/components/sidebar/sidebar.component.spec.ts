@@ -87,7 +87,7 @@ describe('SidebarComponent', () => {
     expect(text).not.toContain('Dashboard');
   });
 
-  it('agrupa as quatro areas financeiras para quem tem acesso', () => {
+  it('agrupa as áreas financeiras para quem tem acesso', () => {
     render([APP_PERMISSIONS.FINANCE_READ]);
 
     const finance = fixture.componentInstance.navigation.find(
@@ -98,6 +98,7 @@ describe('SidebarComponent', () => {
       '/finance/receivables',
       '/finance/payables',
       '/finance/cash-flow',
+      '/finance/reconciliation',
     ]);
   });
 });
