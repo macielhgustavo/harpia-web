@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-09-02 — Correção Monetária:** implementada gestão de índices monetários, values, políticas de ajuste e ajustes de recebíveis. Inclui abas para índices, values, políticas e ajustes, com criação, leitura, atualização e exclusão, além de pré-view de ajustes.
+
 - **2026-09-02 — Cobrança automatizada:** criada central de réguas e envios com modelos seguros inicialmente pausados, ativação por perfis financeiros, processamento sob demanda, filtros, indicadores, histórico de tentativas, repetição de falhas e cancelamento. A interface diferencia claramente fila operacional de envio efetivo e avisa quando o provedor de e-mail ainda não está configurado.
 
 - **2026-09-02 — DRE gerencial:** criada visão financeira por competência ou caixa, com filtros por período, empresa/SPE, empreendimento e centro de custo. A tela compara receitas, despesas e resultado ao período anterior, calcula margem líquida e apresenta a composição das despesas por categoria.
@@ -22,7 +24,7 @@
 
 - **2026-08-16 — Documentos privados:** criado componente reutilizável para pessoa, investimento, unidade e empreendimento, com listagem, busca, categoria, metadados, upload preliminarmente validado até 25 MB, download autenticado por `Blob` preservando o nome e exclusão do arquivo privado; fluxos respeitam `DOCUMENTS_READ`/`DOCUMENTS_WRITE` e nunca tratam `fileUrl` como URL pública.
 
-- **2026-08-16 — Contas bancárias:** substituído o placeholder por gestão real das contas da organização e de empresas/SPEs, com indicadores, busca, filtro por empresa, criação, edição, desvinculação e exclusão; visualização financeira restrita a `BANK_ACCOUNTS_READ`, mutações restritas a `BANK_ACCOUNTS_WRITE` e tenant derivado exclusivamente da sessão.
+- **2026-08-16 — Contas bancárias:** substituído o placeholder por gestão real das contas da organização e de empresas/SPEs, com indicadores, busca, filtro por empresa, criação, edição, desvinculação e exclusão; visualização financeira restrita a `BANK_ACCOUNTS_READ`, mutações restrita a `BANK_ACCOUNTS_WRITE` e tenant derivado exclusivamente da sessão.
 
 - **2026-08-16 — Interações e próximos passos:** substituído o placeholder por listagem e timeline reais, com busca, filtros por pessoa e tipo, indicadores, criação, edição e exclusão; enums reconciliados com a API; próximo passo destacado; cadastro também disponível diretamente no detalhe da pessoa, respeitando `INTERACTIONS_READ`/`INTERACTIONS_WRITE`.
 
@@ -53,4 +55,5 @@
 - **2026-07-11 — Ajuste de paleta: fundos quentes off-white com sombra nos cards:** troca do branco frio por tons quentes (`surface #FAF9F6`, `surface-warm #F7F4EC`, `card #FCFBF7`, `border #E8E4D8`) e nova `shadow-card` levemente esverdeada; sidebar/header/login agora usam `bg-card`, fundo em `bg-surface`, hovers em `surface-warm`. Verde-floresta mantido como acento.
 
 - **2026-07-11 — Frontend: fundação reconstruída:** removida a arquitetura antiga (investidores/projetos/aportes) preservando infra (Angular 18, Tailwind verde-floresta, Lucide, auth, currency-mask, login). Nova navegação centralizada em `core/config/navigation.config.ts` (grupos Comercial, Empreendimentos, Investidores, Cadastros) renderizada pela sidebar; rotas placeholder protegidas por `authGuard` para dashboard/people/interactions/developments/investments/returns/companies/bank-accounts; novos models da arquitetura de incorporadora (Person+papéis, Company/SPE, BankAccount, Development, Unit, UnitType, PriceTable, Investment, Allocation, Return, Interaction, Document, Dashboard).
+
 - **2026-08-16 — Reservas comerciais de unidades:** adicionada uma seção reutilizável nos detalhes de empreendimento e oportunidade, com listagem do histórico, status, cliente, unidade, responsável, vínculo comercial, validade e tempo restante. Usuários com `SALES_WRITE` podem reservar somente unidades disponíveis e cancelar reservas ativas com motivo; expiração e concorrência continuam autoritativas no backend. Formulários são responsivos, impedem envio duplicado e preservam foco/teclado, enquanto perfis sem `SALES_READ` não consultam nem exibem dados comerciais.

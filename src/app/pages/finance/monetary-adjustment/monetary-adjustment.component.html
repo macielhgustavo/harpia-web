@@ -1,0 +1,104 @@
+<div class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold text-ink">Correção Monetária</h1>
+    <p class="mt-1 max-w-3xl text-sm text-muted">
+      Gerencie índices monetários, suas values, políticas de ajuste e ajustes de recebíveis.
+    </p>
+  </header>
+
+  <!-- Receivable Selector -->
+  <div *ngIf="receivables.length > 0" class="p-4 border border-border rounded-lg mb-6">
+    <div class="flex justify-between items-start">
+      <div>
+        <h3 class="text-lg font-bold text-ink">Recebível Selecionado:</h3>
+        <p class="text-sm text-muted">{{ selectedReceivable?.description || 'Nenhum selecionado' }}</p>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <button
+          class="btn btn-outline"
+          (click)="showReceivableSelector = !showReceivableSelector"
+        >
+          {{ showReceivableSelector ? 'Cancelar' : 'Selecionar Recebível' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Receivable Selector Dropdown -->
+    <div *ngIf="showReceivableSelector" class="mt-4 p-4 border border-border rounded-lg">
+      <h4 class="text-font-bold text-ink mb-2">Selecionar Recebível</h4>
+      <select
+        class="select select-bordered w-full"
+        (change)="onReceivableSelect($event)"
+      >
+        <option value="">Selecione um recebível</option>
+        <option *ngFor="let receivable of receivables" [value]="receivable">
+          {{ receivable.description }} (ID: {{ receivable.id }})
+        </option>
+      </select>
+      <div class="flex justify-end mt-2">
+        <button
+          class="btn btn-secondary"
+          (click)="showReceivableSelector = false"
+        >
+          Cancelar
+        </button>
+        <button
+          class="btn btn-primary"
+          (click)="selectReceivableFromDropdown()"
+        >
+          Selecionar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-2">
+    <button
+      [class]="activeTab === 'indices' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
+      (click)="activeTab = 'indices'"
+    >
+      Índices
+    </button>
+    <button
+      [class]="activeTab === 'values' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
+      (click)="activeTab = 'values'"
+    >
+      Valores dos Índices
+    </button>
+    <button
+      [class]="activeTab === 'policies' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
+      (click)="activeTab = 'policies'"
+    >
+      Políticas de Ajuste
+    </button>
+    <button
+      [class]="activeTab === 'adjustments' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
+      (click)="activeTab = 'adjustments'"
+    >
+      Ajustes de Recebíveis
+    </button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Tab Content -->
+  <div *ngIf="activeTab === 'indices'">
+    <!-- Monetary Indices Tab -->
+    <app-monetary-indices-tab (indexSelected)="onIndexSelected($event)"></app-monetary-indices-tab>
+  </div>
+
+  <div *ngIf="activeTab === 'values'">
+    <!-- Monetary Index Values Tab -->
+    <app-monetary-index-values-tab [selectedMonetaryIndex]="selectedMonetaryIndex"></app-monetary-index-values-tab>
+  </div>
+
+  <div *ngIf="activeTab === 'policies'">
+    <!-- Receivable Adjustment Policies Tab -->
+    <app-receivable-adjustment-policies-tab [selectedReceivable]="selectedReceivable"></app-receivable-adjustment-policies-tab>
+  </div>
+
+  <div *ngIf="activeTab === 'adjustments'">
+    <!-- Receivable Adjustments Tab -->
+    <app-receivable-adjustments-tab [selectedReceivable]="selectedReceivable"></app-receivable-adjustments-tab>
+  </div>
+</div>
