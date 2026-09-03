@@ -77,3 +77,25 @@ export interface CashFlowResult {
     projectedOutflows: string;
   }[];
 }
+
+export type IncomeStatementBasis = 'COMPETENCIA' | 'CAIXA';
+
+export interface IncomeStatementResult {
+  basis: IncomeStatementBasis;
+  startDate: string;
+  endDate: string;
+  previousStartDate: string;
+  previousEndDate: string;
+  revenue: string;
+  expenses: string;
+  netIncome: string;
+  margin: string;
+  revenueLines: { name: string; amount: string }[];
+  expenseLines: { name: string; amount: string }[];
+  previous: { revenue: string; expenses: string; netIncome: string };
+  variation: {
+    revenue: string | null;
+    expenses: string | null;
+    netIncome: string | null;
+  };
+}

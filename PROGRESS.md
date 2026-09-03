@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-09-02 — DRE gerencial:** criada visão financeira por competência ou caixa, com filtros por período, empresa/SPE, empreendimento e centro de custo. A tela compara receitas, despesas e resultado ao período anterior, calcula margem líquida e apresenta a composição das despesas por categoria.
+
 - **2026-09-02 — Conciliação bancária:** adicionada área financeira para importar extratos CSV de até 500 lançamentos, sem duplicar reimportações, com indicadores, busca, filtros, paginação e sugestões por conta, natureza, valor e proximidade de data. Usuários financeiros podem conciliar, desfazer, ignorar ou restaurar lançamentos; perfis de leitura apenas consultam o estado e a correspondência.
 
 - **2026-09-01 — Gestão financeira:** criado o grupo Financeiro com visão geral consolidada/por SPE, contas a receber, contas a pagar e fluxo de caixa realizado, projetado ou consolidado. A interface mostra saldo, compromissos, atrasos, projeção de 30 dias, posição por empresa e próximos vencimentos; permite contas manuais, pagamentos com conta bancária obrigatória, histórico, estorno e cancelamento, respeitando `FINANCE_READ`/`FINANCE_WRITE`. Retornos agora são pagos no financeiro e comissões previstas podem ser tornadas devidas.

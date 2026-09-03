@@ -8,6 +8,8 @@ import {
   FinanceSummary,
   FinancialCategory,
   FinancialCategoryType,
+  IncomeStatementBasis,
+  IncomeStatementResult,
 } from '../models/finance.model';
 import { ApiService } from './api.service';
 import {
@@ -33,6 +35,15 @@ export class FinanceService {
   cashFlow(filters: FinanceFilters = {}): Observable<CashFlowResult> {
     return this.api.get<CashFlowResult>(
       '/finance/cash-flow',
+      this.params(filters),
+    );
+  }
+
+  incomeStatement(
+    filters: FinanceFilters & { basis?: IncomeStatementBasis } = {},
+  ): Observable<IncomeStatementResult> {
+    return this.api.get<IncomeStatementResult>(
+      '/finance/income-statement',
       this.params(filters),
     );
   }
@@ -105,7 +116,12 @@ export class FinanceService {
     );
   }
 
-  private params(filters: FinanceFilters | ReconciliationFilters): HttpParams {
+  private params(
+    filters:
+      | FinanceFilters
+      | ReconciliationFilters
+      | (FinanceFilters & { basis?: IncomeStatementBasis }),
+  ): HttpParams {
     return Object.entries(filters).reduce(
       (params, [key, value]) =>
         value === undefined || value === null || value === ''

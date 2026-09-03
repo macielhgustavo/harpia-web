@@ -116,6 +116,7 @@ describe('Rotas financeiras', () => {
       'finance/payables',
       'finance/cash-flow',
       'finance/reconciliation',
+      'finance/income-statement',
     ];
 
     for (const path of paths) {

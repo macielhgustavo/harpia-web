@@ -202,6 +202,15 @@ export const routes: Routes = [
         (m) => m.BankReconciliationComponent,
       ),
   },
+  {
+    path: 'finance/income-statement',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/income-statement.component').then(
+        (m) => m.IncomeStatementComponent,
+      ),
+  },
   { path: 'receivables', redirectTo: 'finance/receivables', pathMatch: 'full' },
   {
     path: 'reports',

@@ -17,6 +17,24 @@ describe('FinanceService', () => {
     service = TestBed.inject(FinanceService);
   });
 
+  it('loads the income statement with its management filters', () => {
+    service
+      .incomeStatement({
+        basis: 'COMPETENCIA',
+        startDate: '2026-09-01',
+        endDate: '2026-09-30',
+        companyId: 'company-1',
+      })
+      .subscribe();
+
+    const [path, params] = api.get.calls.mostRecent().args;
+    expect(path).toBe('/finance/income-statement');
+    expect(params?.get('basis')).toBe('COMPETENCIA');
+    expect(params?.get('startDate')).toBe('2026-09-01');
+    expect(params?.get('endDate')).toBe('2026-09-30');
+    expect(params?.get('companyId')).toBe('company-1');
+  });
+
   it('lists reconciliation entries without leaking empty filters', () => {
     service
       .reconciliation({

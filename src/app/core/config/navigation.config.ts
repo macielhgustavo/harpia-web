@@ -108,6 +108,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'ListChecks',
         permission: APP_PERMISSIONS.FINANCE_READ,
       },
+      {
+        label: 'DRE gerencial',
+        route: '/finance/income-statement',
+        icon: 'ChartNoAxesCombined',
+        permission: APP_PERMISSIONS.FINANCE_READ,
+      },
     ],
   },
   {

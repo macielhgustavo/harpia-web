@@ -1,0 +1,204 @@
+<div class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold text-ink">DRE gerencial</h1>
+    <p class="mt-1 text-sm text-muted">
+      Receitas, despesas, resultado e margem com comparação ao período anterior.
+    </p>
+  </header>
+  <form
+    (ngSubmit)="load()"
+    class="rounded-xl border border-border bg-card p-4 shadow-card"
+  >
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <label class="text-sm font-medium text-ink"
+        >Regime<select
+          name="basis"
+          [(ngModel)]="basis"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="COMPETENCIA">Competência</option>
+          <option value="CAIXA">Caixa realizado</option>
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Data inicial<input
+          type="date"
+          name="start"
+          [(ngModel)]="startDate"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+      /></label>
+      <label class="text-sm font-medium text-ink"
+        >Data final<input
+          type="date"
+          name="end"
+          [(ngModel)]="endDate"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+      /></label>
+      <label class="text-sm font-medium text-ink"
+        >Empresa / SPE<select
+          name="company"
+          [(ngModel)]="companyId"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Consolidado</option>
+          @for (item of companies(); track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Empreendimento<select
+          name="development"
+          [(ngModel)]="developmentId"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (item of developments(); track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select></label
+      >
+      <label class="text-sm font-medium text-ink"
+        >Centro de custo<select
+          name="center"
+          [(ngModel)]="costCenterId"
+          class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+        >
+          <option value="">Todos</option>
+          @for (item of costCenters(); track item.id) {
+            <option [value]="item.id">{{ item.name }}</option>
+          }
+        </select></label
+      >
+    </div>
+    <div class="mt-4 flex justify-end">
+      <button
+        type="submit"
+        [disabled]="loading()"
+        class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"
+      >
+        Calcular DRE
+      </button>
+    </div>
+  </form>
+  @if (loading()) {
+    <div class="py-16 text-center text-sm text-muted">
+      Calculando resultado...
+    </div>
+  } @else if (error()) {
+    <div
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-800"
+    >
+      {{ error() }}
+      <button
+        type="button"
+        (click)="load()"
+        class="ml-3 inline-flex items-center gap-1 font-medium"
+      >
+        <lucide-icon [img]="RetryIcon" [size]="15"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
+  } @else {
+    @if (result(); as dre) {
+      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Receita</p>
+          <p class="mt-2 text-xl font-bold text-emerald-800">
+            {{ money(dre.revenue) }}
+          </p>
+          <p
+            class="mt-1 text-xs"
+            [class]="variationClass(dre.variation.revenue)"
+          >
+            {{ variation(dre.variation.revenue) }} vs. anterior
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Despesas</p>
+          <p class="mt-2 text-xl font-bold text-red-800">
+            {{ money(dre.expenses) }}
+          </p>
+          <p
+            class="mt-1 text-xs"
+            [class]="variationClass(dre.variation.expenses, true)"
+          >
+            {{ variation(dre.variation.expenses) }} vs. anterior
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Resultado</p>
+          <p
+            class="mt-2 text-xl font-bold"
+            [class.text-emerald-800]="isPositive(dre.netIncome)"
+            [class.text-red-800]="!isPositive(dre.netIncome)"
+          >
+            {{ money(dre.netIncome) }}
+          </p>
+          <p
+            class="mt-1 text-xs"
+            [class]="variationClass(dre.variation.netIncome)"
+          >
+            {{ variation(dre.variation.netIncome) }} vs. anterior
+          </p>
+        </article>
+        <article
+          class="rounded-xl border border-border bg-card p-4 shadow-card"
+        >
+          <p class="text-sm text-muted">Margem líquida</p>
+          <p class="mt-2 text-xl font-bold text-ink">
+            {{ percent(dre.margin) }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            Regime de {{ dre.basis === "CAIXA" ? "caixa" : "competência" }}
+          </p>
+        </article>
+      </section>
+      <section class="grid gap-4 lg:grid-cols-2">
+        <article
+          class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+        >
+          <h2 class="border-b border-border px-5 py-4 font-semibold text-ink">
+            Receitas
+          </h2>
+          @for (line of dre.revenueLines; track line.name) {
+            <div
+              class="flex justify-between border-b border-border px-5 py-3 text-sm last:border-0"
+            >
+              <span>{{ line.name }}</span
+              ><strong class="text-emerald-800">{{
+                money(line.amount)
+              }}</strong>
+            </div>
+          } @empty {
+            <p class="p-5 text-sm text-muted">Sem receitas no período.</p>
+          }
+        </article>
+        <article
+          class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
+        >
+          <h2 class="border-b border-border px-5 py-4 font-semibold text-ink">
+            Despesas
+          </h2>
+          @for (line of dre.expenseLines; track line.name) {
+            <div
+              class="flex justify-between border-b border-border px-5 py-3 text-sm last:border-0"
+            >
+              <span>{{ line.name }}</span
+              ><strong class="text-red-800">{{ money(line.amount) }}</strong>
+            </div>
+          } @empty {
+            <p class="p-5 text-sm text-muted">Sem despesas no período.</p>
+          }
+        </article>
+      </section>
+    }
+  }
+</div>
