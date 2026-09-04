@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthSessionService } from '../../../core/services/auth-session.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {
@@ -19,6 +21,10 @@ describe('HeaderComponent', () => {
           useValue: {
             getClaims: () => ({ email: 'admin@harpia.com' }),
           },
+        },
+        {
+          provide: NotificationService,
+          useValue: { unreadCount: () => of({ count: 0 }) },
         },
         provideRouter([]),
       ],

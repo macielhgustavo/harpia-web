@@ -9,8 +9,8 @@ import {
 
 describe('RBAC configuration', () => {
   it('mirrors the backend permission vocabulary without duplicates', () => {
-    expect(ALL_APP_PERMISSIONS.length).toBe(30);
-    expect(new Set(ALL_APP_PERMISSIONS).size).toBe(30);
+    expect(ALL_APP_PERMISSIONS.length).toBe(39);
+    expect(new Set(ALL_APP_PERMISSIONS).size).toBe(39);
     expect(isAppPermission(APP_PERMISSIONS.USERS_MANAGE)).toBeTrue();
     expect(isAppPermission('USERS_READ')).toBeFalse();
   });
@@ -41,6 +41,15 @@ describe('RBAC configuration', () => {
       APP_PERMISSIONS.REPORTS_EXPORT,
       APP_PERMISSIONS.FINANCE_READ,
       APP_PERMISSIONS.FINANCE_WRITE,
+      APP_PERMISSIONS.MONETARY_INDEX_READ,
+      APP_PERMISSIONS.MONETARY_INDEX_CREATE,
+      APP_PERMISSIONS.MONETARY_INDEX_UPDATE,
+      APP_PERMISSIONS.MONETARY_INDEX_VALUE_READ,
+      APP_PERMISSIONS.MONETARY_INDEX_VALUE_CREATE,
+      APP_PERMISSIONS.MONETARY_INDEX_VALUE_UPDATE,
+      APP_PERMISSIONS.RECEIVABLE_ADJUSTMENT_PREVIEW,
+      APP_PERMISSIONS.RECEIVABLE_ADJUSTMENT_CREATE,
+      APP_PERMISSIONS.RECEIVABLE_ADJUSTMENT_READ,
     ]);
   });
 
