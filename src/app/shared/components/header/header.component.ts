@@ -1,8 +1,9 @@
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LogOut, LucideAngularModule, Menu } from 'lucide-angular';
+import { Bell, LogOut, LucideAngularModule, Menu } from 'lucide-angular';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthSessionService } from '../../../core/services/auth-session.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-header',
@@ -22,6 +23,12 @@ import { AuthSessionService } from '../../../core/services/auth-session.service'
       >
         <lucide-icon [img]="MenuIcon" [size]="18"></lucide-icon>
       </button>
+      <a routerLink="/notifications" class="relative rounded-lg border border-border p-2 text-ink hover:bg-surface-warm" aria-label="Abrir notifica\u00e7\u00f5es">
+        <lucide-icon [img]="BellIcon" [size]="18"></lucide-icon>
+        @if (unread() > 0) {
+          <span class="absolute -right-1.5 -top-1.5 min-w-5 rounded-full bg-red-600 px-1 text-center text-[11px] font-bold leading-5 text-white">{{ unread() > 99 ? '99+' : unread() }}</span>
+        }
+      </a>
       <a
         routerLink="/account/security"
         class="flex items-center gap-3 rounded-lg px-1.5 py-1 transition-colors hover:bg-surface-warm"
@@ -47,9 +54,10 @@ import { AuthSessionService } from '../../../core/services/auth-session.service'
     </header>
   `,
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit {
   private readonly authService = inject(AuthService);
   private readonly session = inject(AuthSessionService);
+  private readonly notifications = inject(NotificationService);
   @Output() readonly menuToggle = new EventEmitter<void>();
   @Input() menuOpen = false;
 
@@ -57,6 +65,15 @@ export class HeaderComponent {
   readonly initials = this.userEmail.slice(0, 2).toUpperCase();
   readonly LogOutIcon = LogOut;
   readonly MenuIcon = Menu;
+  readonly BellIcon = Bell;
+  readonly unread = signal(0);
+
+  ngOnInit(): void {
+    this.notifications.unreadCount().subscribe({
+      next: ({ count }) => this.unread.set(count),
+      error: () => this.unread.set(0),
+    });
+  }
 
   logout(): void {
     this.authService.logout();

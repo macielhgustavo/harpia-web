@@ -32,6 +32,12 @@ export const NAVIGATION: NavGroup[] = [
         icon: 'LayoutDashboard',
         permission: APP_PERMISSIONS.DASHBOARD_READ,
       },
+      {
+        label: 'Notifica\u00e7\u00f5es',
+        route: '/notifications',
+        icon: 'Bell',
+        permission: APP_PERMISSIONS.PEOPLE_READ,
+      },
     ],
   },
   {

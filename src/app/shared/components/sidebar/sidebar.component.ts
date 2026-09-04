@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   Building2,
+  Bell,
   CircleDollarSign,
   ChartNoAxesCombined,
   Coins,
@@ -128,6 +129,7 @@ export class SidebarComponent {
     ChartNoAxesCombined,
     ListChecks,
     MailCheck,
+    Bell,
   };
 
   iconOf(name: string): LucideIconData {

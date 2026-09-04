@@ -1,0 +1,31 @@
+<div class="space-y-6">
+  <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div><h1 class="text-2xl font-bold text-ink">Notifica\u00e7\u00f5es</h1><p class="mt-1 text-sm text-muted">Acompanhe eventos importantes e escolha como deseja receb\u00ea-los.</p></div>
+    <button type="button" (click)="markAllRead()" [disabled]="acting() || !page()?.summary?.unread" class="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium disabled:opacity-50"><lucide-icon [img]="ReadIcon" [size]="17"></lucide-icon>Marcar todas como lidas</button>
+  </header>
+  @if (notice()) { <div role="status" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ notice() }}</div> }
+  @if (error()) { <div role="alert" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ error() }}</div> }
+
+  <section class="grid gap-4 sm:grid-cols-3">
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card"><p class="text-sm text-muted">N\u00e3o lidas</p><p class="mt-2 text-2xl font-bold text-primary">{{ page()?.summary?.unread ?? 0 }}</p></article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card"><p class="text-sm text-muted">No filtro atual</p><p class="mt-2 text-2xl font-bold text-ink">{{ page()?.pagination?.total ?? 0 }}</p></article>
+    <article class="rounded-xl border border-border bg-card p-4 shadow-card"><label class="text-sm font-medium">Exibir<select [(ngModel)]="state" (ngModelChange)="applyFilter()" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2"><option value="all">Todas</option><option value="unread">N\u00e3o lidas</option><option value="read">Lidas</option></select></label></article>
+  </section>
+
+  <section class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+    <div class="flex items-center gap-2 border-b border-border px-5 py-4"><lucide-icon [img]="BellIcon" [size]="18"></lucide-icon><h2 class="font-semibold">Central</h2></div>
+    @if (loading()) { <div class="py-16 text-center text-sm text-muted">Carregando...</div> }
+    @else { <div class="divide-y divide-border">@for (item of page()?.data ?? []; track item.id) {
+      <button type="button" (click)="markRead(item)" class="flex w-full gap-4 p-5 text-left hover:bg-surface" [class.bg-gold-light]="!item.readAt">
+        <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" [class.bg-primary]="!item.readAt" [class.bg-border]="!!item.readAt"></span>
+        <span class="min-w-0 flex-1"><span class="flex flex-wrap items-center justify-between gap-2"><strong class="text-ink">{{ item.title }}</strong><small class="text-muted">{{ date(item.createdAt) }}</small></span><span class="mt-1 block text-sm text-muted">{{ item.message }}</span><small class="mt-2 block text-primary">{{ typeLabel(item.type) }}</small></span>
+      </button>
+    } @empty { <div class="py-16 text-center text-sm text-muted">Nenhuma notifica\u00e7\u00e3o neste filtro.</div> }</div> }
+    @if (page(); as data) { <footer class="flex items-center justify-between border-t border-border px-4 py-3 text-sm text-muted"><span>{{ data.pagination.total }} registro(s)</span><div class="flex items-center gap-2"><button type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage <= 1" class="rounded border border-border px-3 py-1.5 disabled:opacity-40">Anterior</button><span>{{ currentPage }} / {{ data.pagination.totalPages || 1 }}</span><button type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= data.pagination.totalPages" class="rounded border border-border px-3 py-1.5 disabled:opacity-40">Pr\u00f3xima</button></div></footer> }
+  </section>
+
+  <section class="rounded-xl border border-border bg-card shadow-card">
+    <div class="flex items-center gap-2 border-b border-border px-5 py-4"><lucide-icon [img]="MailIcon" [size]="18"></lucide-icon><div><h2 class="font-semibold">Prefer\u00eancias</h2><p class="text-xs text-muted">Novos tipos come\u00e7am habilitados nos dois canais.</p></div></div>
+    <div class="divide-y divide-border">@for (option of types; track option.type) { @let current = preference(option.type);<div class="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_auto_auto] sm:items-center"><strong class="text-sm text-ink">{{ option.label }}</strong><label class="flex items-center gap-2 text-sm"><input type="checkbox" [ngModel]="current.internal" (ngModelChange)="setPreference(option.type, 'internal', $event)" /> No sistema</label><label class="flex items-center gap-2 text-sm"><input type="checkbox" [ngModel]="current.email" (ngModelChange)="setPreference(option.type, 'email', $event)" /> E-mail</label></div> }</div>
+  </section>
+</div>

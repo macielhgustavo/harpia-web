@@ -229,6 +229,14 @@ export const routes: Routes = [
         (m) => m.MonetaryAdjustmentComponent,
       ),
   },
+  {
+    path: 'notifications',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/notifications/notifications.component').then(
+        (m) => m.NotificationsComponent,
+      ),
+  },
   { path: 'receivables', redirectTo: 'finance/receivables', pathMatch: 'full' },
   {
     path: 'reports',
