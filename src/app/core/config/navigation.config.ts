@@ -57,6 +57,12 @@ export const NAVIGATION: NavGroup[] = [
         permission: APP_PERMISSIONS.CRM_READ,
       },
       {
+        label: 'Visitas',
+        route: '/crm/visits',
+        icon: 'CalendarDays',
+        permission: APP_PERMISSIONS.CRM_READ,
+      },
+      {
         label: 'Pessoas',
         route: '/people',
         icon: 'Users',

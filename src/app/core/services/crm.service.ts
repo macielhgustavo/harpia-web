@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   CreateOpportunityInput,
+  CreateSalesVisitInput,
   CreateSalesActivityInput,
   MoveOpportunityInput,
   Opportunity,
@@ -14,8 +15,12 @@ import {
   SalesActivityFilters,
   SalesActivityPage,
   SalesPipeline,
+  SalesVisit,
+  SalesVisitFilters,
+  SalesVisitPage,
   UpdateOpportunityInput,
   UpdateSalesActivityInput,
+  UpdateSalesVisitInput,
 } from '../models/crm.model';
 import { ApiService } from './api.service';
 
@@ -96,6 +101,18 @@ export class CrmService {
 
   removeActivity(id: string): Observable<SalesActivity> {
     return this.api.delete<SalesActivity>(`/crm/activities/${id}`);
+  }
+
+  listVisits(filters: SalesVisitFilters = {}): Observable<SalesVisitPage> {
+    return this.api.get<SalesVisitPage>('/crm/visits', this.params(filters));
+  }
+
+  createVisit(data: CreateSalesVisitInput): Observable<SalesVisit> {
+    return this.api.post<SalesVisit>('/crm/visits', data);
+  }
+
+  updateVisit(id: string, data: UpdateSalesVisitInput): Observable<SalesVisit> {
+    return this.api.patch<SalesVisit>(`/crm/visits/${id}`, data);
   }
 
   private params(filters: object): HttpParams {

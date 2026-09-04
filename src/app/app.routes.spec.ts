@@ -73,8 +73,9 @@ describe('Rotas do CRM', () => {
   it('protege lista, agenda e detalhe por CRM_READ e carrega tudo de forma lazy', () => {
     const crm = routes.find((item) => item.path === 'crm');
     const tasks = routes.find((item) => item.path === 'crm/tasks');
+    const visits = routes.find((item) => item.path === 'crm/visits');
     const detail = routes.find((item) => item.path === 'crm/opportunities/:id');
-    for (const route of [crm, tasks, detail]) {
+    for (const route of [crm, tasks, visits, detail]) {
       expect(route?.canActivate).toContain(authGuard);
       expect(route?.canActivate).toContain(permissionGuard);
       expect(route?.data?.['permission']).toBe(APP_PERMISSIONS.CRM_READ);

@@ -106,6 +106,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'crm/visits',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.CRM_READ },
+    loadComponent: () =>
+      import('./pages/crm/crm-visits.component').then(
+        (m) => m.CrmVisitsComponent,
+      ),
+  },
+  {
     path: 'developments',
     canActivate: [authGuard, permissionGuard],
     data: { permission: APP_PERMISSIONS.DEVELOPMENTS_READ },

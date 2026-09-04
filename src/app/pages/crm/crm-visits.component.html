@@ -1,0 +1,460 @@
+<div class="space-y-6">
+  <header
+    class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+  >
+    <div>
+      <h1 class="text-2xl font-bold text-ink">Visitas imobiliárias</h1>
+      <p class="mt-1 max-w-2xl text-sm text-muted">
+        Agende visitas, registre comparecimento e transforme cada encontro em um
+        próximo passo comercial.
+      </p>
+    </div>
+    @if (canWrite) {
+      <button
+        type="button"
+        (click)="createOpen.set(true)"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white"
+      >
+        <lucide-icon [img]="PlusIcon" [size]="17"></lucide-icon>Agendar visita
+      </button>
+    }
+  </header>
+
+  @if (feedback()) {
+    <p
+      class="rounded-xl border border-primary bg-card px-4 py-3 text-sm text-primary"
+      role="status"
+    >
+      {{ feedback() }}
+    </p>
+  }
+  @if (error()) {
+    <p
+      class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      role="alert"
+    >
+      {{ error() }}
+    </p>
+  }
+
+  <section class="rounded-xl border border-border bg-card p-4 shadow-card">
+    <form
+      (ngSubmit)="load(1)"
+      class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5"
+    >
+      <select
+        [ngModel]="statusFilter()"
+        (ngModelChange)="statusFilter.set($event)"
+        name="status"
+        class="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
+      >
+        <option value="">Todos os status</option>
+        <option value="AGENDADA">Agendadas</option>
+        <option value="REALIZADA">Realizadas</option>
+        <option value="NAO_COMPARECEU">Não compareceu</option>
+        <option value="CANCELADA">Canceladas</option>
+      </select>
+      <select
+        [ngModel]="assignedUserFilter()"
+        (ngModelChange)="assignedUserFilter.set($event)"
+        name="responsible"
+        class="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
+      >
+        <option value="">Toda a equipe</option>
+        @for (user of users(); track user.id) {
+          <option [value]="user.id">{{ user.name }}</option>
+        }
+      </select>
+      <input
+        type="datetime-local"
+        aria-label="Visitas a partir de"
+        [ngModel]="scheduledFrom()"
+        (ngModelChange)="scheduledFrom.set($event)"
+        name="from"
+        class="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
+      />
+      <input
+        type="datetime-local"
+        aria-label="Visitas até"
+        [ngModel]="scheduledTo()"
+        (ngModelChange)="scheduledTo.set($event)"
+        name="to"
+        class="rounded-lg border border-border bg-surface px-3 py-2.5 text-sm"
+      />
+      <button
+        type="submit"
+        class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>Aplicar
+      </button>
+    </form>
+  </section>
+
+  @if (loading()) {
+    <div
+      class="flex min-h-64 items-center justify-center rounded-xl border border-border bg-card text-sm text-muted"
+    >
+      Carregando visitas...
+    </div>
+  } @else {
+    <section class="space-y-3" aria-label="Agenda de visitas">
+      @for (visit of result().data; track visit.id) {
+        <article
+          class="rounded-xl border border-border bg-card p-5 shadow-card"
+        >
+          <div
+            class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+          >
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span
+                  class="rounded-full bg-gold-light px-2.5 py-1 text-xs font-semibold text-gold-dark"
+                >
+                  {{ statusLabel(visit.status) }}
+                </span>
+                @if (visit.outcome) {
+                  <span
+                    class="rounded-full bg-surface-warm px-2.5 py-1 text-xs text-muted"
+                  >
+                    {{ outcomeLabel(visit.outcome) }}
+                  </span>
+                }
+              </div>
+              <a
+                [routerLink]="['/crm/opportunities', visit.opportunityId]"
+                class="mt-2 block text-lg font-semibold text-ink hover:text-primary"
+              >
+                {{ visit.person.name }}
+              </a>
+              <p class="mt-1 text-sm text-muted">
+                {{ visit.development?.name || "Local a definir" }}
+                @if (visit.unit) {
+                  · Unidade {{ visit.unit.identifier }}
+                }
+              </p>
+              <p class="mt-2 inline-flex items-center gap-2 text-sm text-ink">
+                <lucide-icon [img]="CalendarIcon" [size]="16"></lucide-icon>
+                {{ formatDateTime(visit.scheduledAt) }} ·
+                {{ visit.durationMinutes }} min
+              </p>
+              <p class="mt-1 text-sm text-muted">
+                Responsável: {{ visit.assignedUser?.name || "Não definido" }}
+                @if (visit.location) {
+                  · {{ visit.location }}
+                }
+              </p>
+              @if (visit.result) {
+                <p class="mt-2 text-sm text-ink">
+                  <strong>Resultado:</strong> {{ visit.result }}
+                </p>
+              }
+              @if (visit.cancellationReason) {
+                <p class="mt-2 text-sm text-red-700">
+                  <strong>Motivo:</strong> {{ visit.cancellationReason }}
+                </p>
+              }
+            </div>
+            @if (canWrite && visit.status === "AGENDADA") {
+              <div class="flex shrink-0 flex-wrap gap-2">
+                <button
+                  type="button"
+                  (click)="completeTarget.set(visit)"
+                  class="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white"
+                >
+                  <lucide-icon [img]="CompleteIcon" [size]="16"></lucide-icon
+                  >Realizada
+                </button>
+                <button
+                  type="button"
+                  (click)="markNoShow(visit)"
+                  [disabled]="!!actionId()"
+                  class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-50"
+                >
+                  <lucide-icon [img]="NoShowIcon" [size]="16"></lucide-icon
+                  >Ausência
+                </button>
+                <button
+                  type="button"
+                  (click)="cancelTarget.set(visit)"
+                  class="inline-flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700"
+                >
+                  <lucide-icon [img]="CancelIcon" [size]="16"></lucide-icon
+                  >Cancelar
+                </button>
+              </div>
+            }
+          </div>
+        </article>
+      } @empty {
+        <div
+          class="flex min-h-56 flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center"
+        >
+          <p class="font-medium text-ink">Nenhuma visita encontrada</p>
+          <p class="mt-1 text-sm text-muted">
+            Ajuste os filtros ou agende a primeira visita.
+          </p>
+        </div>
+      }
+    </section>
+  }
+
+  @if (result().pagination.totalPages > 1) {
+    <nav
+      class="flex items-center justify-center gap-3"
+      aria-label="Paginação de visitas"
+    >
+      <button
+        type="button"
+        (click)="load(result().pagination.page - 1)"
+        [disabled]="result().pagination.page <= 1"
+        class="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-40"
+      >
+        Anterior
+      </button>
+      <span class="text-sm text-muted"
+        >Página {{ result().pagination.page }} de
+        {{ result().pagination.totalPages }}</span
+      >
+      <button
+        type="button"
+        (click)="load(result().pagination.page + 1)"
+        [disabled]="result().pagination.page >= result().pagination.totalPages"
+        class="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-40"
+      >
+        Próxima
+      </button>
+    </nav>
+  }
+</div>
+
+@if (createOpen()) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+    role="presentation"
+    (click)="createOpen.set(false)"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="createOpen.set(false)"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="visit-create-title"
+      class="w-full max-w-2xl rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="visit-create-title" class="text-lg font-semibold text-ink">
+        Agendar visita
+      </h2>
+      <form (ngSubmit)="createVisit()" class="mt-4 space-y-4">
+        <label class="block text-sm font-medium text-ink"
+          >Oportunidade *
+          <select
+            data-dialog-initial-focus
+            name="opportunity"
+            [(ngModel)]="opportunityId"
+            required
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          >
+            <option value="">Selecione</option>
+            @for (item of opportunities(); track item.id) {
+              <option [value]="item.id">
+                {{ item.person.name }} —
+                {{ item.development?.name || "Sem empreendimento" }}
+                {{ item.unit?.identifier || "" }}
+              </option>
+            }
+          </select>
+        </label>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Data e horário *
+            <input
+              name="scheduledAt"
+              [(ngModel)]="scheduledAt"
+              type="datetime-local"
+              required
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            />
+          </label>
+          <label class="text-sm font-medium text-ink"
+            >Duração em minutos
+            <input
+              name="duration"
+              [(ngModel)]="durationMinutes"
+              type="number"
+              min="15"
+              max="480"
+              required
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            />
+          </label>
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium text-ink"
+            >Responsável
+            <select
+              name="assigned"
+              [(ngModel)]="assignedUserId"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            >
+              <option value="">Herdar da oportunidade</option>
+              @for (user of users(); track user.id) {
+                <option [value]="user.id">{{ user.name }}</option>
+              }
+            </select>
+          </label>
+          <label class="text-sm font-medium text-ink"
+            >Local de encontro
+            <input
+              name="location"
+              [(ngModel)]="location"
+              maxlength="300"
+              class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            />
+          </label>
+        </div>
+        <label class="block text-sm font-medium text-ink"
+          >Observações
+          <textarea
+            name="notes"
+            [(ngModel)]="notes"
+            maxlength="4000"
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="createOpen.set(false)"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="!!actionId() || !opportunityId || !scheduledAt"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {{ actionId() === "create" ? "Salvando..." : "Agendar" }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (completeTarget(); as visit) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="completeTarget.set(null)"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="completeTarget.set(null)"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="visit-complete-title"
+      class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="visit-complete-title" class="text-lg font-semibold text-ink">
+        Registrar visita de {{ visit.person.name }}
+      </h2>
+      <form (ngSubmit)="completeVisit()" class="mt-4 space-y-4">
+        <label class="block text-sm font-medium text-ink"
+          >Resultado comercial
+          <select
+            data-dialog-initial-focus
+            name="outcome"
+            [(ngModel)]="outcome"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          >
+            <option value="INTERESSE_ALTO">Interesse alto</option>
+            <option value="INTERESSE_MEDIO">Interesse médio</option>
+            <option value="INTERESSE_BAIXO">Interesse baixo</option>
+            <option value="SEM_INTERESSE">Sem interesse</option>
+            <option value="REAGENDAR">Reagendar</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-ink"
+          >Relato da visita
+          <textarea
+            name="result"
+            [(ngModel)]="resultNotes"
+            maxlength="2000"
+            rows="4"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            (click)="completeTarget.set(null)"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Voltar</button
+          ><button
+            type="submit"
+            [disabled]="!!actionId()"
+            class="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Confirmar
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (cancelTarget(); as visit) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    role="presentation"
+    (click)="cancelTarget.set(null)"
+  >
+    <section
+      appDialogFocus
+      (dialogEscape)="cancelTarget.set(null)"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="visit-cancel-title"
+      class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-xl"
+    >
+      <h2 id="visit-cancel-title" class="text-lg font-semibold text-ink">
+        Cancelar visita de {{ visit.person.name }}
+      </h2>
+      <form (ngSubmit)="cancelVisit()" class="mt-4 space-y-4">
+        <label class="block text-sm font-medium text-ink"
+          >Motivo *
+          <textarea
+            data-dialog-initial-focus
+            name="reason"
+            [(ngModel)]="cancellationReason"
+            maxlength="500"
+            required
+            rows="3"
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+          ></textarea>
+        </label>
+        <div class="flex justify-end gap-3">
+          <button
+            type="button"
+            (click)="cancelTarget.set(null)"
+            class="rounded-lg border border-border px-4 py-2.5 text-sm"
+          >
+            Voltar</button
+          ><button
+            type="submit"
+            [disabled]="!!actionId() || !cancellationReason.trim()"
+            class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+          >
+            Cancelar visita
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

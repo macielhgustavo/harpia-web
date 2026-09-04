@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import {
   Building2,
   Bell,
+  CalendarDays,
   CircleDollarSign,
   ChartNoAxesCombined,
   Coins,
@@ -132,6 +133,7 @@ export class SidebarComponent {
     ListTodo,
     MailCheck,
     Bell,
+    CalendarDays,
   };
 
   iconOf(name: string): LucideIconData {

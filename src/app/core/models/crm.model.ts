@@ -14,6 +14,16 @@ export type SalesActivityStatus =
 
 export type SalesActivityPriority = 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE';
 
+export type SalesVisitStatus =
+  'AGENDADA' | 'REALIZADA' | 'CANCELADA' | 'NAO_COMPARECEU';
+
+export type SalesVisitOutcome =
+  | 'INTERESSE_ALTO'
+  | 'INTERESSE_MEDIO'
+  | 'INTERESSE_BAIXO'
+  | 'SEM_INTERESSE'
+  | 'REAGENDAR';
+
 export interface SalesStage {
   id: string;
   organizationId: string;
@@ -89,12 +99,89 @@ export interface OpportunityStageHistory {
 
 export interface OpportunityTimelineEvent {
   id: string;
-  type: 'STAGE_CHANGED' | 'ACTIVITY' | 'RESERVATION' | 'PROPOSAL' | 'SALE';
+  type:
+    | 'STAGE_CHANGED'
+    | 'ACTIVITY'
+    | 'VISIT'
+    | 'RESERVATION'
+    | 'PROPOSAL'
+    | 'SALE';
   occurredAt: string;
   title: string;
   description: string | null;
   status: string | null;
   actor: { id: string; name: string } | null;
+}
+
+export interface SalesVisit {
+  id: string;
+  organizationId: string;
+  opportunityId: string;
+  personId: string;
+  assignedUserId: string | null;
+  developmentId: string | null;
+  unitId: string | null;
+  scheduledAt: string;
+  durationMinutes: number;
+  status: SalesVisitStatus;
+  outcome: SalesVisitOutcome | null;
+  location: string | null;
+  result: string | null;
+  notes: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+  opportunity: { id: string; stageId: string };
+  person: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+  };
+  assignedUser: { id: string; name: string; email: string } | null;
+  createdByUser: { id: string; name: string };
+  development: { id: string; name: string } | null;
+  unit: { id: string; identifier: string; developmentId: string } | null;
+}
+
+export interface SalesVisitPage {
+  data: SalesVisit[];
+  pagination: Pagination;
+}
+
+export interface SalesVisitFilters {
+  opportunityId?: string;
+  assignedUserId?: string;
+  status?: SalesVisitStatus;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CreateSalesVisitInput {
+  opportunityId: string;
+  assignedUserId?: string;
+  developmentId?: string;
+  unitId?: string;
+  scheduledAt: string;
+  durationMinutes?: number;
+  location?: string;
+  notes?: string;
+}
+
+export interface UpdateSalesVisitInput {
+  assignedUserId?: string | null;
+  scheduledAt?: string;
+  durationMinutes?: number;
+  status?: SalesVisitStatus;
+  outcome?: SalesVisitOutcome | null;
+  location?: string | null;
+  result?: string | null;
+  notes?: string | null;
+  cancellationReason?: string | null;
 }
 
 export interface SalesActivity {

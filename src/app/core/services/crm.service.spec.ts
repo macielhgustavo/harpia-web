@@ -111,4 +111,29 @@ describe('CrmService', () => {
     expect(api.post).toHaveBeenCalledOnceWith('/crm/activities', activity);
     expect(api.delete).toHaveBeenCalledOnceWith('/crm/activities/activity-1');
   });
+
+  it('lists, creates and updates structured visits', () => {
+    service.listVisits({ status: 'AGENDADA', pageSize: 50 }).subscribe();
+    const [path, params] = api.get.calls.mostRecent().args;
+    expect(path).toBe('/crm/visits');
+    expect(params?.get('status')).toBe('AGENDADA');
+
+    const create = {
+      opportunityId: 'opportunity-1',
+      scheduledAt: '2026-09-10T14:00:00.000Z',
+    };
+    service.createVisit(create).subscribe();
+    service
+      .updateVisit('visit-1', {
+        status: 'REALIZADA',
+        outcome: 'INTERESSE_ALTO',
+      })
+      .subscribe();
+
+    expect(api.post).toHaveBeenCalledWith('/crm/visits', create);
+    expect(api.patch).toHaveBeenCalledWith('/crm/visits/visit-1', {
+      status: 'REALIZADA',
+      outcome: 'INTERESSE_ALTO',
+    });
+  });
 });

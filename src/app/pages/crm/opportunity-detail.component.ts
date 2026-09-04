@@ -405,6 +405,7 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
     return {
       STAGE_CHANGED: 'Etapa',
       ACTIVITY: 'Atividade',
+      VISIT: 'Visita',
       RESERVATION: 'Reserva',
       PROPOSAL: 'Proposta',
       SALE: 'Venda',
