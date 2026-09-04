@@ -9,6 +9,7 @@ import {
   OpportunityFilters,
   OpportunityPage,
   OpportunityStageHistory,
+  OpportunityTimelineEvent,
   SalesActivity,
   SalesActivityFilters,
   SalesActivityPage,
@@ -64,6 +65,12 @@ export class CrmService {
   getHistory(id: string): Observable<OpportunityStageHistory[]> {
     return this.api.get<OpportunityStageHistory[]>(
       `/crm/opportunities/${id}/history`,
+    );
+  }
+
+  getTimeline(id: string): Observable<OpportunityTimelineEvent[]> {
+    return this.api.get<OpportunityTimelineEvent[]>(
+      `/crm/opportunities/${id}/timeline`,
     );
   }
 

@@ -185,6 +185,51 @@
         </article>
       </section>
 
+      <section class="rounded-xl border border-border bg-card shadow-card">
+        <header class="border-b border-border p-5">
+          <h2 class="font-semibold text-ink">Linha do tempo comercial</h2>
+          <p class="mt-1 text-sm text-muted">
+            Etapas, atividades, reservas, propostas e vendas em ordem
+            cronológica.
+          </p>
+        </header>
+        <ol class="divide-y divide-border">
+          @for (event of timeline(); track event.id) {
+            <li class="relative p-5 pl-10">
+              <span
+                class="absolute left-5 top-6 h-2.5 w-2.5 rounded-full bg-gold"
+                aria-hidden="true"
+              ></span>
+              <div
+                class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div>
+                  <span class="text-xs font-semibold uppercase text-primary">
+                    {{ timelineTypeLabel(event.type) }}
+                  </span>
+                  <h3 class="mt-1 text-sm font-semibold text-ink">
+                    {{ event.title }}
+                  </h3>
+                  @if (event.description) {
+                    <p class="mt-1 text-sm text-muted">
+                      {{ event.description }}
+                    </p>
+                  }
+                </div>
+                <p class="shrink-0 text-xs text-muted">
+                  {{ event.actor?.name || "Sistema" }} ·
+                  {{ formatDateTime(event.occurredAt) }}
+                </p>
+              </div>
+            </li>
+          } @empty {
+            <li class="p-6 text-center text-sm text-muted">
+              Ainda não há eventos comerciais.
+            </li>
+          }
+        </ol>
+      </section>
+
       <app-reservations-section
         [developmentId]="item.developmentId || ''"
         [opportunityId]="item.id"

@@ -76,6 +76,10 @@ describe('CrmService', () => {
 
   it('queries commercial history and paginated activities', () => {
     service.getHistory('opportunity-1').subscribe();
+    service.getTimeline('opportunity-1').subscribe();
+    expect(api.get).toHaveBeenCalledWith(
+      '/crm/opportunities/opportunity-1/timeline',
+    );
     service
       .listActivities({
         opportunityId: 'opportunity-1',

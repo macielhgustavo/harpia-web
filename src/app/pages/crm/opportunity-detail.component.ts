@@ -15,6 +15,7 @@ import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import {
   Opportunity,
   OpportunityStageHistory,
+  OpportunityTimelineEvent,
   SalesActivity,
   SalesActivityPage,
   SalesActivityPriority,
@@ -78,6 +79,7 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
   readonly pipelines = signal<SalesPipeline[]>([]);
   readonly activities = signal<SalesActivityPage>(EMPTY_ACTIVITIES);
   readonly history = signal<OpportunityStageHistory[]>([]);
+  readonly timeline = signal<OpportunityTimelineEvent[]>([]);
   readonly people = signal<Person[]>([]);
   readonly users = signal<ManagedUser[]>([]);
   readonly developments = signal<DevelopmentListItem[]>([]);
@@ -159,6 +161,7 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
         pageSize: 50,
       }),
       history: this.crm.getHistory(this.id),
+      timeline: this.crm.getTimeline(this.id),
       people: this.peopleService.list(),
       users: this.usersService.list({ isActive: true }),
       developments: this.developmentService.list(),
@@ -168,6 +171,7 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
         this.pipelines.set(data.pipelines);
         this.activities.set(data.activities);
         this.history.set(data.history);
+        this.timeline.set(data.timeline);
         this.people.set(data.people);
         this.users.set(data.users);
         this.developments.set(data.developments);
@@ -191,11 +195,13 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
         pageSize: 50,
       }),
       history: this.crm.getHistory(this.id),
+      timeline: this.crm.getTimeline(this.id),
     }).subscribe({
       next: (data) => {
         this.opportunity.set(data.opportunity);
         this.activities.set(data.activities);
         this.history.set(data.history);
+        this.timeline.set(data.timeline);
         this.selectedStageId.set(data.opportunity.stageId);
         if (message) this.feedback.set(message);
       },
@@ -393,6 +399,16 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
       ALTA: 'Alta',
       URGENTE: 'Urgente',
     }[priority];
+  }
+
+  timelineTypeLabel(type: OpportunityTimelineEvent['type']): string {
+    return {
+      STAGE_CHANGED: 'Etapa',
+      ACTIVITY: 'Atividade',
+      RESERVATION: 'Reserva',
+      PROPOSAL: 'Proposta',
+      SALE: 'Venda',
+    }[type];
   }
 
   private resetActivityForm(): void {

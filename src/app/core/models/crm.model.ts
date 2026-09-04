@@ -87,6 +87,16 @@ export interface OpportunityStageHistory {
   changedByUser: { id: string; name: string; email: string };
 }
 
+export interface OpportunityTimelineEvent {
+  id: string;
+  type: 'STAGE_CHANGED' | 'ACTIVITY' | 'RESERVATION' | 'PROPOSAL' | 'SALE';
+  occurredAt: string;
+  title: string;
+  description: string | null;
+  status: string | null;
+  actor: { id: string; name: string } | null;
+}
+
 export interface SalesActivity {
   id: string;
   organizationId: string;

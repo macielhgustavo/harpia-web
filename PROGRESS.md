@@ -1,6 +1,6 @@
 # Progresso — Frontend Harpia
 
-- **2026-09-04 — CRM fase C, agenda comercial:** adicionada página `/crm/tasks` com visões de hoje, atrasadas, próximas e todas, filtros por responsável e prioridade e ações rápidas para iniciar ou concluir atividades. O detalhe da oportunidade agora registra e exibe status, prioridade, lembrete e resultado do follow-up.
+- **2026-09-04 — CRM fase C, agenda e timeline:** adicionada página `/crm/tasks` com visões de hoje, atrasadas, próximas e todas, filtros por responsável e prioridade e ações rápidas para iniciar ou concluir atividades. O detalhe registra status, prioridade, lembrete e resultado do follow-up e reúne etapas, atividades, reservas, propostas e vendas em uma linha do tempo única.
 
 - **2026-09-04 — CRM fase B:** funil e lista comercial agora exibem probabilidade, tempo na etapa, unidade, total financeiro por coluna e alertas visuais para contato atrasado ou oportunidade parada. O quadro aceita movimentação por arrastar e soltar, mantém o seletor como alternativa acessível e reaproveita as validações transacionais já existentes no backend.
 
