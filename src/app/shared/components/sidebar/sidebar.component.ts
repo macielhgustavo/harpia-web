@@ -10,6 +10,7 @@ import {
   FileSpreadsheet,
   Landmark,
   ListChecks,
+  ListTodo,
   MailCheck,
   LayoutDashboard,
   LucideAngularModule,
@@ -128,6 +129,7 @@ export class SidebarComponent {
     HandCoins,
     ChartNoAxesCombined,
     ListChecks,
+    ListTodo,
     MailCheck,
     Bell,
   };

@@ -97,6 +97,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'crm/tasks',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.CRM_READ },
+    loadComponent: () =>
+      import('./pages/crm/crm-tasks.component').then(
+        (m) => m.CrmTasksComponent,
+      ),
+  },
+  {
     path: 'developments',
     canActivate: [authGuard, permissionGuard],
     data: { permission: APP_PERMISSIONS.DEVELOPMENTS_READ },

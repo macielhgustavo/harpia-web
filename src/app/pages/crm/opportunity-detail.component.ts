@@ -17,6 +17,8 @@ import {
   OpportunityStageHistory,
   SalesActivity,
   SalesActivityPage,
+  SalesActivityPriority,
+  SalesActivityStatus,
   SalesActivityType,
   SalesPipeline,
   SalesStage,
@@ -96,11 +98,15 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
   readonly moving = signal(false);
 
   activityType: SalesActivityType = 'LIGACAO';
+  activityStatus: SalesActivityStatus = 'PENDENTE';
+  activityPriority: SalesActivityPriority = 'NORMAL';
   activityAssignedUserId = '';
   activityScheduledAt = '';
+  activityReminderAt = '';
   activityCompletedAt = '';
   activitySummary = '';
   activityNotes = '';
+  activityResult = '';
 
   readonly activityTypes: { value: SalesActivityType; label: string }[] = [
     { value: 'LIGACAO', label: 'Ligação' },
@@ -273,11 +279,16 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
       .createActivity({
         opportunityId: this.id,
         type: this.activityType,
+        status: this.activityStatus,
+        priority: this.activityPriority,
         ...(this.activityAssignedUserId
           ? { assignedUserId: this.activityAssignedUserId }
           : {}),
         ...(this.activityScheduledAt
           ? { scheduledAt: new Date(this.activityScheduledAt).toISOString() }
+          : {}),
+        ...(this.activityReminderAt
+          ? { reminderAt: new Date(this.activityReminderAt).toISOString() }
           : {}),
         ...(this.activityCompletedAt
           ? { completedAt: new Date(this.activityCompletedAt).toISOString() }
@@ -287,6 +298,9 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
           : {}),
         ...(this.activityNotes.trim()
           ? { notes: this.activityNotes.trim() }
+          : {}),
+        ...(this.activityResult.trim()
+          ? { result: this.activityResult.trim() }
           : {}),
       })
       .subscribe({
@@ -363,12 +377,34 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
     );
   }
 
+  activityStatusLabel(status: SalesActivityStatus): string {
+    return {
+      PENDENTE: 'Pendente',
+      EM_ANDAMENTO: 'Em andamento',
+      CONCLUIDA: 'Concluída',
+      CANCELADA: 'Cancelada',
+    }[status];
+  }
+
+  activityPriorityLabel(priority: SalesActivityPriority): string {
+    return {
+      BAIXA: 'Baixa',
+      NORMAL: 'Normal',
+      ALTA: 'Alta',
+      URGENTE: 'Urgente',
+    }[priority];
+  }
+
   private resetActivityForm(): void {
     this.activityType = 'LIGACAO';
+    this.activityStatus = 'PENDENTE';
+    this.activityPriority = 'NORMAL';
     this.activityAssignedUserId = '';
     this.activityScheduledAt = '';
+    this.activityReminderAt = '';
     this.activityCompletedAt = '';
     this.activitySummary = '';
     this.activityNotes = '';
+    this.activityResult = '';
   }
 }

@@ -9,6 +9,11 @@ export type SalesActivityType =
   | 'FOLLOW_UP'
   | 'OUTRO';
 
+export type SalesActivityStatus =
+  'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDA' | 'CANCELADA';
+
+export type SalesActivityPriority = 'BAIXA' | 'NORMAL' | 'ALTA' | 'URGENTE';
+
 export interface SalesStage {
   id: string;
   organizationId: string;
@@ -89,10 +94,14 @@ export interface SalesActivity {
   personId: string;
   assignedUserId: string | null;
   type: SalesActivityType;
+  status: SalesActivityStatus;
+  priority: SalesActivityPriority;
   scheduledAt: string | null;
+  reminderAt: string | null;
   completedAt: string | null;
   summary: string | null;
   notes: string | null;
+  result: string | null;
   createdAt: string;
   updatedAt: string;
   opportunity: {
@@ -179,16 +188,25 @@ export interface SalesActivityFilters {
   personId?: string;
   assignedUserId?: string;
   type?: SalesActivityType;
+  status?: SalesActivityStatus;
+  priority?: SalesActivityPriority;
+  scheduledFrom?: string;
+  scheduledTo?: string;
+  openOnly?: boolean;
 }
 
 export interface CreateSalesActivityInput {
   opportunityId: string;
   assignedUserId?: string;
   type: SalesActivityType;
+  status?: SalesActivityStatus;
+  priority?: SalesActivityPriority;
   scheduledAt?: string;
+  reminderAt?: string;
   completedAt?: string;
   summary?: string;
   notes?: string;
+  result?: string;
 }
 
 export type UpdateSalesActivityInput = Partial<
