@@ -85,6 +85,8 @@ export class CrmComponent implements OnInit {
   readonly moveStage = signal<SalesStage | null>(null);
   readonly lostReason = signal('');
   readonly moving = signal(false);
+  readonly draggingOpportunityId = signal('');
+  readonly dragTargetStageId = signal('');
 
   readonly SearchIcon = Search;
   readonly PlusIcon = Plus;
@@ -278,6 +280,48 @@ export class CrmComponent implements OnInit {
     this.moveTarget.set(opportunity);
     this.moveStage.set(stage);
     this.lostReason.set('');
+  }
+
+  startDrag(opportunity: Opportunity, event: DragEvent): void {
+    if (!this.canWrite || this.moving()) {
+      event.preventDefault();
+      return;
+    }
+    this.draggingOpportunityId.set(opportunity.id);
+    event.dataTransfer?.setData('text/plain', opportunity.id);
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+  }
+
+  enterStage(stageId: string, event: DragEvent): void {
+    if (!this.draggingOpportunityId()) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    this.dragTargetStageId.set(stageId);
+  }
+
+  leaveStage(stageId: string, event: DragEvent): void {
+    if (
+      event.currentTarget === event.target &&
+      this.dragTargetStageId() === stageId
+    ) {
+      this.dragTargetStageId.set('');
+    }
+  }
+
+  dropOnStage(stageId: string, event: DragEvent): void {
+    event.preventDefault();
+    const opportunityId =
+      this.draggingOpportunityId() || event.dataTransfer?.getData('text/plain');
+    const opportunity = this.result().data.find(
+      (item) => item.id === opportunityId,
+    );
+    this.finishDrag();
+    if (opportunity) this.requestMove(opportunity, stageId);
+  }
+
+  finishDrag(): void {
+    this.draggingOpportunityId.set('');
+    this.dragTargetStageId.set('');
   }
 
   closeMove(): void {

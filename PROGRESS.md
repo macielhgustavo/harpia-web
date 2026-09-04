@@ -1,6 +1,6 @@
 # Progresso — Frontend Harpia
 
-- **2026-09-04 — CRM fase B1:** funil e lista comercial agora exibem probabilidade, tempo na etapa, unidade, total financeiro por coluna e alertas visuais para contato atrasado ou oportunidade parada. A leitura usa os novos campos `defaultProbability` e `stageEnteredAt` sem alterar os fluxos existentes de movimentação, reserva, proposta ou venda.
+- **2026-09-04 — CRM fase B:** funil e lista comercial agora exibem probabilidade, tempo na etapa, unidade, total financeiro por coluna e alertas visuais para contato atrasado ou oportunidade parada. O quadro aceita movimentação por arrastar e soltar, mantém o seletor como alternativa acessível e reaproveita as validações transacionais já existentes no backend.
 
 - **2026-09-02 — Correção Monetária:** implementada gestão de índices monetários, values, políticas de ajuste e ajustes de recebíveis. Inclui abas para índices, values, políticas e ajustes, com criação, leitura, atualização e exclusão, além de pré-view de ajustes.
 
