@@ -77,6 +77,7 @@ export class SaleDetailComponent implements OnInit {
   readonly actionError = signal('');
   readonly editOpen = signal(false);
   readonly commissionOpen = signal(false);
+  readonly cancellationOpen = signal(false);
   readonly saving = signal(false);
   readonly downloadingId = signal('');
   readonly markingCommissionId = signal('');
@@ -97,6 +98,7 @@ export class SaleDetailComponent implements OnInit {
   commissionAmount = '';
   commissionPercentage = '';
   commissionNotes = '';
+  cancellationReason = '';
 
   readonly BackIcon = ArrowLeft;
   readonly EditIcon = Pencil;
@@ -215,6 +217,40 @@ export class SaleDetailComponent implements OnInit {
 
   closeCommission(): void {
     if (!this.saving()) this.commissionOpen.set(false);
+  }
+
+  openCancellation(): void {
+    const sale = this.sale();
+    if (!sale || !this.canWrite || !['ATIVA', 'QUITADA'].includes(sale.status)) return;
+    this.actionError.set('');
+    this.cancellationReason = '';
+    this.cancellationOpen.set(true);
+  }
+
+  closeCancellation(): void {
+    if (!this.saving()) this.cancellationOpen.set(false);
+  }
+
+  cancelSale(): void {
+    const sale = this.sale();
+    if (!sale || this.saving() || this.cancellationReason.trim().length < 10) {
+      this.actionError.set('Descreva o motivo do distrato com pelo menos 10 caracteres.');
+      return;
+    }
+    this.saving.set(true);
+    this.actionError.set('');
+    this.salesService.cancel(sale.id, { reason: this.cancellationReason.trim() }).subscribe({
+      next: (updated) => {
+        this.saving.set(false);
+        this.cancellationOpen.set(false);
+        this.sale.set(updated);
+        this.feedback.set('Distrato conclu\u00eddo. Parcelas e comiss\u00f5es em aberto foram canceladas.');
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.actionError.set(extractError(error, 'N\u00e3o foi poss\u00edvel concluir o distrato.'));
+      },
+    });
   }
 
   saveCommission(): void {

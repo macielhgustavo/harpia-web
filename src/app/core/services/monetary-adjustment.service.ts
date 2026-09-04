@@ -1,85 +1,82 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import {
+  AdjustmentPeriodInput,
+  AdjustmentPreview,
+  MonetaryIndex,
+  MonetaryIndexInput,
+  MonetaryIndexValue,
+  MonetaryIndexValueInput,
+  ReceivableAdjustment,
+  ReceivableAdjustmentPolicy,
+  ReceivableAdjustmentPolicyInput,
+} from '../models/monetary-adjustment.model';
 import { ApiService } from './api.service';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class MonetaryAdjustmentService {
-  private api = inject(ApiService);
+  private readonly api = inject(ApiService);
 
-  // MonetaryIndex
-  getMonetaryIndices(): Observable<any> {
-    return this.api.get('monetary-indices');
+  indices(): Observable<MonetaryIndex[]> {
+    return this.api.get<MonetaryIndex[]>('/monetary-indices');
   }
 
-  createMonetaryIndex(dto: any): Observable<any> {
-    return this.api.post('monetary-indices', dto);
+  createIndex(input: MonetaryIndexInput): Observable<MonetaryIndex> {
+    return this.api.post<MonetaryIndex>('/monetary-indices', input);
   }
 
-  updateMonetaryIndex(id: string, dto: any): Observable<any> {
-    return this.api.patch(`monetary-indices/${id}`, dto);
+  updateIndex(id: string, input: Partial<MonetaryIndexInput>): Observable<MonetaryIndex> {
+    return this.api.patch<MonetaryIndex>(`/monetary-indices/${id}`, input);
   }
 
-  // MonetaryIndexValue
-  getMonetaryIndexValues(monetaryIndexId: string): Observable<any> {
-    return this.api.get(`monetary-indices/${monetaryIndexId}/values`);
+  values(indexId: string): Observable<MonetaryIndexValue[]> {
+    return this.api.get<MonetaryIndexValue[]>(`/monetary-indices/${indexId}/values`);
   }
 
-  createMonetaryIndexValue(monetaryIndexId: string, dto: any): Observable<any> {
-    return this.api.post(`monetary-indices/${monetaryIndexId}/values`, dto);
+  createValue(indexId: string, input: MonetaryIndexValueInput): Observable<MonetaryIndexValue> {
+    return this.api.post<MonetaryIndexValue>(`/monetary-indices/${indexId}/values`, input);
   }
 
-  updateMonetaryIndexValue(monetaryIndexId: string, id: string, dto: any): Observable<any> {
-    return this.api.patch(`monetary-indices/${monetaryIndexId}/values/${id}`, dto);
+  updateValue(
+    indexId: string,
+    id: string,
+    input: Partial<MonetaryIndexValueInput>,
+  ): Observable<MonetaryIndexValue> {
+    return this.api.patch<MonetaryIndexValue>(`/monetary-indices/${indexId}/values/${id}`, input);
   }
 
-  // ReceivableAdjustmentPolicy
-  getReceivableAdjustmentPolicies(receivableId: string): Observable<any> {
-    return this.api.get(`receivables/${receivableId}/adjustment-policies`);
+  policies(receivableId: string): Observable<ReceivableAdjustmentPolicy[]> {
+    return this.api.get<ReceivableAdjustmentPolicy[]>(`/receivables/${receivableId}/adjustment-policies`);
   }
 
-  createReceivableAdjustmentPolicy(dto: any): Observable<any> {
-    return this.api.post('receivable-adjustment-policies', dto);
-  }
-
-  updateReceivableAdjustmentPolicy(id: string, dto: any): Observable<any> {
-    return this.api.patch(`receivable-adjustment-policies/${id}`, dto);
-  }
-
-  deleteReceivableAdjustmentPolicy(id: string): Observable<any> {
-    return this.api.delete(`receivable-adjustment-policies/${id}`);
-  }
-
-  // ReceivableAdjustment
-  previewReceivableAdjustment(
+  createPolicy(
     receivableId: string,
-    dto: { startCompetence: string; endCompetence: string; indexValues: Record<string, number> },
-  ): Observable<any> {
-    return this.api.post(`receivables/${receivableId}/adjustments/preview`, dto);
+    input: ReceivableAdjustmentPolicyInput,
+  ): Observable<ReceivableAdjustmentPolicy> {
+    return this.api.post<ReceivableAdjustmentPolicy>(`/receivables/${receivableId}/adjustment-policies`, input);
   }
 
-  createReceivableAdjustment(
+  updatePolicy(
     receivableId: string,
-    dto: { startCompetence: string; endCompetence: string; indexValues: Record<string, number> },
-    userId: string,
-  ): Observable<any> {
-    return this.api.post(`receivables/${receivableId}/adjustments`, {
-      ...dto,
-      appliedById: userId,
-    });
+    id: string,
+    input: Partial<ReceivableAdjustmentPolicyInput>,
+  ): Observable<ReceivableAdjustmentPolicy> {
+    return this.api.patch<ReceivableAdjustmentPolicy>(`/receivables/${receivableId}/adjustment-policies/${id}`, input);
   }
 
-  updateReceivableAdjustment(id: string, dto: any): Observable<any> {
-    return this.api.patch(`receivable-adjustments/${id}`, dto);
+  deletePolicy(receivableId: string, id: string): Observable<{ deleted: boolean }> {
+    return this.api.delete<{ deleted: boolean }>(`/receivables/${receivableId}/adjustment-policies/${id}`);
   }
 
-  deleteReceivableAdjustment(id: string): Observable<any> {
-    return this.api.delete(`receivable-adjustments/${id}`);
+  preview(receivableId: string, input: AdjustmentPeriodInput): Observable<AdjustmentPreview> {
+    return this.api.post<AdjustmentPreview>(`/receivables/${receivableId}/adjustments/preview`, input);
   }
 
-  getReceivableAdjustments(receivableId: string): Observable<any> {
-    return this.api.get(`receivables/${receivableId}/adjustments`);
+  apply(receivableId: string, input: AdjustmentPeriodInput): Observable<ReceivableAdjustment> {
+    return this.api.post<ReceivableAdjustment>(`/receivables/${receivableId}/adjustments`, input);
+  }
+
+  adjustments(receivableId: string): Observable<ReceivableAdjustment[]> {
+    return this.api.get<ReceivableAdjustment[]>(`/receivables/${receivableId}/adjustments`);
   }
 }

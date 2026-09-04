@@ -1,104 +1,108 @@
 <div class="space-y-6">
   <header>
-    <h1 class="text-2xl font-bold text-ink">Correção Monetária</h1>
-    <p class="mt-1 max-w-3xl text-sm text-muted">
-      Gerencie índices monetários, suas values, políticas de ajuste e ajustes de recebíveis.
+    <h1 class="text-2xl font-bold text-ink">Corre\u00e7\u00e3o monet\u00e1ria</h1>
+    <p class="mt-1 text-sm text-muted">
+      Cadastre \u00edndices, associe uma regra ao receb\u00edvel e aplique a corre\u00e7\u00e3o com pr\u00e9via e hist\u00f3rico.
     </p>
   </header>
 
-  <!-- Receivable Selector -->
-  <div *ngIf="receivables.length > 0" class="p-4 border border-border rounded-lg mb-6">
-    <div class="flex justify-between items-start">
-      <div>
-        <h3 class="text-lg font-bold text-ink">Recebível Selecionado:</h3>
-        <p class="text-sm text-muted">{{ selectedReceivable?.description || 'Nenhum selecionado' }}</p>
-      </div>
-      <div class="flex flex-col items-end gap-2">
-        <button
-          class="btn btn-outline"
-          (click)="showReceivableSelector = !showReceivableSelector"
-        >
-          {{ showReceivableSelector ? 'Cancelar' : 'Selecionar Recebível' }}
-        </button>
-      </div>
-    </div>
+  @if (notice()) {
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ notice() }}</div>
+  }
+  @if (error()) {
+    <div role="alert" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ error() }}</div>
+  }
 
-    <!-- Receivable Selector Dropdown -->
-    <div *ngIf="showReceivableSelector" class="mt-4 p-4 border border-border rounded-lg">
-      <h4 class="text-font-bold text-ink mb-2">Selecionar Recebível</h4>
-      <select
-        class="select select-bordered w-full"
-        (change)="onReceivableSelect($event)"
-      >
-        <option value="">Selecione um recebível</option>
-        <option *ngFor="let receivable of receivables" [value]="receivable">
-          {{ receivable.description }} (ID: {{ receivable.id }})
-        </option>
+  <section class="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-card lg:grid-cols-2">
+    <label class="text-sm font-medium text-ink">
+      \u00cdndice selecionado
+      <select class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" [ngModel]="selectedIndex()?.id ?? ''" (ngModelChange)="chooseIndex($event)">
+        <option value="">Selecione</option>
+        @for (index of indices(); track index.id) {
+          <option [value]="index.id">{{ index.code }} \u00b7 {{ index.name }}</option>
+        }
       </select>
-      <div class="flex justify-end mt-2">
-        <button
-          class="btn btn-secondary"
-          (click)="showReceivableSelector = false"
-        >
-          Cancelar
-        </button>
-        <button
-          class="btn btn-primary"
-          (click)="selectReceivableFromDropdown()"
-        >
-          Selecionar
-        </button>
+    </label>
+    <label class="text-sm font-medium text-ink">
+      Receb\u00edvel selecionado
+      <select class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" [ngModel]="selectedReceivable()?.id ?? ''" (ngModelChange)="chooseReceivable($event)">
+        <option value="">Selecione</option>
+        @for (item of receivables(); track item.id) {
+          <option [value]="item.id">{{ item.description }} \u00b7 {{ money(item.balance) }}</option>
+        }
+      </select>
+    </label>
+  </section>
+
+  <nav class="flex flex-wrap gap-2" aria-label="Etapas da corre\u00e7\u00e3o monet\u00e1ria">
+    <button type="button" (click)="activeTab = 'indices'" [class.bg-primary]="activeTab === 'indices'" [class.text-white]="activeTab === 'indices'" class="rounded-lg border border-border px-4 py-2 text-sm font-medium">1. \u00cdndices</button>
+    <button type="button" (click)="activeTab = 'values'" [class.bg-primary]="activeTab === 'values'" [class.text-white]="activeTab === 'values'" class="rounded-lg border border-border px-4 py-2 text-sm font-medium">2. Valores</button>
+    <button type="button" (click)="activeTab = 'policy'" [class.bg-primary]="activeTab === 'policy'" [class.text-white]="activeTab === 'policy'" class="rounded-lg border border-border px-4 py-2 text-sm font-medium">3. Pol\u00edtica</button>
+    <button type="button" (click)="activeTab = 'adjustments'" [class.bg-primary]="activeTab === 'adjustments'" [class.text-white]="activeTab === 'adjustments'" class="rounded-lg border border-border px-4 py-2 text-sm font-medium">4. Aplicar</button>
+  </nav>
+
+  @if (loading()) {
+    <div class="rounded-xl border border-border bg-card py-16 text-center text-sm text-muted">Carregando...</div>
+  } @else if (activeTab === 'indices') {
+    <section class="grid gap-5 lg:grid-cols-[380px_1fr]">
+      @if (canWrite) {
+        <form (ngSubmit)="saveIndex()" class="space-y-4 rounded-xl border border-border bg-card p-5 shadow-card">
+          <h2 class="font-semibold text-ink">{{ editingIndexId ? 'Editar \u00edndice' : 'Novo \u00edndice' }}</h2>
+          <label class="block text-sm font-medium">Nome<input name="indexName" required maxlength="100" [(ngModel)]="indexForm.name" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <label class="block text-sm font-medium">C\u00f3digo<input name="indexCode" required maxlength="50" [(ngModel)]="indexForm.code" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 uppercase" /></label>
+          <label class="block text-sm font-medium">Periodicidade<select name="indexPeriodicity" [(ngModel)]="indexForm.periodicity" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"><option value="MONTHLY">Mensal</option><option value="QUARTERLY">Trimestral</option><option value="YEARLY">Anual</option></select></label>
+          <label class="block text-sm font-medium">Descri\u00e7\u00e3o<textarea name="indexDescription" rows="3" maxlength="255" [(ngModel)]="indexForm.description" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"></textarea></label>
+          <label class="flex items-center gap-2 text-sm"><input name="indexActive" type="checkbox" [(ngModel)]="indexForm.active" /> Ativo</label>
+          <div class="flex justify-end gap-2"><button type="button" (click)="cancelEdit()" class="rounded-lg border border-border px-4 py-2 text-sm">Limpar</button><button type="submit" [disabled]="saving()" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Salvar</button></div>
+        </form>
+      }
+      <div class="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+        <table class="min-w-full divide-y divide-border text-sm"><thead class="bg-surface text-left text-xs uppercase text-muted"><tr><th class="px-4 py-3">\u00cdndice</th><th class="px-4 py-3">Periodicidade</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">A\u00e7\u00f5es</th></tr></thead>
+          <tbody class="divide-y divide-border">@for (index of indices(); track index.id) {<tr><td class="px-4 py-3"><strong>{{ index.code }}</strong><p class="text-xs text-muted">{{ index.name }}</p></td><td class="px-4 py-3">{{ index.periodicity }}</td><td class="px-4 py-3">{{ index.active ? 'Ativo' : 'Inativo' }}</td><td class="px-4 py-3 text-right">@if (canWrite) {<button type="button" (click)="editIndex(index)" class="text-primary">Editar</button><button type="button" (click)="toggleIndex(index)" class="ml-3 text-muted">{{ index.active ? 'Desativar' : 'Ativar' }}</button>}</td></tr>} @empty {<tr><td colspan="4" class="px-4 py-12 text-center text-muted">Nenhum \u00edndice cadastrado.</td></tr>}</tbody>
+        </table>
       </div>
-    </div>
-  </div>
-
-  <div class="flex flex-wrap gap-2">
-    <button
-      [class]="activeTab === 'indices' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
-      (click)="activeTab = 'indices'"
-    >
-      Índices
-    </button>
-    <button
-      [class]="activeTab === 'values' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
-      (click)="activeTab = 'values'"
-    >
-      Valores dos Índices
-    </button>
-    <button
-      [class]="activeTab === 'policies' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
-      (click)="activeTab = 'policies'"
-    >
-      Políticas de Ajuste
-    </button>
-    <button
-      [class]="activeTab === 'adjustments' ? 'bg-primary text-primary-foreground' : 'text-muted hover:text-primary'"
-      (click)="activeTab = 'adjustments'"
-    >
-      Ajustes de Recebíveis
-    </button>
-  </div>
-
-  <div class="divider"></div>
-
-  <!-- Tab Content -->
-  <div *ngIf="activeTab === 'indices'">
-    <!-- Monetary Indices Tab -->
-    <app-monetary-indices-tab (indexSelected)="onIndexSelected($event)"></app-monetary-indices-tab>
-  </div>
-
-  <div *ngIf="activeTab === 'values'">
-    <!-- Monetary Index Values Tab -->
-    <app-monetary-index-values-tab [selectedMonetaryIndex]="selectedMonetaryIndex"></app-monetary-index-values-tab>
-  </div>
-
-  <div *ngIf="activeTab === 'policies'">
-    <!-- Receivable Adjustment Policies Tab -->
-    <app-receivable-adjustment-policies-tab [selectedReceivable]="selectedReceivable"></app-receivable-adjustment-policies-tab>
-  </div>
-
-  <div *ngIf="activeTab === 'adjustments'">
-    <!-- Receivable Adjustments Tab -->
-    <app-receivable-adjustments-tab [selectedReceivable]="selectedReceivable"></app-receivable-adjustments-tab>
-  </div>
+    </section>
+  } @else if (activeTab === 'values') {
+    <section class="grid gap-5 lg:grid-cols-[380px_1fr]">
+      @if (canWrite) {
+        <form (ngSubmit)="saveValue()" class="space-y-4 rounded-xl border border-border bg-card p-5 shadow-card">
+          <h2 class="font-semibold text-ink">{{ editingValueId ? 'Editar valor' : 'Novo valor' }}</h2>
+          <p class="text-xs text-muted">O percentual \u00e9 exibido como porcentagem e armazenado como fra\u00e7\u00e3o.</p>
+          <label class="block text-sm font-medium">Compet\u00eancia<input name="competence" type="month" required [(ngModel)]="valueForm.competence" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <label class="block text-sm font-medium">Percentual (%)<input name="percentage" type="number" step="0.0001" required [(ngModel)]="valueForm.percentage" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <label class="block text-sm font-medium">Fonte<input name="source" maxlength="100" [(ngModel)]="valueForm.source" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <label class="block text-sm font-medium">Publicado em<input name="publishedAt" type="date" [(ngModel)]="valueForm.publishedAt" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <div class="flex justify-end gap-2"><button type="button" (click)="cancelEdit()" class="rounded-lg border border-border px-4 py-2 text-sm">Limpar</button><button type="submit" [disabled]="saving() || !selectedIndex()" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Salvar</button></div>
+        </form>
+      }
+      <div class="overflow-hidden rounded-xl border border-border bg-card shadow-card"><table class="min-w-full divide-y divide-border text-sm"><thead class="bg-surface text-left text-xs uppercase text-muted"><tr><th class="px-4 py-3">Compet\u00eancia</th><th class="px-4 py-3">Percentual</th><th class="px-4 py-3">Fonte</th><th class="px-4 py-3 text-right">A\u00e7\u00f5es</th></tr></thead><tbody class="divide-y divide-border">@for (value of values(); track value.id) {<tr><td class="px-4 py-3">{{ month(value.competence) }}</td><td class="px-4 py-3 font-medium">{{ percentage(value.percentage) }}</td><td class="px-4 py-3">{{ value.source || '\u2014' }}</td><td class="px-4 py-3 text-right">@if (canWrite) {<button type="button" (click)="editValue(value)" class="text-primary">Editar</button>}</td></tr>} @empty {<tr><td colspan="4" class="px-4 py-12 text-center text-muted">Selecione um \u00edndice ou cadastre seus valores.</td></tr>}</tbody></table></div>
+    </section>
+  } @else if (activeTab === 'policy') {
+    <section class="grid gap-5 lg:grid-cols-[380px_1fr]">
+      @if (canWrite) {
+        <form (ngSubmit)="savePolicy()" class="space-y-4 rounded-xl border border-border bg-card p-5 shadow-card">
+          <h2 class="font-semibold text-ink">{{ editingPolicyId ? 'Editar pol\u00edtica' : 'Vincular pol\u00edtica' }}</h2>
+          <label class="block text-sm font-medium">\u00cdndice<select name="policyIndex" required [(ngModel)]="policyForm.monetaryIndexId" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"><option value="">Selecione</option>@for (index of indices(); track index.id) {<option [value]="index.id">{{ index.code }} \u00b7 {{ index.name }}</option>}</select></label>
+          <label class="block text-sm font-medium">Data-base<input name="baseDate" type="date" required [(ngModel)]="policyForm.baseDate" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <label class="block text-sm font-medium">Periodicidade<select name="policyPeriodicity" [(ngModel)]="policyForm.periodicity" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"><option value="MONTHLY">Mensal</option><option value="QUARTERLY">Trimestral</option><option value="YEARLY">Anual</option></select></label>
+          <label class="block text-sm font-medium">Defasagem (per\u00edodos)<input name="lag" type="number" min="0" max="24" [(ngModel)]="policyForm.lag" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+          <label class="flex items-center gap-2 text-sm"><input name="policyActive" type="checkbox" [(ngModel)]="policyForm.active" /> Pol\u00edtica ativa</label>
+          <div class="flex justify-end gap-2"><button type="button" (click)="cancelEdit()" class="rounded-lg border border-border px-4 py-2 text-sm">Limpar</button><button type="submit" [disabled]="saving() || !selectedReceivable()" class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">Salvar</button></div>
+        </form>
+      }
+      <div class="space-y-3">@for (policy of policies(); track policy.id) {<article class="rounded-xl border border-border bg-card p-5 shadow-card"><div class="flex items-start justify-between"><div><h3 class="font-semibold">{{ policy.monetaryIndex.code }} \u00b7 {{ policy.monetaryIndex.name }}</h3><p class="mt-1 text-sm text-muted">Data-base {{ date(policy.baseDate) }} \u00b7 {{ policy.periodicity }} \u00b7 defasagem {{ policy.lag || 0 }}</p></div><span class="rounded-full bg-surface px-2 py-1 text-xs">{{ policy.active ? 'Ativa' : 'Inativa' }}</span></div>@if (canWrite) {<div class="mt-4 text-right"><button type="button" (click)="editPolicy(policy)" class="text-sm text-primary">Editar</button><button type="button" (click)="deletePolicy(policy)" class="ml-3 text-sm text-red-700">Excluir</button></div>}</article>} @empty {<div class="rounded-xl border border-border bg-card py-12 text-center text-sm text-muted">O receb\u00edvel selecionado ainda n\u00e3o possui pol\u00edtica.</div>}</div>
+    </section>
+  } @else {
+    <section class="space-y-5">
+      <form (ngSubmit)="preview()" class="grid gap-4 rounded-xl border border-border bg-card p-5 shadow-card md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <label class="text-sm font-medium">Compet\u00eancia inicial<input name="startCompetence" type="month" required [(ngModel)]="period.startCompetence" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+        <label class="text-sm font-medium">Compet\u00eancia final<input name="endCompetence" type="month" required [(ngModel)]="period.endCompetence" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" /></label>
+        <button type="submit" [disabled]="saving() || !selectedReceivable()" class="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">Calcular pr\u00e9via</button>
+      </form>
+      @if (previewResult(); as preview) {
+        <article class="rounded-xl border border-blue-200 bg-blue-50 p-5"><div class="grid gap-4 sm:grid-cols-3"><div><p class="text-xs text-muted">Valor atual</p><strong class="text-lg">{{ money(preview.previousAmount) }}</strong></div><div><p class="text-xs text-muted">Corre\u00e7\u00e3o</p><strong class="text-lg text-blue-800">{{ money(preview.difference) }}</strong></div><div><p class="text-xs text-muted">Novo valor</p><strong class="text-lg text-emerald-800">{{ money(preview.adjustedAmount) }}</strong></div></div><p class="mt-3 text-xs text-muted">{{ preview.monetaryIndex.code }} \u00b7 {{ month(preview.startCompetence) }} a {{ month(preview.endCompetence) }}</p>@if (canWrite) {<div class="mt-4 text-right"><button type="button" (click)="applyAdjustment()" [disabled]="saving()" class="rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">Aplicar corre\u00e7\u00e3o</button></div>}</article>
+      }
+      <div class="overflow-hidden rounded-xl border border-border bg-card shadow-card"><div class="border-b border-border px-5 py-4"><h2 class="font-semibold">Hist\u00f3rico imut\u00e1vel</h2></div><table class="min-w-full divide-y divide-border text-sm"><thead class="bg-surface text-left text-xs uppercase text-muted"><tr><th class="px-4 py-3">Per\u00edodo</th><th class="px-4 py-3">Anterior</th><th class="px-4 py-3">Corrigido</th><th class="px-4 py-3">Aplicado por</th></tr></thead><tbody class="divide-y divide-border">@for (item of adjustments(); track item.id) {<tr><td class="px-4 py-3">{{ month(item.startCompetence) }} a {{ month(item.endCompetence) }}</td><td class="px-4 py-3">{{ money(item.previousAmount) }}</td><td class="px-4 py-3 font-medium">{{ money(item.adjustedAmount) }}</td><td class="px-4 py-3">{{ item.appliedBy?.name || '\u2014' }}<p class="text-xs text-muted">{{ date(item.appliedAt) }}</p></td></tr>} @empty {<tr><td colspan="4" class="px-4 py-12 text-center text-muted">Nenhuma corre\u00e7\u00e3o aplicada.</td></tr>}</tbody></table></div>
+    </section>
+  }
 </div>

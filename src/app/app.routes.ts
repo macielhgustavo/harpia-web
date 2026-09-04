@@ -220,6 +220,15 @@ export const routes: Routes = [
         (m) => m.CollectionsComponent,
       ),
   },
+  {
+    path: 'finance/monetary-adjustment',
+    canActivate: [authGuard, permissionGuard],
+    data: { permission: APP_PERMISSIONS.FINANCE_READ },
+    loadComponent: () =>
+      import('./pages/finance/monetary-adjustment/monetary-adjustment.component').then(
+        (m) => m.MonetaryAdjustmentComponent,
+      ),
+  },
   { path: 'receivables', redirectTo: 'finance/receivables', pathMatch: 'full' },
   {
     path: 'reports',

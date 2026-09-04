@@ -2,6 +2,7 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  CancelSaleInput,
   ConvertProposalToSaleInput,
   Sale,
   SaleCommission,
@@ -51,5 +52,9 @@ export class SaleService {
     data: SaleCommissionInput,
   ): Observable<SaleCommission> {
     return this.api.post<SaleCommission>(`/sales/${id}/commissions`, data);
+  }
+
+  cancel(id: string, data: CancelSaleInput): Observable<SaleDetail> {
+    return this.api.post<SaleDetail>(`/sales/${id}/cancel`, data);
   }
 }

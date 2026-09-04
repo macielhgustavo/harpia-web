@@ -62,13 +62,18 @@
           </p>
         </div>
         @if (canWrite) {
-          <button
-            type="button"
-            (click)="openEdit()"
-            class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary"
-          >
-            <lucide-icon [img]="EditIcon" [size]="17"></lucide-icon>Editar dados
-          </button>
+          <div class="flex flex-wrap gap-2">
+            @if (item.status === "ATIVA" || item.status === "QUITADA") {
+              <button type="button" (click)="openCancellation()" class="rounded-lg border border-red-300 px-4 py-2.5 text-sm font-medium text-red-700">Realizar distrato</button>
+            }
+            <button
+              type="button"
+              (click)="openEdit()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary"
+            >
+              <lucide-icon [img]="EditIcon" [size]="17"></lucide-icon>Editar dados
+            </button>
+          </div>
         }
       </header>
 
@@ -635,6 +640,29 @@
           >
             {{ saving() ? "Adicionando..." : "Adicionar" }}
           </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (cancellationOpen() && sale(); as item) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" (click)="closeCancellation()">
+    <section role="dialog" aria-modal="true" aria-labelledby="sale-cancellation-title" appDialogFocus class="w-full max-w-xl rounded-xl bg-card p-6 shadow-xl" (click)="$event.stopPropagation()">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 id="sale-cancellation-title" class="text-lg font-semibold text-ink">Realizar distrato da venda {{ item.saleNumber }}</h2>
+          <p class="mt-1 text-sm text-muted">Parcelas, cobran\u00e7as e comiss\u00f5es ainda abertas ser\u00e3o canceladas. Valores pagos devem ser estornados antes.</p>
+        </div>
+        <button type="button" (click)="closeCancellation()" aria-label="Fechar" class="rounded-lg p-2 text-muted"><lucide-icon [img]="CloseIcon" [size]="18"></lucide-icon></button>
+      </div>
+      <form class="mt-5 space-y-4" (ngSubmit)="cancelSale()">
+        <label class="block text-sm font-medium text-ink">Motivo do distrato *
+          <textarea data-dialog-initial-focus required minlength="10" maxlength="1000" rows="5" name="cancellationReason" [(ngModel)]="cancellationReason" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"></textarea>
+        </label>
+        <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button type="button" (click)="closeCancellation()" [disabled]="saving()" class="rounded-lg border border-border px-4 py-2.5 text-sm">Voltar</button>
+          <button type="submit" [disabled]="saving()" class="rounded-lg bg-red-700 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60">{{ saving() ? "Concluindo..." : "Confirmar distrato" }}</button>
         </div>
       </form>
     </section>

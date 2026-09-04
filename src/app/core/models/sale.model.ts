@@ -104,6 +104,12 @@ export interface SaleDetail extends Sale {
   receivables: Receivable[];
   documents: SaleDocument[];
   audit: AuditLog[];
+  cancellation: {
+    id: string;
+    reason: string;
+    createdAt: string;
+    cancelledByUser: { id: string; name: string };
+  } | null;
 }
 
 export interface SalePage {
@@ -153,4 +159,8 @@ export interface UpdateSaleInput {
   saleNumber?: string;
   saleDate?: string;
   notes?: string;
+}
+
+export interface CancelSaleInput {
+  reason: string;
 }
