@@ -107,6 +107,49 @@ export class CrmComponent implements OnInit {
     return this.result().data.filter((item) => item.stageId === stageId);
   }
 
+  stageTotal(stageId: string): string {
+    const total = this.stageItems(stageId).reduce(
+      (sum, opportunity) => sum + Number(opportunity.estimatedValue ?? 0),
+      0,
+    );
+    return this.formatMoney(String(total));
+  }
+
+  daysInStage(opportunity: Opportunity): number {
+    const enteredAt = new Date(opportunity.stageEnteredAt).getTime();
+    if (!Number.isFinite(enteredAt)) return 0;
+    return Math.max(0, Math.floor((Date.now() - enteredAt) / 86_400_000));
+  }
+
+  stageAgeLabel(opportunity: Opportunity): string {
+    const days = this.daysInStage(opportunity);
+    if (days === 0) return 'Entrou hoje';
+    return `${days} ${days === 1 ? 'dia' : 'dias'} na etapa`;
+  }
+
+  isOverdue(opportunity: Opportunity): boolean {
+    if (
+      !opportunity.nextContactAt ||
+      opportunity.stage.isWon ||
+      opportunity.stage.isLost
+    ) {
+      return false;
+    }
+    return new Date(opportunity.nextContactAt).getTime() < Date.now();
+  }
+
+  isStalled(opportunity: Opportunity): boolean {
+    return (
+      !opportunity.stage.isWon &&
+      !opportunity.stage.isLost &&
+      this.daysInStage(opportunity) >= 7
+    );
+  }
+
+  probabilityLabel(opportunity: Opportunity): string {
+    return `${opportunity.probability ?? opportunity.stage.defaultProbability}%`;
+  }
+
   loadReferenceData(): void {
     this.loading.set(true);
     this.loadError.set('');

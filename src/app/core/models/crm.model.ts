@@ -17,6 +17,7 @@ export interface SalesStage {
   code: string;
   position: number;
   colorKey: string;
+  defaultProbability: number;
   isWon: boolean;
   isLost: boolean;
   createdAt: string;
@@ -58,6 +59,7 @@ export interface Opportunity {
   expectedCloseDate: string | null;
   lostReason: string | null;
   notes: string | null;
+  stageEnteredAt: string;
   createdAt: string;
   updatedAt: string;
   person: OpportunityPerson;

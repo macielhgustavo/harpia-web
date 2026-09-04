@@ -170,11 +170,15 @@
             class="w-[290px] shrink-0 rounded-xl border border-border bg-surface-warm p-3"
           >
             <header class="mb-3 flex items-center justify-between gap-2">
-              <h2 class="font-semibold text-ink">{{ stage.name }}</h2>
-              <span
-                class="rounded-full bg-card px-2 py-0.5 text-xs text-muted"
-                >{{ stageItems(stage.id).length }}</span
-              >
+              <div>
+                <h2 class="font-semibold text-ink">{{ stage.name }}</h2>
+                <p class="mt-0.5 text-xs text-muted">
+                  {{ stageTotal(stage.id) }} · {{ stage.defaultProbability }}%
+                </p>
+              </div>
+              <span class="rounded-full bg-card px-2 py-0.5 text-xs text-muted">
+                {{ stageItems(stage.id).length }}
+              </span>
             </header>
             <div class="space-y-3">
               @for (opportunity of stageItems(stage.id); track opportunity.id) {
@@ -192,6 +196,9 @@
                     ><span class="mt-1 block text-sm text-primary">{{
                       formatMoney(opportunity.estimatedValue)
                     }}</span
+                    ><span class="mt-1 block text-xs text-muted">
+                      {{ opportunity.unit?.identifier || "Sem unidade" }} ·
+                      {{ probabilityLabel(opportunity) }} </span
                     ><span class="mt-2 block text-xs text-muted"
                       >{{
                         opportunity.development?.name || "Sem empreendimento"
@@ -204,6 +211,27 @@
                       >Próximo contato:
                       {{ formatDate(opportunity.nextContactAt) }}</span
                     >
+                    <span class="mt-2 flex flex-wrap gap-1.5">
+                      <span
+                        class="rounded-full bg-surface-warm px-2 py-0.5 text-[11px] text-muted"
+                      >
+                        {{ stageAgeLabel(opportunity) }}
+                      </span>
+                      @if (isOverdue(opportunity)) {
+                        <span
+                          class="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-medium text-red-700"
+                        >
+                          Contato atrasado
+                        </span>
+                      }
+                      @if (isStalled(opportunity)) {
+                        <span
+                          class="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+                        >
+                          Parada
+                        </span>
+                      }
+                    </span>
                   </button>
                   @if (canWrite) {
                     <select
@@ -238,13 +266,16 @@
       class="overflow-hidden rounded-xl border border-border bg-card shadow-card"
     >
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[900px] text-left text-sm">
+        <table class="w-full min-w-[1180px] text-left text-sm">
           <thead
             class="border-b border-border bg-surface-warm text-xs uppercase text-muted"
           >
             <tr>
               <th class="px-4 py-3">Pessoa</th>
+              <th class="px-4 py-3">Pipeline</th>
               <th class="px-4 py-3">Etapa</th>
+              <th class="px-4 py-3">Probabilidade</th>
+              <th class="px-4 py-3">Tempo na etapa</th>
               <th class="px-4 py-3">Valor</th>
               <th class="px-4 py-3">Responsável</th>
               <th class="px-4 py-3">Empreendimento/unidade</th>
@@ -265,7 +296,23 @@
                     opportunity.source || "Origem não informada"
                   }}</span>
                 </td>
+                <td class="px-4 py-3">{{ opportunity.pipeline.name }}</td>
                 <td class="px-4 py-3">{{ opportunity.stage.name }}</td>
+                <td class="px-4 py-3">
+                  {{ probabilityLabel(opportunity) }}
+                </td>
+                <td class="px-4 py-3">
+                  <span>{{ stageAgeLabel(opportunity) }}</span>
+                  @if (isOverdue(opportunity)) {
+                    <span class="block text-xs font-medium text-red-700">
+                      Contato atrasado
+                    </span>
+                  } @else if (isStalled(opportunity)) {
+                    <span class="block text-xs font-medium text-amber-800">
+                      Requer atenção
+                    </span>
+                  }
+                </td>
                 <td class="px-4 py-3">
                   {{ formatMoney(opportunity.estimatedValue) }}
                 </td>

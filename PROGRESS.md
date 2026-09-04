@@ -1,5 +1,7 @@
 # Progresso — Frontend Harpia
 
+- **2026-09-04 — CRM fase B1:** funil e lista comercial agora exibem probabilidade, tempo na etapa, unidade, total financeiro por coluna e alertas visuais para contato atrasado ou oportunidade parada. A leitura usa os novos campos `defaultProbability` e `stageEnteredAt` sem alterar os fluxos existentes de movimentação, reserva, proposta ou venda.
+
 - **2026-09-02 — Correção Monetária:** implementada gestão de índices monetários, values, políticas de ajuste e ajustes de recebíveis. Inclui abas para índices, values, políticas e ajustes, com criação, leitura, atualização e exclusão, além de pré-view de ajustes.
 
 - **2026-09-02 — Cobrança automatizada:** criada central de réguas e envios com modelos seguros inicialmente pausados, ativação por perfis financeiros, processamento sob demanda, filtros, indicadores, histórico de tentativas, repetição de falhas e cancelamento. A interface diferencia claramente fila operacional de envio efetivo e avisa quando o provedor de e-mail ainda não está configurado.
