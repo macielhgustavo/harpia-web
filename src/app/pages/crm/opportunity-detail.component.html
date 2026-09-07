@@ -43,6 +43,13 @@
           <div class="flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
+              (click)="scheduleVisit()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+            >
+              <lucide-icon [img]="VisitIcon" [size]="16"></lucide-icon>Agendar
+              visita</button
+            ><button
+              type="button"
               (click)="openMove()"
               class="rounded-lg border border-primary px-4 py-2.5 text-sm font-medium text-primary"
             >
@@ -229,6 +236,17 @@
           }
         </ol>
       </section>
+
+      <app-visits-section
+        [opportunityId]="item.id"
+        [personName]="item.person.name"
+        [developmentId]="item.developmentId || ''"
+        [unitId]="item.unitId || ''"
+        [assignedUserId]="item.assignedUserId || ''"
+        [users]="users()"
+        [developments]="developments()"
+        (changed)="onVisitChanged($event)"
+      />
 
       <app-reservations-section
         [developmentId]="item.developmentId || ''"

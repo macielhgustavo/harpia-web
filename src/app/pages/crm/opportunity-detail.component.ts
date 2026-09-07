@@ -1,10 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   ArrowLeft,
+  CalendarPlus,
   LucideAngularModule,
   Pencil,
   Plus,
@@ -37,6 +45,7 @@ import { UserManagementService } from '../../core/services/user-management.servi
 import { DialogFocusDirective } from '../../shared/directives/dialog-focus.directive';
 import { extractError } from '../../shared/utils/http-error';
 import { OpportunityFormModalComponent } from './opportunity-form-modal.component';
+import { VisitsSectionComponent } from './visits-section.component';
 import { ReservationsSectionComponent } from '../reservations/reservations-section.component';
 import { ProposalsSectionComponent } from '../proposals/proposals-section.component';
 
@@ -55,6 +64,7 @@ const EMPTY_ACTIVITIES: SalesActivityPage = {
     LucideAngularModule,
     DialogFocusDirective,
     OpportunityFormModalComponent,
+    VisitsSectionComponent,
     ReservationsSectionComponent,
     ProposalsSectionComponent,
   ],
@@ -119,7 +129,11 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
     { value: 'FOLLOW_UP', label: 'Follow-up' },
     { value: 'OUTRO', label: 'Outro' },
   ];
+  /** Lets the header quick action open the form owned by the visits section. */
+  readonly visitsSection = viewChild(VisitsSectionComponent);
+
   readonly BackIcon = ArrowLeft;
+  readonly VisitIcon = CalendarPlus;
   readonly EditIcon = Pencil;
   readonly PlusIcon = Plus;
   readonly TrashIcon = Trash2;
@@ -236,6 +250,19 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
 
   onProposalChanged(message: string): void {
     this.refreshCommercialData(message);
+  }
+
+  /**
+   * The visits section owns its own list; the detail only refetches the
+   * timeline, which stays a backend projection of what actually happened.
+   */
+  onVisitChanged(message: string): void {
+    this.refreshCommercialData(message);
+  }
+
+  scheduleVisit(): void {
+    if (!this.canWrite) return;
+    this.visitsSection()?.openCreate();
   }
 
   openMove(): void {
