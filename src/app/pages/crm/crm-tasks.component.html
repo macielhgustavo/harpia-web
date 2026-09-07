@@ -27,19 +27,23 @@
       {{ feedback() }}
     </p>
   }
-  @if (error()) {
+  @if (actionError()) {
     <p
       class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
       role="alert"
     >
-      {{ error() }}
+      {{ actionError() }}
     </p>
   }
 
-  <section class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+  <section
+    class="grid grid-cols-2 gap-3 sm:grid-cols-4"
+    aria-label="Visões da agenda"
+  >
     <button
       type="button"
-      (click)="view.set('TODAY')"
+      (click)="select('TODAY')"
+      [attr.aria-pressed]="view() === 'TODAY'"
       [class.border-primary]="view() === 'TODAY'"
       class="rounded-xl border border-border bg-card p-4 text-left shadow-card"
     >
@@ -48,7 +52,8 @@
     </button>
     <button
       type="button"
-      (click)="view.set('OVERDUE')"
+      (click)="select('OVERDUE')"
+      [attr.aria-pressed]="view() === 'OVERDUE'"
       [class.border-red-400]="view() === 'OVERDUE'"
       class="rounded-xl border border-border bg-card p-4 text-left shadow-card"
     >
@@ -59,13 +64,26 @@
     </button>
     <button
       type="button"
-      (click)="view.set('UPCOMING')"
+      (click)="select('UPCOMING')"
+      [attr.aria-pressed]="view() === 'UPCOMING'"
       [class.border-primary]="view() === 'UPCOMING'"
       class="rounded-xl border border-border bg-card p-4 text-left shadow-card"
     >
       <span class="text-xs font-semibold uppercase text-muted">Próximas</span>
       <strong class="mt-1 block text-2xl text-ink">{{
         upcomingCount()
+      }}</strong>
+    </button>
+    <button
+      type="button"
+      (click)="select('COMPLETED')"
+      [attr.aria-pressed]="view() === 'COMPLETED'"
+      [class.border-primary]="view() === 'COMPLETED'"
+      class="rounded-xl border border-border bg-card p-4 text-left shadow-card"
+    >
+      <span class="text-xs font-semibold uppercase text-muted">Concluídas</span>
+      <strong class="mt-1 block text-2xl text-ink">{{
+        completedCount()
       }}</strong>
     </button>
   </section>
@@ -97,11 +115,12 @@
       </select>
       <button
         type="button"
-        (click)="view.set('ALL')"
+        (click)="select('ALL')"
+        [attr.aria-pressed]="view() === 'ALL'"
         [class.bg-surface-warm]="view() === 'ALL'"
         class="rounded-lg border border-border px-4 py-2.5 text-sm text-ink"
       >
-        Ver todas
+        Todas as abertas ({{ openCount() }})
       </button>
     </div>
   </section>
@@ -112,8 +131,31 @@
     >
       Carregando agenda...
     </div>
+  } @else if (loadError()) {
+    <div
+      class="flex min-h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card p-6 text-center"
+    >
+      <p class="text-sm text-red-800" role="alert">{{ loadError() }}</p>
+      <button
+        type="button"
+        (click)="load()"
+        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+      >
+        <lucide-icon [img]="RefreshIcon" [size]="16"></lucide-icon>Tentar
+        novamente
+      </button>
+    </div>
   } @else {
     <section class="space-y-3" aria-label="Atividades da agenda comercial">
+      @if (truncated()) {
+        <p
+          class="rounded-xl border border-border bg-surface-warm px-4 py-3 text-sm text-muted"
+        >
+          Mostrando as primeiras {{ visibleActivities().length }} de
+          {{ count(view()) }} atividades desta visão. Refine os filtros para ver
+          o restante.
+        </p>
+      }
       @for (activity of visibleActivities(); track activity.id) {
         <article
           class="rounded-xl border border-border bg-card p-4 shadow-card sm:p-5"
@@ -138,6 +180,13 @@
                     class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
                   >
                     Em andamento
+                  </span>
+                }
+                @if (activity.status === "CONCLUIDA") {
+                  <span
+                    class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700"
+                  >
+                    Concluída
                   </span>
                 }
                 @if (isLate(activity)) {
@@ -165,7 +214,7 @@
                 {{ formatDateTime(activity.scheduledAt) }}
               </p>
             </div>
-            @if (canWrite) {
+            @if (canWrite && activity.status !== "CONCLUIDA") {
               <div class="flex shrink-0 flex-wrap gap-2">
                 @if (activity.status === "PENDENTE") {
                   <button
@@ -195,10 +244,8 @@
         <div
           class="flex min-h-56 flex-col items-center justify-center rounded-xl border border-border bg-card p-6 text-center"
         >
-          <p class="font-medium text-ink">Nenhuma atividade nesta visão</p>
-          <p class="mt-1 text-sm text-muted">
-            Troque o período ou os filtros para consultar a agenda.
-          </p>
+          <p class="font-medium text-ink">{{ emptyMessage() }}</p>
+          <p class="mt-1 text-sm text-muted">{{ emptyHint() }}</p>
         </div>
       }
     </section>
