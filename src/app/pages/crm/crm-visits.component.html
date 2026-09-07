@@ -246,14 +246,24 @@
         Agendar visita
       </h2>
       <form (ngSubmit)="createVisit()" class="mt-4 space-y-4">
-        <label class="block text-sm font-medium text-ink"
-          >Oportunidade *
-          <select
+        <div class="block text-sm font-medium text-ink">
+          <label for="opportunity-search">Oportunidade *</label>
+          <input
+            id="opportunity-search"
             data-dialog-initial-focus
+            name="opportunitySearch"
+            [ngModel]="opportunitySearch()"
+            (ngModelChange)="searchOpportunities($event)"
+            placeholder="Buscar por pessoa, e-mail, origem ou unidade..."
+            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 font-normal"
+          />
+          <select
             name="opportunity"
             [(ngModel)]="opportunityId"
             required
-            class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+            size="5"
+            aria-label="Oportunidade da visita"
+            class="mt-2 w-full rounded-lg border border-border bg-surface px-3 py-2.5 font-normal"
           >
             <option value="">Selecione</option>
             @for (item of opportunities(); track item.id) {
@@ -264,7 +274,19 @@
               </option>
             }
           </select>
-        </label>
+          <p class="mt-1 text-xs font-normal text-muted">
+            @if (opportunitySearching()) {
+              Buscando...
+            } @else if (opportunityOverflow > 0) {
+              Mostrando {{ opportunities().length }} de
+              {{ opportunityTotal() }}. Refine a busca para encontrar as demais.
+            } @else if (!opportunities().length) {
+              Nenhuma oportunidade encontrada para esta busca.
+            } @else {
+              {{ opportunities().length }} oportunidade(s) encontrada(s).
+            }
+          </p>
+        </div>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label class="text-sm font-medium text-ink"
             >Data e horário *

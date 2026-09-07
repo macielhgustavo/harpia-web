@@ -151,9 +151,8 @@
         <p
           class="rounded-xl border border-border bg-surface-warm px-4 py-3 text-sm text-muted"
         >
-          Mostrando as primeiras {{ visibleActivities().length }} de
-          {{ count(view()) }} atividades desta visão. Refine os filtros para ver
-          o restante.
+          Mostrando {{ visibleActivities().length }} de
+          {{ count(view()) }} atividades desta visão.
         </p>
       }
       @for (activity of visibleActivities(); track activity.id) {
@@ -247,6 +246,20 @@
           <p class="font-medium text-ink">{{ emptyMessage() }}</p>
           <p class="mt-1 text-sm text-muted">{{ emptyHint() }}</p>
         </div>
+      }
+      @if (hasMore()) {
+        <button
+          type="button"
+          (click)="loadMore()"
+          [disabled]="loadingMore()"
+          class="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-ink disabled:opacity-50"
+        >
+          @if (loadingMore()) {
+            Carregando...
+          } @else {
+            Carregar mais {{ remaining() }}
+          }
+        </button>
       }
     </section>
   }

@@ -313,9 +313,78 @@ describe('CrmTasksComponent', () => {
       fixture.detectChanges();
 
       expect(component.truncated()).toBeTrue();
+      expect(component.hasMore()).toBeTrue();
+      expect(component.remaining()).toBe(249);
       expect(fixture.nativeElement.textContent).toContain(
-        'Mostrando as primeiras 1 de 250',
+        'Mostrando 1 de 250 atividades',
       );
+      expect(fixture.nativeElement.textContent).toContain(
+        'Carregar mais 249',
+      );
+    });
+
+    it('appends the next page without duplicating records', () => {
+      respondPerView({
+        TODAY: {
+          data: [activity({ id: 'a-1' }), activity({ id: 'a-2' })],
+          pagination: { page: 1, pageSize: 2, total: 3, totalPages: 2 },
+        },
+      });
+      fixture.detectChanges();
+
+      crm.listActivities.and.returnValue(
+        of({
+          // The overlapping row must not be listed twice.
+          data: [activity({ id: 'a-2' }), activity({ id: 'a-3' })],
+          pagination: { page: 2, pageSize: 2, total: 3, totalPages: 2 },
+        }),
+      );
+      component.loadMore();
+      fixture.detectChanges();
+
+      expect(component.visibleActivities().map((item) => item.id)).toEqual([
+        'a-1',
+        'a-2',
+        'a-3',
+      ]);
+      expect(component.hasMore()).toBeFalse();
+      expect(component.todayCount()).toBe(3);
+    });
+
+    it('asks for the next page of the active view only', () => {
+      respondPerView({
+        TODAY: {
+          data: [activity({ id: 'a-1' })],
+          pagination: { page: 1, pageSize: 1, total: 5, totalPages: 5 },
+        },
+      });
+      fixture.detectChanges();
+      crm.listActivities.calls.reset();
+      crm.listActivities.and.returnValue(
+        of({
+          data: [activity({ id: 'a-2' })],
+          pagination: { page: 2, pageSize: 1, total: 5, totalPages: 5 },
+        }),
+      );
+
+      component.loadMore();
+
+      expect(crm.listActivities).toHaveBeenCalledTimes(1);
+      const filters = crm.listActivities.calls.mostRecent()
+        .args[0] as SalesActivityFilters;
+      expect(filters.page).toBe(2);
+      expect(filters.openOnly).toBeTrue();
+      expect(filters.scheduledFrom).toBe(START_OF_TODAY.toISOString());
+    });
+
+    it('does not page beyond the end of the view', () => {
+      respondPerView({ TODAY: pageWith([activity()], 1) });
+      fixture.detectChanges();
+      crm.listActivities.calls.reset();
+
+      component.loadMore();
+
+      expect(crm.listActivities).not.toHaveBeenCalled();
     });
   });
 

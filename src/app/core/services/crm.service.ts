@@ -2,6 +2,8 @@ import { HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
+  Board,
+  BoardFilters,
   CreateOpportunityInput,
   CreateSalesVisitInput,
   CreateSalesActivityInput,
@@ -30,6 +32,10 @@ export class CrmService {
 
   listPipelines(): Observable<SalesPipeline[]> {
     return this.api.get<SalesPipeline[]>('/crm/pipelines');
+  }
+
+  getBoard(filters: BoardFilters = {}): Observable<Board> {
+    return this.api.get<Board>('/crm/board', this.params(filters));
   }
 
   listOpportunities(

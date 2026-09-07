@@ -39,7 +39,7 @@ export const AGENDA_VIEWS: readonly AgendaView[] = [
   'ALL',
 ];
 
-const AGENDA_PAGE_SIZE = 100;
+export const AGENDA_PAGE_SIZE = 20;
 
 const emptyPage = (): SalesActivityPage => ({
   data: [],
@@ -119,6 +119,7 @@ export class CrmTasksComponent implements OnInit {
     APP_PERMISSIONS.CRM_WRITE,
   );
   readonly pages = signal<Record<AgendaView, SalesActivityPage>>(emptyPages());
+  readonly loadingMore = signal(false);
   readonly users = signal<ManagedUser[]>([]);
   readonly loading = signal(true);
   readonly actionId = signal('');
@@ -162,17 +163,70 @@ export class CrmTasksComponent implements OnInit {
     this.view.set(view);
   }
 
+  /** Appends the next page of the active view, keeping the badge total. */
+  loadMore(): void {
+    const view = this.view();
+    const page = this.pages()[view];
+    if (this.loadingMore() || !this.hasMore()) return;
+    this.loadingMore.set(true);
+    this.actionError.set('');
+    this.crm
+      .listActivities({
+        ...this.sharedFilters(),
+        ...agendaViewFilters(view, this.clock()),
+        page: page.pagination.page + 1,
+      })
+      .subscribe({
+        next: (next) => {
+          this.loadingMore.set(false);
+          this.pages.update((pages) => {
+            const known = new Set(pages[view].data.map((item) => item.id));
+            return {
+              ...pages,
+              [view]: {
+                data: [
+                  ...pages[view].data,
+                  ...next.data.filter((item) => !known.has(item.id)),
+                ],
+                pagination: next.pagination,
+              },
+            };
+          });
+        },
+        error: (error: unknown) => {
+          this.loadingMore.set(false);
+          this.actionError.set(
+            extractError(error, 'Não foi possível carregar mais atividades.'),
+          );
+        },
+      });
+  }
+
+  hasMore(): boolean {
+    const page = this.pages()[this.view()];
+    return page.pagination.total > page.data.length;
+  }
+
+  remaining(): number {
+    const page = this.pages()[this.view()];
+    return Math.max(0, page.pagination.total - page.data.length);
+  }
+
+  private sharedFilters(): SalesActivityFilters {
+    return {
+      pageSize: AGENDA_PAGE_SIZE,
+      assignedUserId: this.assignedUserId() || undefined,
+      priority: this.priority() || undefined,
+    };
+  }
+
   load(loadUsers = false): void {
     const sequence = ++this.loadSequence;
     const now = Date.now();
     this.loading.set(true);
     this.loadError.set('');
     this.clock.set(now);
-    const shared: SalesActivityFilters = {
-      pageSize: AGENDA_PAGE_SIZE,
-      assignedUserId: this.assignedUserId() || undefined,
-      priority: this.priority() || undefined,
-    };
+    const shared = this.sharedFilters();
     forkJoin({
       TODAY: this.crm.listActivities({
         ...shared,

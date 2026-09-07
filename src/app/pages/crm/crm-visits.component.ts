@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import {
@@ -11,7 +11,14 @@ import {
   UserX,
   X,
 } from 'lucide-angular';
-import { forkJoin } from 'rxjs';
+import {
+  Subject,
+  debounceTime,
+  distinctUntilChanged,
+  forkJoin,
+  switchMap,
+  takeUntil,
+} from 'rxjs';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import {
   Opportunity,
@@ -26,6 +33,10 @@ import { CrmService } from '../../core/services/crm.service';
 import { UserManagementService } from '../../core/services/user-management.service';
 import { DialogFocusDirective } from '../../shared/directives/dialog-focus.directive';
 import { extractError } from '../../shared/utils/http-error';
+
+/** Opportunities offered by the lookup at a time; search narrows the rest. */
+export const OPPORTUNITY_LOOKUP_SIZE = 20;
+export const OPPORTUNITY_LOOKUP_DEBOUNCE = 300;
 
 const EMPTY_VISITS: SalesVisitPage = {
   data: [],
@@ -44,7 +55,7 @@ const EMPTY_VISITS: SalesVisitPage = {
   ],
   templateUrl: './crm-visits.component.html',
 })
-export class CrmVisitsComponent implements OnInit {
+export class CrmVisitsComponent implements OnInit, OnDestroy {
   private readonly crm = inject(CrmService);
   private readonly usersService = inject(UserManagementService);
   private readonly authorization = inject(AuthorizationService);
@@ -62,6 +73,12 @@ export class CrmVisitsComponent implements OnInit {
   readonly createOpen = signal(false);
   readonly completeTarget = signal<SalesVisit | null>(null);
   readonly cancelTarget = signal<SalesVisit | null>(null);
+
+  readonly opportunitySearch = signal('');
+  readonly opportunitySearching = signal(false);
+  readonly opportunityTotal = signal(0);
+  private readonly opportunityQuery = new Subject<string>();
+  private readonly destroy = new Subject<void>();
 
   readonly statusFilter = signal<SalesVisitStatus | ''>('');
   readonly assignedUserFilter = signal('');
@@ -86,17 +103,61 @@ export class CrmVisitsComponent implements OnInit {
   readonly CancelIcon = X;
 
   ngOnInit(): void {
+    // Server side lookup: any opportunity of the tenant can be reached,
+    // instead of only the ones that fit an arbitrary first page.
+    this.opportunityQuery
+      .pipe(
+        debounceTime(OPPORTUNITY_LOOKUP_DEBOUNCE),
+        distinctUntilChanged(),
+        switchMap((search) => {
+          this.opportunitySearching.set(true);
+          return this.crm.listOpportunities({
+            search: search || undefined,
+            pageSize: OPPORTUNITY_LOOKUP_SIZE,
+          });
+        }),
+        takeUntil(this.destroy),
+      )
+      .subscribe({
+        next: (result) => {
+          this.opportunitySearching.set(false);
+          this.opportunities.set(result.data);
+          this.opportunityTotal.set(result.pagination.total);
+        },
+        error: () => {
+          this.opportunitySearching.set(false);
+          this.error.set('Não foi possível buscar oportunidades.');
+        },
+      });
     this.loadReferences();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy.next();
+    this.destroy.complete();
+  }
+
+  searchOpportunities(term: string): void {
+    this.opportunitySearch.set(term);
+    this.opportunityQuery.next(term.trim());
+  }
+
+  /** Records matching the lookup that did not fit the offered page. */
+  get opportunityOverflow(): number {
+    return Math.max(0, this.opportunityTotal() - this.opportunities().length);
   }
 
   loadReferences(): void {
     this.loading.set(true);
     forkJoin({
-      opportunities: this.crm.listOpportunities({ pageSize: 100 }),
+      opportunities: this.crm.listOpportunities({
+        pageSize: OPPORTUNITY_LOOKUP_SIZE,
+      }),
       users: this.usersService.list({ isActive: true }),
     }).subscribe({
       next: ({ opportunities, users }) => {
         this.opportunities.set(opportunities.data);
+        this.opportunityTotal.set(opportunities.pagination.total);
         this.users.set(users);
         this.load(1);
       },

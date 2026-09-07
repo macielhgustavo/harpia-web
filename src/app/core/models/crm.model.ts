@@ -309,3 +309,41 @@ export interface CreateSalesActivityInput {
 export type UpdateSalesActivityInput = Partial<
   Omit<CreateSalesActivityInput, 'opportunityId'>
 >;
+
+export interface BoardStageSummary {
+  /** Records matching the current filters, not only the loaded page. */
+  total: number;
+  loaded: number;
+  hasMore: boolean;
+  /** Canonical decimal strings; never parse these into a float for money. */
+  estimatedValue: string;
+  weightedValue: string;
+}
+
+export interface BoardStage {
+  stage: SalesStage;
+  summary: BoardStageSummary;
+  opportunities: Opportunity[];
+  pagination: Pagination;
+}
+
+export interface Board {
+  pipeline: { id: string; name: string; isDefault: boolean };
+  stages: BoardStage[];
+  summary: {
+    total: number;
+    estimatedValue: string;
+    weightedValue: string;
+  };
+}
+
+export interface BoardFilters {
+  pipelineId?: string;
+  assignedUserId?: string;
+  developmentId?: string;
+  personId?: string;
+  source?: string;
+  search?: string;
+  /** `0` asks for summaries only, used to refresh totals after a move. */
+  stageLimit?: number;
+}

@@ -14,6 +14,9 @@ import {
 import { forkJoin } from 'rxjs';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import {
+  Board,
+  BoardFilters,
+  BoardStageSummary,
   Opportunity,
   OpportunityPage,
   SalesPipeline,
@@ -33,10 +36,22 @@ import { DialogFocusDirective } from '../../shared/directives/dialog-focus.direc
 import { extractError } from '../../shared/utils/http-error';
 import { OpportunityFormModalComponent } from './opportunity-form-modal.component';
 
+/** Cards fetched per stage, both on the first board load and on "load more". */
+export const STAGE_PAGE_SIZE = 20;
+const LIST_PAGE_SIZE = 20;
+
 const EMPTY_PAGE: OpportunityPage = {
   data: [],
-  pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+  pagination: { page: 1, pageSize: LIST_PAGE_SIZE, total: 0, totalPages: 0 },
 };
+
+/** One Kanban column: server aggregates plus the pages loaded so far. */
+export interface BoardColumn {
+  stage: SalesStage;
+  summary: BoardStageSummary;
+  opportunities: Opportunity[];
+  page: number;
+}
 
 @Component({
   selector: 'app-crm',
@@ -63,6 +78,12 @@ export class CrmComponent implements OnInit {
   readonly canWrite = this.authorization.hasPermission(
     APP_PERMISSIONS.CRM_WRITE,
   );
+  readonly columns = signal<BoardColumn[]>([]);
+  readonly boardSummary = signal<Board['summary']>({
+    total: 0,
+    estimatedValue: '0.00',
+    weightedValue: '0.00',
+  });
   readonly result = signal<OpportunityPage>(EMPTY_PAGE);
   readonly pipelines = signal<SalesPipeline[]>([]);
   readonly people = signal<Person[]>([]);
@@ -73,6 +94,7 @@ export class CrmComponent implements OnInit {
   readonly loadError = signal('');
   readonly feedback = signal('');
   readonly actionError = signal('');
+  readonly loadingStageId = signal('');
   readonly search = signal('');
   readonly pipelineId = signal('');
   readonly stageId = signal('');
@@ -105,16 +127,17 @@ export class CrmComponent implements OnInit {
     );
   }
 
-  stageItems(stageId: string): Opportunity[] {
-    return this.result().data.filter((item) => item.stageId === stageId);
+  get isEmpty(): boolean {
+    return this.view() === 'kanban'
+      ? this.boardSummary().total === 0
+      : this.result().data.length === 0;
   }
 
-  stageTotal(stageId: string): string {
-    const total = this.stageItems(stageId).reduce(
-      (sum, opportunity) => sum + Number(opportunity.estimatedValue ?? 0),
-      0,
-    );
-    return this.formatMoney(String(total));
+  /** Always the server total for the active view, never a page length. */
+  get total(): number {
+    return this.view() === 'kanban'
+      ? this.boardSummary().total
+      : this.result().pagination.total;
   }
 
   daysInStage(opportunity: Opportunity): number {
@@ -152,6 +175,10 @@ export class CrmComponent implements OnInit {
     return `${opportunity.probability ?? opportunity.stage.defaultProbability}%`;
   }
 
+  remaining(column: BoardColumn): number {
+    return Math.max(0, column.summary.total - column.opportunities.length);
+  }
+
   loadReferenceData(): void {
     this.loading.set(true);
     this.loadError.set('');
@@ -180,19 +207,42 @@ export class CrmComponent implements OnInit {
     });
   }
 
-  load(page: number): void {
+  load(page = 1): void {
+    return this.view() === 'kanban' ? this.loadBoard() : this.loadList(page);
+  }
+
+  /** Kanban: one request returns every column with server side aggregates. */
+  loadBoard(): void {
+    const sequence = ++this.loadSequence;
+    this.loading.set(true);
+    this.loadError.set('');
+    this.crm.getBoard({ ...this.boardFilters(), stageLimit: STAGE_PAGE_SIZE })
+      .subscribe({
+        next: (board) => {
+          if (sequence !== this.loadSequence) return;
+          this.applyBoard(board);
+          this.loading.set(false);
+        },
+        error: (error: unknown) => {
+          if (sequence !== this.loadSequence) return;
+          this.loading.set(false);
+          this.loadError.set(
+            extractError(error, 'Não foi possível carregar o funil.'),
+          );
+        },
+      });
+  }
+
+  loadList(page = 1): void {
     const sequence = ++this.loadSequence;
     this.loading.set(true);
     this.loadError.set('');
     this.crm
       .listOpportunities({
+        ...this.boardFilters(),
+        stageId: this.stageId() || undefined,
         page,
-        pageSize: 50,
-        search: this.search(),
-        pipelineId: this.pipelineId(),
-        stageId: this.stageId(),
-        assignedUserId: this.assignedUserId(),
-        developmentId: this.developmentId(),
+        pageSize: LIST_PAGE_SIZE,
       })
       .subscribe({
         next: (result) => {
@@ -208,6 +258,59 @@ export class CrmComponent implements OnInit {
           );
         },
       });
+  }
+
+  /** Appends the next page of a single column without touching the others. */
+  loadMore(stageId: string): void {
+    const column = this.columns().find((item) => item.stage.id === stageId);
+    if (!column || this.loadingStageId()) return;
+    this.loadingStageId.set(stageId);
+    this.actionError.set('');
+    this.crm
+      .listOpportunities({
+        ...this.boardFilters(),
+        stageId,
+        page: column.page + 1,
+        pageSize: STAGE_PAGE_SIZE,
+      })
+      .subscribe({
+        next: (result) => {
+          this.loadingStageId.set('');
+          this.columns.update((columns) =>
+            columns.map((item) => {
+              if (item.stage.id !== stageId) return item;
+              const known = new Set(item.opportunities.map((row) => row.id));
+              const opportunities = [
+                ...item.opportunities,
+                ...result.data.filter((row) => !known.has(row.id)),
+              ];
+              return {
+                ...item,
+                opportunities,
+                page: item.page + 1,
+                summary: {
+                  ...item.summary,
+                  total: result.pagination.total,
+                  loaded: opportunities.length,
+                  hasMore: result.pagination.total > opportunities.length,
+                },
+              };
+            }),
+          );
+        },
+        error: (error: unknown) => {
+          this.loadingStageId.set('');
+          this.actionError.set(
+            extractError(error, 'Não foi possível carregar mais oportunidades.'),
+          );
+        },
+      });
+  }
+
+  setView(view: 'kanban' | 'list'): void {
+    if (this.view() === view) return;
+    this.view.set(view);
+    this.load(1);
   }
 
   applyFilters(): void {
@@ -259,7 +362,7 @@ export class CrmComponent implements OnInit {
     });
   }
 
-  onSaved(opportunity: Opportunity): void {
+  onSaved(): void {
     const wasEditing = !!this.editing();
     this.closeForm();
     this.feedback.set(
@@ -312,7 +415,7 @@ export class CrmComponent implements OnInit {
     event.preventDefault();
     const opportunityId =
       this.draggingOpportunityId() || event.dataTransfer?.getData('text/plain');
-    const opportunity = this.result().data.find(
+    const opportunity = this.boardOpportunities().find(
       (item) => item.id === opportunityId,
     );
     this.finishDrag();
@@ -343,6 +446,9 @@ export class CrmComponent implements OnInit {
       return;
     this.moving.set(true);
     this.actionError.set('');
+    // Snapshot so a failed move can restore both columns and their summaries.
+    const snapshot = this.columns();
+    if (this.view() === 'kanban') this.moveCardLocally(target, stage);
     this.crm
       .moveOpportunity(target.id, {
         stageId: stage.id,
@@ -353,13 +459,15 @@ export class CrmComponent implements OnInit {
           this.moving.set(false);
           this.closeMove();
           this.feedback.set(`Oportunidade movida para “${stage.name}”.`);
-          this.load(this.result().pagination.page);
+          if (this.view() === 'kanban') this.refreshSummaries();
+          else this.loadList(this.result().pagination.page);
         },
         error: (error: unknown) => {
           this.moving.set(false);
+          this.columns.set(snapshot);
           if ((error as HttpErrorResponse).status === 404) {
             this.closeMove();
-            this.load(this.result().pagination.page);
+            this.load(1);
           }
           this.actionError.set(
             extractError(error, 'Não foi possível mover a oportunidade.'),
@@ -387,5 +495,106 @@ export class CrmComponent implements OnInit {
           new Date(value),
         )
       : 'Não definido';
+  }
+
+  private boardFilters(): BoardFilters {
+    return {
+      search: this.search() || undefined,
+      pipelineId: this.pipelineId() || undefined,
+      assignedUserId: this.assignedUserId() || undefined,
+      developmentId: this.developmentId() || undefined,
+    };
+  }
+
+  private boardOpportunities(): Opportunity[] {
+    return this.columns().flatMap((column) => column.opportunities);
+  }
+
+  private applyBoard(board: Board): void {
+    this.boardSummary.set(board.summary);
+    this.columns.set(
+      board.stages.map((item) => ({
+        stage: item.stage,
+        summary: item.summary,
+        opportunities: item.opportunities,
+        page: 1,
+      })),
+    );
+  }
+
+  /**
+   * Optimistic move between columns. Totals are adjusted by one; the money
+   * aggregates are refreshed from the server instead of being recomputed here,
+   * because they are decimal strings and must never go through a JS float.
+   */
+  private moveCardLocally(opportunity: Opportunity, stage: SalesStage): void {
+    this.columns.update((columns) =>
+      columns.map((column) => {
+        if (column.stage.id === opportunity.stageId) {
+          const opportunities = column.opportunities.filter(
+            (item) => item.id !== opportunity.id,
+          );
+          return {
+            ...column,
+            opportunities,
+            summary: {
+              ...column.summary,
+              total: Math.max(0, column.summary.total - 1),
+              loaded: opportunities.length,
+            },
+          };
+        }
+        if (column.stage.id === stage.id) {
+          const moved: Opportunity = {
+            ...opportunity,
+            stageId: stage.id,
+            stage,
+            stageEnteredAt: new Date().toISOString(),
+          };
+          const opportunities = [moved, ...column.opportunities];
+          return {
+            ...column,
+            opportunities,
+            summary: {
+              ...column.summary,
+              total: column.summary.total + 1,
+              loaded: opportunities.length,
+            },
+          };
+        }
+        return column;
+      }),
+    );
+  }
+
+  /** Summaries only: refreshes totals and money without reloading any list. */
+  private refreshSummaries(): void {
+    this.crm
+      .getBoard({ ...this.boardFilters(), stageLimit: 0 })
+      .subscribe({
+        next: (board) => {
+          this.boardSummary.set(board.summary);
+          this.columns.update((columns) =>
+            columns.map((column) => {
+              const fresh = board.stages.find(
+                (item) => item.stage.id === column.stage.id,
+              );
+              if (!fresh) return column;
+              return {
+                ...column,
+                summary: {
+                  ...fresh.summary,
+                  loaded: column.opportunities.length,
+                  hasMore: fresh.summary.total > column.opportunities.length,
+                },
+              };
+            }),
+          );
+        },
+        error: () =>
+          this.actionError.set(
+            'A oportunidade foi movida, mas os totais do funil não puderam ser atualizados.',
+          ),
+      });
   }
 }
