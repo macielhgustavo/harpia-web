@@ -8,6 +8,8 @@ import { NEVER, of, throwError } from 'rxjs';
 import {
   CreateSalesVisitInput,
   Opportunity,
+  OpportunityStageHistory,
+  OpportunityTimelineEvent,
   SalesActivityPage,
   SalesPipeline,
   SalesStage,
@@ -694,5 +696,271 @@ describe('OpportunityDetailComponent — visits', () => {
       expect(crm.listVisits).not.toHaveBeenCalled();
       expect(text()).not.toContain('Carregando visitas...');
     });
+  });
+});
+
+describe('OpportunityDetailComponent — loss reason', () => {
+  let fixture: ComponentFixture<OpportunityDetailComponent>;
+  let component: OpportunityDetailComponent;
+  let crm: jasmine.SpyObj<CrmService>;
+
+  const text = () => fixture.nativeElement.textContent as string;
+
+  const historyEntry = (
+    overrides: Partial<OpportunityStageHistory> = {},
+  ): OpportunityStageHistory =>
+    ({
+      id: 'history-1',
+      opportunityId: OPPORTUNITY_ID,
+      fromStageId: 'stage-qualified',
+      toStageId: 'stage-lost',
+      changedAt: '2026-09-01T12:00:00.000Z',
+      fromStage: { id: 'stage-qualified', name: 'Qualificado', code: 'QUAL' },
+      toStage: { id: 'stage-lost', name: 'Perdido', code: 'PERDIDO' },
+      changedByUser: { id: LUCAS.id, name: 'Lucas', email: LUCAS.email },
+      lostReason: 'Preço acima do orçamento',
+      ...overrides,
+    }) as OpportunityStageHistory;
+
+  const timelineEvent = (
+    overrides: Partial<OpportunityTimelineEvent> = {},
+  ): OpportunityTimelineEvent => ({
+    id: 'stage:history-1',
+    type: 'STAGE_CHANGED',
+    occurredAt: '2026-09-01T12:00:00.000Z',
+    title: 'Oportunidade marcada como perdida',
+    description:
+      'Movida de Qualificado para Perdido. Motivo: Preço acima do orçamento',
+    status: null,
+    actor: { id: LUCAS.id, name: 'Lucas' },
+    ...overrides,
+  });
+
+  const build = (opportunity = opportunityWith()) => {
+    crm.getOpportunity.and.returnValue(of(opportunity));
+    fixture = TestBed.createComponent(OpportunityDetailComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  };
+
+  beforeEach(async () => {
+    crm = jasmine.createSpyObj<CrmService>('CrmService', [
+      'getOpportunity',
+      'listPipelines',
+      'listActivities',
+      'getHistory',
+      'getTimeline',
+      'listVisits',
+      'createVisit',
+      'updateVisit',
+      'createActivity',
+      'removeActivity',
+      'moveOpportunity',
+      'removeOpportunity',
+      'listOpportunities',
+    ]);
+    crm.getOpportunity.and.returnValue(of(opportunityWith()));
+    crm.listPipelines.and.returnValue(of([PIPELINE]));
+    crm.listActivities.and.returnValue(of(emptyActivities));
+    crm.getHistory.and.returnValue(of([historyEntry()]));
+    crm.getTimeline.and.returnValue(of([timelineEvent()]));
+    crm.listVisits.and.returnValue(of(visitPage([])));
+    crm.listOpportunities.and.returnValue(
+      of({
+        data: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      }),
+    );
+
+    const authorization = jasmine.createSpyObj<AuthorizationService>(
+      'AuthorizationService',
+      ['hasPermission'],
+    );
+    authorization.hasPermission.and.returnValue(true);
+    const units = jasmine.createSpyObj<UnitService>('UnitService', ['list']);
+    units.list.and.returnValue(of([UNIT_305]));
+    const people = jasmine.createSpyObj<PersonService>('PersonService', [
+      'list',
+    ]);
+    people.list.and.returnValue(of([]));
+    const users = jasmine.createSpyObj<UserManagementService>(
+      'UserManagementService',
+      ['list'],
+    );
+    users.list.and.returnValue(of([LUCAS]));
+    const developments = jasmine.createSpyObj<DevelopmentService>(
+      'DevelopmentService',
+      ['list'],
+    );
+    developments.list.and.returnValue(of([AURORA]));
+    const reservations = jasmine.createSpyObj<ReservationService>(
+      'ReservationService',
+      ['list'],
+    );
+    reservations.list.and.returnValue(
+      of({
+        data: [],
+        pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 },
+      } as ReservationPage),
+    );
+    const proposals = jasmine.createSpyObj<ProposalService>('ProposalService', [
+      'list',
+    ]);
+    proposals.list.and.returnValue(
+      of({
+        data: [],
+        pagination: { page: 1, pageSize: 100, total: 0, totalPages: 0 },
+      } as ProposalPage),
+    );
+
+    await TestBed.configureTestingModule({
+      imports: [OpportunityDetailComponent],
+      providers: [
+        provideRouter([]),
+        { provide: CrmService, useValue: crm },
+        { provide: AuthorizationService, useValue: authorization },
+        { provide: UnitService, useValue: units },
+        { provide: PersonService, useValue: people },
+        { provide: UserManagementService, useValue: users },
+        { provide: DevelopmentService, useValue: developments },
+        { provide: ReservationService, useValue: reservations },
+        { provide: ProposalService, useValue: proposals },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            paramMap: of(convertToParamMap({ id: OPPORTUNITY_ID })),
+          },
+        },
+      ],
+    }).compileComponents();
+  });
+
+  it('shows the reason of a loss in the commercial history', () => {
+    build();
+
+    expect(text()).toContain('Qualificado → Perdido');
+    expect(text()).toContain('Motivo da perda:');
+    expect(text()).toContain('Preço acima do orçamento');
+  });
+
+  it('limits a new loss reason to the backend contract', () => {
+    crm.listPipelines.and.returnValue(
+      of([
+        {
+          ...PIPELINE,
+          stages: [
+            STAGE,
+            {
+              ...STAGE,
+              id: 'stage-lost',
+              name: 'Perdido',
+              code: 'PERDIDO',
+              isLost: true,
+            },
+          ],
+        } as SalesPipeline,
+      ]),
+    );
+    build();
+    component.openMove();
+    component.selectedStageId.set('stage-lost');
+    fixture.detectChanges();
+
+    const textarea = fixture.nativeElement.querySelector(
+      'textarea[maxlength="500"]',
+    ) as HTMLTextAreaElement | null;
+    expect(textarea).not.toBeNull();
+    expect(textarea?.maxLength).toBe(500);
+  });
+
+  it('shows the reason of a loss in the timeline', () => {
+    build();
+
+    expect(text()).toContain('Oportunidade marcada como perdida');
+    expect(text()).toContain(
+      'Movida de Qualificado para Perdido. Motivo: Preço acima do orçamento',
+    );
+  });
+
+  it('keeps the past loss visible after the opportunity is reopened', () => {
+    // Current state: back in Qualificado with no reason at all.
+    build(
+      opportunityWith({
+        stageId: 'stage-qualified',
+        lostReason: null,
+        stage: {
+          ...STAGE,
+          id: 'stage-qualified',
+          name: 'Qualificado',
+        } as SalesStage,
+      }),
+    );
+
+    const [summary, stageHistory]: HTMLElement[] = Array.from(
+      fixture.nativeElement
+        .querySelectorAll('section')[0]
+        .querySelectorAll('article'),
+    );
+
+    // Current state: the summary no longer mentions any loss.
+    expect(component.opportunity()?.lostReason).toBeNull();
+    expect(summary.textContent).toContain('Resumo comercial');
+    expect(summary.textContent).not.toContain('Motivo da perda');
+
+    // Commercial history: the loss and its reason are still there.
+    expect(stageHistory.textContent).toContain('Histórico de etapas');
+    expect(stageHistory.textContent).toContain('Qualificado → Perdido');
+    expect(stageHistory.textContent).toContain('Preço acima do orçamento');
+  });
+
+  it('keeps every loss when the opportunity was lost more than once', () => {
+    crm.getHistory.and.returnValue(
+      of([
+        historyEntry({
+          id: 'history-2',
+          changedAt: '2026-09-05T12:00:00.000Z',
+          lostReason: 'Escolheu concorrente',
+        }),
+        historyEntry({ id: 'history-1', lostReason: 'Sem orçamento' }),
+      ]),
+    );
+    build();
+
+    expect(text()).toContain('Escolheu concorrente');
+    expect(text()).toContain('Sem orçamento');
+  });
+
+  it('shows no reason on events that are not losses', () => {
+    crm.getHistory.and.returnValue(
+      of([
+        historyEntry({
+          toStageId: 'stage-won',
+          toStage: { id: 'stage-won', name: 'Ganho', code: 'GANHO' },
+          lostReason: null,
+        }),
+      ]),
+    );
+    crm.getTimeline.and.returnValue(
+      of([
+        timelineEvent({
+          title: 'Etapa alterada para Ganho',
+          description: 'Movida de Qualificado para Ganho.',
+        }),
+      ]),
+    );
+    build();
+
+    expect(text()).toContain('Qualificado → Ganho');
+    expect(text()).not.toContain('Motivo da perda:');
+    expect(text()).not.toContain('Motivo:');
+  });
+
+  it('keeps the existing loading and error states of the page', () => {
+    crm.getHistory.and.returnValue(throwError(() => new Error('down')));
+    build();
+
+    expect(component.loading()).toBeFalse();
+    expect(component.loadError()).toBeTruthy();
+    expect(text()).toContain('Tentar novamente');
   });
 });

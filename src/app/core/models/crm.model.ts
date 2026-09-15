@@ -95,6 +95,12 @@ export interface OpportunityStageHistory {
   fromStage: Pick<SalesStage, 'id' | 'name' | 'code'> | null;
   toStage: Pick<SalesStage, 'id' | 'name' | 'code'>;
   changedByUser: { id: string; name: string; email: string };
+  /**
+   * Reason of this particular loss, set only on entries into a lost stage and
+   * never rewritten. Unlike `Opportunity.lostReason`, which is current state
+   * and is cleared on reopening, this survives forever.
+   */
+  lostReason: string | null;
 }
 
 export interface OpportunityTimelineEvent {

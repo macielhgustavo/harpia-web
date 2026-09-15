@@ -184,6 +184,13 @@
                   {{ entry.changedByUser.name }} ·
                   {{ formatDateTime(entry.changedAt) }}
                 </p>
+                <!-- Reason of that loss. Stays here even after a reopening,
+                     unlike the current state shown in the summary. -->
+                @if (entry.lostReason) {
+                  <p class="mt-1 text-xs text-red-800">
+                    <strong>Motivo da perda:</strong> {{ entry.lostReason }}
+                  </p>
+                }
               </li>
             } @empty {
               <li class="text-sm text-muted">Sem histórico.</li>
@@ -534,6 +541,7 @@
             [ngModel]="lostReason()"
             (ngModelChange)="lostReason.set($event)"
             rows="3"
+            maxlength="500"
             class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
           ></textarea>
         </label>
