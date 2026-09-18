@@ -10,9 +10,9 @@ import {
   MoveOpportunityInput,
   Opportunity,
   OpportunityFilters,
+  OpportunityHistoryPage,
   OpportunityPage,
-  OpportunityStageHistory,
-  OpportunityTimelineEvent,
+  OpportunityTimelinePage,
   SalesActivity,
   SalesActivityFilters,
   SalesActivityPage,
@@ -73,15 +73,25 @@ export class CrmService {
     return this.api.post<Opportunity>(`/crm/opportunities/${id}/move`, data);
   }
 
-  getHistory(id: string): Observable<OpportunityStageHistory[]> {
-    return this.api.get<OpportunityStageHistory[]>(
+  getHistory(
+    id: string,
+    page = 1,
+    pageSize = 20,
+  ): Observable<OpportunityHistoryPage> {
+    return this.api.get<OpportunityHistoryPage>(
       `/crm/opportunities/${id}/history`,
+      this.params({ page, pageSize }),
     );
   }
 
-  getTimeline(id: string): Observable<OpportunityTimelineEvent[]> {
-    return this.api.get<OpportunityTimelineEvent[]>(
+  getTimeline(
+    id: string,
+    limit = 20,
+    cursor?: string,
+  ): Observable<OpportunityTimelinePage> {
+    return this.api.get<OpportunityTimelinePage>(
       `/crm/opportunities/${id}/timeline`,
+      this.params({ limit, cursor }),
     );
   }
 

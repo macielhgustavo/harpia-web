@@ -196,6 +196,29 @@
               <li class="text-sm text-muted">Sem histórico.</li>
             }
           </ol>
+          @if (
+            historyPage().pagination.page < historyPage().pagination.totalPages
+          ) {
+            <div class="mt-4">
+              <button
+                type="button"
+                class="text-sm font-semibold text-primary hover:underline disabled:opacity-50"
+                [disabled]="historyLoadingMore()"
+                (click)="loadMoreHistory()"
+              >
+                {{
+                  historyLoadingMore()
+                    ? "Carregando..."
+                    : "Carregar etapas anteriores"
+                }}
+              </button>
+              @if (historyMoreError()) {
+                <p class="mt-2 text-sm text-red-700" role="alert">
+                  {{ historyMoreError() }} Tente novamente.
+                </p>
+              }
+            </div>
+          }
         </article>
       </section>
 
@@ -242,6 +265,27 @@
             </li>
           }
         </ol>
+        @if (timelineNextCursor()) {
+          <div class="border-t border-border p-5">
+            <button
+              type="button"
+              class="text-sm font-semibold text-primary hover:underline disabled:opacity-50"
+              [disabled]="timelineLoadingMore()"
+              (click)="loadMoreTimeline()"
+            >
+              {{
+                timelineLoadingMore()
+                  ? "Carregando..."
+                  : "Carregar eventos anteriores"
+              }}
+            </button>
+            @if (timelineMoreError()) {
+              <p class="mt-2 text-sm text-red-700" role="alert">
+                {{ timelineMoreError() }} Tente novamente.
+              </p>
+            }
+          </div>
+        }
       </section>
 
       <app-visits-section

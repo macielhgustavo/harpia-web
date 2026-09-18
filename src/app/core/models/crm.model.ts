@@ -119,6 +119,16 @@ export interface OpportunityTimelineEvent {
   actor: { id: string; name: string } | null;
 }
 
+export interface OpportunityHistoryPage {
+  data: OpportunityStageHistory[];
+  pagination: Pagination;
+}
+
+export interface OpportunityTimelinePage {
+  data: OpportunityTimelineEvent[];
+  nextCursor: string | null;
+}
+
 export interface SalesVisit {
   id: string;
   organizationId: string;

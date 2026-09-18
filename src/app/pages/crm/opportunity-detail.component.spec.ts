@@ -4,12 +4,13 @@ import {
   convertToParamMap,
   provideRouter,
 } from '@angular/router';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Subject, of, throwError } from 'rxjs';
 import {
   CreateSalesVisitInput,
   Opportunity,
   OpportunityStageHistory,
   OpportunityTimelineEvent,
+  OpportunityTimelinePage,
   SalesActivityPage,
   SalesPipeline,
   SalesStage,
@@ -193,8 +194,13 @@ describe('OpportunityDetailComponent — visits', () => {
     crm.getOpportunity.and.returnValue(of(opportunityWith()));
     crm.listPipelines.and.returnValue(of([PIPELINE]));
     crm.listActivities.and.returnValue(of(emptyActivities));
-    crm.getHistory.and.returnValue(of([]));
-    crm.getTimeline.and.returnValue(of([]));
+    crm.getHistory.and.returnValue(
+      of({
+        data: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      }),
+    );
+    crm.getTimeline.and.returnValue(of({ data: [], nextCursor: null }));
     crm.listVisits.and.returnValue(of(visitPage([visitWith()])));
     crm.createVisit.and.returnValue(of(visitWith()));
     crm.updateVisit.and.returnValue(of(visitWith()));
@@ -762,8 +768,15 @@ describe('OpportunityDetailComponent — loss reason', () => {
     crm.getOpportunity.and.returnValue(of(opportunityWith()));
     crm.listPipelines.and.returnValue(of([PIPELINE]));
     crm.listActivities.and.returnValue(of(emptyActivities));
-    crm.getHistory.and.returnValue(of([historyEntry()]));
-    crm.getTimeline.and.returnValue(of([timelineEvent()]));
+    crm.getHistory.and.returnValue(
+      of({
+        data: [historyEntry()],
+        pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      }),
+    );
+    crm.getTimeline.and.returnValue(
+      of({ data: [timelineEvent()], nextCursor: null }),
+    );
     crm.listVisits.and.returnValue(of(visitPage([])));
     crm.listOpportunities.and.returnValue(
       of({
@@ -915,14 +928,17 @@ describe('OpportunityDetailComponent — loss reason', () => {
 
   it('keeps every loss when the opportunity was lost more than once', () => {
     crm.getHistory.and.returnValue(
-      of([
-        historyEntry({
-          id: 'history-2',
-          changedAt: '2026-09-05T12:00:00.000Z',
-          lostReason: 'Escolheu concorrente',
-        }),
-        historyEntry({ id: 'history-1', lostReason: 'Sem orçamento' }),
-      ]),
+      of({
+        data: [
+          historyEntry({
+            id: 'history-2',
+            changedAt: '2026-09-05T12:00:00.000Z',
+            lostReason: 'Escolheu concorrente',
+          }),
+          historyEntry({ id: 'history-1', lostReason: 'Sem orçamento' }),
+        ],
+        pagination: { page: 1, pageSize: 20, total: 2, totalPages: 1 },
+      }),
     );
     build();
 
@@ -932,21 +948,27 @@ describe('OpportunityDetailComponent — loss reason', () => {
 
   it('shows no reason on events that are not losses', () => {
     crm.getHistory.and.returnValue(
-      of([
-        historyEntry({
-          toStageId: 'stage-won',
-          toStage: { id: 'stage-won', name: 'Ganho', code: 'GANHO' },
-          lostReason: null,
-        }),
-      ]),
+      of({
+        data: [
+          historyEntry({
+            toStageId: 'stage-won',
+            toStage: { id: 'stage-won', name: 'Ganho', code: 'GANHO' },
+            lostReason: null,
+          }),
+        ],
+        pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
+      }),
     );
     crm.getTimeline.and.returnValue(
-      of([
-        timelineEvent({
-          title: 'Etapa alterada para Ganho',
-          description: 'Movida de Qualificado para Ganho.',
-        }),
-      ]),
+      of({
+        data: [
+          timelineEvent({
+            title: 'Etapa alterada para Ganho',
+            description: 'Movida de Qualificado para Ganho.',
+          }),
+        ],
+        nextCursor: null,
+      }),
     );
     build();
 
@@ -962,5 +984,168 @@ describe('OpportunityDetailComponent — loss reason', () => {
     expect(component.loading()).toBeFalse();
     expect(component.loadError()).toBeTruthy();
     expect(text()).toContain('Tentar novamente');
+  });
+
+  it('loads earlier timeline events incrementally, without duplicates, and hides the final button', () => {
+    crm.getTimeline.and.returnValue(
+      of({ data: [timelineEvent()], nextCursor: 'cursor-1' }),
+    );
+    build();
+    expect(text()).toContain('Carregar eventos anteriores');
+    crm.getTimeline.and.returnValue(
+      of({
+        data: [
+          timelineEvent(),
+          timelineEvent({
+            id: 'activity:older',
+            type: 'ACTIVITY',
+            title: 'Contato anterior',
+            occurredAt: '2026-08-01T10:00:00.000Z',
+          }),
+        ],
+        nextCursor: null,
+      }),
+    );
+    component.loadMoreTimeline();
+    fixture.detectChanges();
+    expect(crm.getTimeline).toHaveBeenCalledWith(
+      OPPORTUNITY_ID,
+      20,
+      'cursor-1',
+    );
+    expect(component.timeline().map((event) => event.id)).toEqual([
+      'stage:history-1',
+      'activity:older',
+    ]);
+    expect(text()).toContain('Contato anterior');
+    expect(text()).not.toContain('Carregar eventos anteriores');
+  });
+
+  it('keeps the first page during incremental loading, failure and retry', () => {
+    crm.getTimeline.and.returnValue(
+      of({ data: [timelineEvent()], nextCursor: 'cursor-1' }),
+    );
+    build();
+    const pending = new Subject<OpportunityTimelinePage>();
+    crm.getTimeline.and.returnValue(pending.asObservable());
+    component.loadMoreTimeline();
+    fixture.detectChanges();
+    expect(component.timelineLoadingMore()).toBeTrue();
+    expect(text()).toContain('Carregando...');
+    expect(component.timeline().length).toBe(1);
+    pending.error(new Error('down'));
+    fixture.detectChanges();
+    expect(component.timeline().length).toBe(1);
+    expect(text()).toContain('Tente novamente.');
+    crm.getTimeline.and.returnValue(
+      of({
+        data: [timelineEvent({ id: 'activity:older', type: 'ACTIVITY' })],
+        nextCursor: null,
+      }),
+    );
+    component.loadMoreTimeline();
+    expect(component.timeline().length).toBe(2);
+    expect(component.timelineMoreError()).toBe('');
+  });
+
+  it('merges a newly created event above loaded items and keeps the older cursor', () => {
+    crm.getTimeline.and.returnValue(
+      of({ data: [timelineEvent()], nextCursor: 'cursor-1' }),
+    );
+    build();
+    const recent = timelineEvent({
+      id: 'activity:new',
+      type: 'ACTIVITY',
+      title: 'Nova atividade',
+      occurredAt: '2026-09-10T10:00:00.000Z',
+    });
+    crm.getTimeline.and.returnValue(
+      of({ data: [recent, timelineEvent()], nextCursor: 'new-cursor' }),
+    );
+    component.refreshCommercialData();
+    expect(component.timeline().map((event) => event.id)).toEqual([
+      'activity:new',
+      'stage:history-1',
+    ]);
+    expect(component.timelineNextCursor()).toBe('cursor-1');
+    crm.getTimeline.and.returnValue(
+      of({
+        data: [
+          timelineEvent({
+            id: 'activity:older',
+            type: 'ACTIVITY',
+            occurredAt: '2026-08-01T10:00:00.000Z',
+          }),
+        ],
+        nextCursor: null,
+      }),
+    );
+    component.loadMoreTimeline();
+    expect(crm.getTimeline).toHaveBeenCalledWith(
+      OPPORTUNITY_ID,
+      20,
+      'cursor-1',
+    );
+    expect(component.timeline().map((event) => event.id)).toEqual([
+      'activity:new',
+      'stage:history-1',
+      'activity:older',
+    ]);
+  });
+
+  it('opens a continuation when a burst of new events has no overlap with a fully loaded timeline', () => {
+    build();
+    const newest = Array.from({ length: 20 }, (_, index) =>
+      timelineEvent({
+        id: `activity:new-${index}`,
+        type: 'ACTIVITY',
+        occurredAt: `2026-09-10T10:${String(index).padStart(2, '0')}:00.000Z`,
+      }),
+    );
+    crm.getTimeline.and.returnValue(
+      of({ data: newest, nextCursor: 'gap-cursor' }),
+    );
+    component.refreshCommercialData();
+    expect(component.timelineNextCursor()).toBe('gap-cursor');
+    crm.getTimeline.and.returnValue(
+      of({
+        data: [
+          timelineEvent({ id: 'activity:gap', type: 'ACTIVITY' }),
+          timelineEvent(),
+        ],
+        nextCursor: null,
+      }),
+    );
+    component.loadMoreTimeline();
+    expect(component.timeline().length).toBe(22);
+    expect(
+      component.timeline().filter((event) => event.id === 'stage:history-1')
+        .length,
+    ).toBe(1);
+  });
+
+  it('loads older stage changes on demand', () => {
+    crm.getHistory.and.returnValue(
+      of({
+        data: [historyEntry()],
+        pagination: { page: 1, pageSize: 20, total: 21, totalPages: 2 },
+      }),
+    );
+    build();
+    expect(text()).toContain('Carregar etapas anteriores');
+    crm.getHistory.and.returnValue(
+      of({
+        data: [historyEntry({ id: 'history-older' })],
+        pagination: { page: 2, pageSize: 20, total: 21, totalPages: 2 },
+      }),
+    );
+    component.loadMoreHistory();
+    fixture.detectChanges();
+    expect(crm.getHistory).toHaveBeenCalledWith(OPPORTUNITY_ID, 2, 20);
+    expect(component.history().map((entry) => entry.id)).toEqual([
+      'history-1',
+      'history-older',
+    ]);
+    expect(text()).not.toContain('Carregar etapas anteriores');
   });
 });

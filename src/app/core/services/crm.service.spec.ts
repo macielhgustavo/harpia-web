@@ -75,11 +75,16 @@ describe('CrmService', () => {
   });
 
   it('queries commercial history and paginated activities', () => {
-    service.getHistory('opportunity-1').subscribe();
-    service.getTimeline('opportunity-1').subscribe();
-    expect(api.get).toHaveBeenCalledWith(
-      '/crm/opportunities/opportunity-1/timeline',
-    );
+    service.getHistory('opportunity-1', 2, 15).subscribe();
+    let [path, params] = api.get.calls.mostRecent().args;
+    expect(path).toBe('/crm/opportunities/opportunity-1/history');
+    expect(params?.get('page')).toBe('2');
+    expect(params?.get('pageSize')).toBe('15');
+    service.getTimeline('opportunity-1', 20, 'cursor-1').subscribe();
+    [path, params] = api.get.calls.mostRecent().args;
+    expect(path).toBe('/crm/opportunities/opportunity-1/timeline');
+    expect(params?.get('limit')).toBe('20');
+    expect(params?.get('cursor')).toBe('cursor-1');
     service
       .listActivities({
         opportunityId: 'opportunity-1',
@@ -88,10 +93,7 @@ describe('CrmService', () => {
       })
       .subscribe();
 
-    expect(api.get).toHaveBeenCalledWith(
-      '/crm/opportunities/opportunity-1/history',
-    );
-    const [path, params] = api.get.calls.mostRecent().args;
+    [path, params] = api.get.calls.mostRecent().args;
     expect(path).toBe('/crm/activities');
     expect(params?.get('opportunityId')).toBe('opportunity-1');
     expect(params?.get('pageSize')).toBe('50');

@@ -22,6 +22,7 @@ import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import {
   Opportunity,
+  OpportunityHistoryPage,
   OpportunityStageHistory,
   OpportunityTimelineEvent,
   SalesActivity,
@@ -53,6 +54,23 @@ const EMPTY_ACTIVITIES: SalesActivityPage = {
   data: [],
   pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0 },
 };
+const EMPTY_HISTORY: OpportunityHistoryPage = {
+  data: [],
+  pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+};
+
+function mergeTimeline(
+  current: OpportunityTimelineEvent[],
+  incoming: OpportunityTimelineEvent[],
+): OpportunityTimelineEvent[] {
+  const byId = new Map(current.map((event) => [event.id, event]));
+  for (const event of incoming) byId.set(event.id, event);
+  return [...byId.values()].sort(
+    (a, b) =>
+      b.occurredAt.localeCompare(a.occurredAt) ||
+      (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  );
+}
 
 @Component({
   selector: 'app-opportunity-detail',
@@ -89,7 +107,13 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
   readonly pipelines = signal<SalesPipeline[]>([]);
   readonly activities = signal<SalesActivityPage>(EMPTY_ACTIVITIES);
   readonly history = signal<OpportunityStageHistory[]>([]);
+  readonly historyPage = signal<OpportunityHistoryPage>(EMPTY_HISTORY);
+  readonly historyLoadingMore = signal(false);
+  readonly historyMoreError = signal('');
   readonly timeline = signal<OpportunityTimelineEvent[]>([]);
+  readonly timelineNextCursor = signal<string | null>(null);
+  readonly timelineLoadingMore = signal(false);
+  readonly timelineMoreError = signal('');
   readonly people = signal<Person[]>([]);
   readonly users = signal<ManagedUser[]>([]);
   readonly developments = signal<DevelopmentListItem[]>([]);
@@ -184,8 +208,12 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
         this.opportunity.set(data.opportunity);
         this.pipelines.set(data.pipelines);
         this.activities.set(data.activities);
-        this.history.set(data.history);
-        this.timeline.set(data.timeline);
+        this.history.set(data.history.data);
+        this.historyPage.set(data.history);
+        this.historyMoreError.set('');
+        this.timeline.set(data.timeline.data);
+        this.timelineNextCursor.set(data.timeline.nextCursor);
+        this.timelineMoreError.set('');
         this.people.set(data.people);
         this.users.set(data.users);
         this.developments.set(data.developments);
@@ -214,8 +242,21 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.opportunity.set(data.opportunity);
         this.activities.set(data.activities);
-        this.history.set(data.history);
-        this.timeline.set(data.timeline);
+        this.history.set(data.history.data);
+        this.historyPage.set(data.history);
+        // A new event is prepended without discarding already loaded pages.
+        // Keep the oldest cursor: keyset pagination remains anchored there.
+        const previous = this.timeline();
+        const previousCursor = this.timelineNextCursor();
+        this.timeline.set(mergeTimeline(previous, data.timeline.data));
+        const previousIds = new Set(previous.map((event) => event.id));
+        const hasOverlap = data.timeline.data.some((event) =>
+          previousIds.has(event.id),
+        );
+        this.timelineNextCursor.set(
+          previousCursor ??
+            (!previous.length || !hasOverlap ? data.timeline.nextCursor : null),
+        );
         this.selectedStageId.set(data.opportunity.stageId);
         if (message) this.feedback.set(message);
       },
@@ -226,6 +267,53 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
             'A alteração foi concluída, mas não foi possível atualizar o resumo.',
           ),
         ),
+    });
+  }
+
+  loadMoreHistory(): void {
+    const { pagination } = this.historyPage();
+    if (this.historyLoadingMore() || pagination.page >= pagination.totalPages)
+      return;
+    this.historyLoadingMore.set(true);
+    this.historyMoreError.set('');
+    this.crm
+      .getHistory(this.id, pagination.page + 1, pagination.pageSize)
+      .subscribe({
+        next: (page) => {
+          const seen = new Set(this.history().map((item) => item.id));
+          this.history.update((items) => [
+            ...items,
+            ...page.data.filter((item) => !seen.has(item.id)),
+          ]);
+          this.historyPage.set(page);
+          this.historyLoadingMore.set(false);
+        },
+        error: (error: unknown) => {
+          this.historyLoadingMore.set(false);
+          this.historyMoreError.set(
+            extractError(error, 'Não foi possível carregar etapas anteriores.'),
+          );
+        },
+      });
+  }
+
+  loadMoreTimeline(): void {
+    const cursor = this.timelineNextCursor();
+    if (!cursor || this.timelineLoadingMore()) return;
+    this.timelineLoadingMore.set(true);
+    this.timelineMoreError.set('');
+    this.crm.getTimeline(this.id, 20, cursor).subscribe({
+      next: (page) => {
+        this.timeline.set(mergeTimeline(this.timeline(), page.data));
+        this.timelineNextCursor.set(page.nextCursor);
+        this.timelineLoadingMore.set(false);
+      },
+      error: (error: unknown) => {
+        this.timelineLoadingMore.set(false);
+        this.timelineMoreError.set(
+          extractError(error, 'Não foi possível carregar eventos anteriores.'),
+        );
+      },
     });
   }
 
@@ -243,7 +331,7 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
   }
 
   onReservationChanged(message: string): void {
-    this.feedback.set(message);
+    this.refreshCommercialData(message);
     const developmentId = this.opportunity()?.developmentId;
     if (developmentId) this.loadUnits(developmentId);
   }
