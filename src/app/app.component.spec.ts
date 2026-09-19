@@ -59,6 +59,7 @@ describe('AppComponent', () => {
     const opener = compiled.querySelector(
       'button[aria-label="Abrir navegação"]',
     ) as HTMLButtonElement;
+    opener.style.display = 'block';
     opener.focus();
     opener.click();
     fixture.detectChanges();
