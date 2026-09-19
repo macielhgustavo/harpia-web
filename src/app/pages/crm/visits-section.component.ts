@@ -12,6 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Ban,
   CalendarClock,
@@ -261,7 +262,7 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
   }
 
   openReschedule(visit: SalesVisit): void {
-    if (!this.canWrite) return;
+    if (!this.canWrite || visit.status !== 'AGENDADA') return;
     this.formScheduledAt = this.toLocalInput(visit.scheduledAt);
     this.formDurationMinutes = visit.durationMinutes;
     this.formAssignedUserId = visit.assignedUserId ?? '';
@@ -274,7 +275,7 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
 
   reschedule(): void {
     const visit = this.rescheduleTarget();
-    if (!visit || this.saving()) return;
+    if (!visit || visit.status !== 'AGENDADA' || this.saving()) return;
     if (!this.formScheduledAt) {
       this.formError.set('Informe a data e o horário da visita.');
       return;
@@ -298,12 +299,12 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
           this.settle('Visita reagendada.');
         },
         error: (error: unknown) =>
-          this.failForm(error, 'Não foi possível reagendar a visita.'),
+          this.failForm(error, 'Não foi possível reagendar a visita.', true),
       });
   }
 
   openComplete(visit: SalesVisit): void {
-    if (!this.canWrite) return;
+    if (!this.canWrite || visit.status !== 'AGENDADA') return;
     this.formOutcome = 'INTERESSE_ALTO';
     this.formResult = '';
     this.formError.set('');
@@ -313,7 +314,7 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
 
   completeVisit(): void {
     const visit = this.completeTarget();
-    if (!visit || this.saving()) return;
+    if (!visit || visit.status !== 'AGENDADA' || this.saving()) return;
     this.saving.set(true);
     this.formError.set('');
     this.crm
@@ -329,12 +330,13 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
           this.settle('Visita registrada como realizada.');
         },
         error: (error: unknown) =>
-          this.failForm(error, 'Não foi possível registrar a visita.'),
+          this.failForm(error, 'Não foi possível registrar a visita.', true),
       });
   }
 
   markNoShow(visit: SalesVisit): void {
-    if (!this.canWrite || this.actionId()) return;
+    if (!this.canWrite || visit.status !== 'AGENDADA' || this.actionId())
+      return;
     this.actionId.set(visit.id);
     this.actionError.set('');
     // Only the status changes: `scheduledAt` stays as the moment that was
@@ -352,12 +354,16 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
             'Não foi possível registrar o não comparecimento.',
           ),
         );
+        if (error instanceof HttpErrorResponse && error.status === 409) {
+          this.load();
+          this.changed.emit('A visita foi atualizada por outro usuário.');
+        }
       },
     });
   }
 
   openCancel(visit: SalesVisit): void {
-    if (!this.canWrite) return;
+    if (!this.canWrite || visit.status !== 'AGENDADA') return;
     this.formCancellationReason = '';
     this.formError.set('');
     this.actionError.set('');
@@ -366,7 +372,7 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
 
   cancelVisit(): void {
     const visit = this.cancelTarget();
-    if (!visit || this.saving()) return;
+    if (!visit || visit.status !== 'AGENDADA' || this.saving()) return;
     // The backend rejects a cancellation without a reason; the UI asks for it
     // instead of turning that into a server error.
     if (!this.formCancellationReason.trim()) {
@@ -387,7 +393,7 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
           this.settle('Visita cancelada.');
         },
         error: (error: unknown) =>
-          this.failForm(error, 'Não foi possível cancelar a visita.'),
+          this.failForm(error, 'Não foi possível cancelar a visita.', true),
       });
   }
 
@@ -475,8 +481,25 @@ export class VisitsSectionComponent implements OnChanges, OnDestroy {
     this.changed.emit(message);
   }
 
-  private failForm(error: unknown, fallback: string): void {
+  private failForm(
+    error: unknown,
+    fallback: string,
+    refreshOnConflict = false,
+  ): void {
     this.saving.set(false);
+    if (
+      refreshOnConflict &&
+      error instanceof HttpErrorResponse &&
+      error.status === 409
+    ) {
+      this.rescheduleTarget.set(null);
+      this.completeTarget.set(null);
+      this.cancelTarget.set(null);
+      this.actionError.set(extractError(error, fallback));
+      this.load();
+      this.changed.emit('A visita foi atualizada por outro usuário.');
+      return;
+    }
     this.formError.set(extractError(error, fallback));
   }
 

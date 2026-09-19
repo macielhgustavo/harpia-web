@@ -1,10 +1,17 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import {
   Opportunity,
   OpportunityFilters,
   OpportunityPage,
+  SalesVisit,
   SalesVisitPage,
 } from '../../core/models/crm.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
@@ -31,13 +38,35 @@ const opportunityPage = (
   total = rows.length,
 ): OpportunityPage => ({
   data: rows,
-  pagination: { page: 1, pageSize: OPPORTUNITY_LOOKUP_SIZE, total, totalPages: 1 },
+  pagination: {
+    page: 1,
+    pageSize: OPPORTUNITY_LOOKUP_SIZE,
+    total,
+    totalPages: 1,
+  },
 });
 
 const visitPage: SalesVisitPage = {
   data: [],
   pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0 },
 };
+
+const visit = (id: string, status: SalesVisit['status']): SalesVisit =>
+  ({
+    id,
+    status,
+    opportunityId: 'o-1',
+    person: { id: 'person-1', name: 'João Silva' },
+    scheduledAt: '2026-09-18T17:00:00.000Z',
+    durationMinutes: 60,
+    outcome: null,
+    development: null,
+    unit: null,
+    assignedUser: null,
+    location: null,
+    result: null,
+    cancellationReason: null,
+  }) as SalesVisit;
 
 describe('CrmVisitsComponent', () => {
   let fixture: ComponentFixture<CrmVisitsComponent>;
@@ -167,4 +196,48 @@ describe('CrmVisitsComponent', () => {
 
     expect(component.opportunities()).toEqual([]);
   }));
+
+  it('only offers completion actions for scheduled visits', () => {
+    const scheduled = visit('visit-1', 'AGENDADA');
+    const cancelled = visit('visit-2', 'CANCELADA');
+    crm.listVisits.and.returnValue(
+      of({
+        data: [scheduled, cancelled],
+        pagination: { page: 1, pageSize: 50, total: 2, totalPages: 1 },
+      }),
+    );
+    fixture.detectChanges();
+
+    component.markNoShow(cancelled);
+    expect(crm.updateVisit).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Cancelada');
+  });
+
+  it('refreshes a stale list after a transition conflict and preserves the error', () => {
+    const scheduled = visit('visit-1', 'AGENDADA');
+    crm.listVisits.and.returnValue(
+      of({
+        data: [scheduled],
+        pagination: { page: 1, pageSize: 50, total: 1, totalPages: 1 },
+      }),
+    );
+    fixture.detectChanges();
+    const calls = crm.listVisits.calls.count();
+    crm.updateVisit.and.returnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            error: { message: 'Visita já finalizada' },
+          }),
+      ),
+    );
+
+    component.markNoShow(scheduled);
+    fixture.detectChanges();
+
+    expect(crm.listVisits.calls.count()).toBe(calls + 1);
+    expect(component.actionError()).toContain('Visita já finalizada');
+    expect(fixture.nativeElement.textContent).toContain('Visita já finalizada');
+  });
 });

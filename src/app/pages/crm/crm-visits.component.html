@@ -36,6 +36,14 @@
       {{ error() }}
     </p>
   }
+  @if (actionError()) {
+    <p
+      class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      role="alert"
+    >
+      {{ actionError() }}
+    </p>
+  }
 
   <section class="rounded-xl border border-border bg-card p-4 shadow-card">
     <form

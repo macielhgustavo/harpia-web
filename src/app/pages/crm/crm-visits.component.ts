@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import {
   CalendarDays,
@@ -68,6 +69,7 @@ export class CrmVisitsComponent implements OnInit, OnDestroy {
   readonly users = signal<ManagedUser[]>([]);
   readonly loading = signal(true);
   readonly error = signal('');
+  readonly actionError = signal('');
   readonly feedback = signal('');
   readonly actionId = signal('');
   readonly createOpen = signal(false);
@@ -200,6 +202,7 @@ export class CrmVisitsComponent implements OnInit, OnDestroy {
     if (!this.canWrite || !this.opportunityId || !this.scheduledAt) return;
     this.actionId.set('create');
     this.error.set('');
+    this.actionError.set('');
     this.crm
       .createVisit({
         opportunityId: this.opportunityId,
@@ -223,7 +226,14 @@ export class CrmVisitsComponent implements OnInit, OnDestroy {
 
   completeVisit(): void {
     const visit = this.completeTarget();
-    if (!visit || this.actionId()) return;
+    if (
+      !this.canWrite ||
+      !visit ||
+      visit.status !== 'AGENDADA' ||
+      this.actionId()
+    )
+      return;
+    this.actionError.set('');
     this.actionId.set(visit.id);
     this.crm
       .updateVisit(visit.id, {
@@ -244,7 +254,9 @@ export class CrmVisitsComponent implements OnInit, OnDestroy {
   }
 
   markNoShow(visit: SalesVisit): void {
-    if (!this.canWrite || this.actionId()) return;
+    if (!this.canWrite || visit.status !== 'AGENDADA' || this.actionId())
+      return;
+    this.actionError.set('');
     this.actionId.set(visit.id);
     this.crm.updateVisit(visit.id, { status: 'NAO_COMPARECEU' }).subscribe({
       next: () => {
@@ -258,7 +270,15 @@ export class CrmVisitsComponent implements OnInit, OnDestroy {
 
   cancelVisit(): void {
     const visit = this.cancelTarget();
-    if (!visit || !this.cancellationReason.trim() || this.actionId()) return;
+    if (
+      !this.canWrite ||
+      !visit ||
+      visit.status !== 'AGENDADA' ||
+      !this.cancellationReason.trim() ||
+      this.actionId()
+    )
+      return;
+    this.actionError.set('');
     this.actionId.set(visit.id);
     this.crm
       .updateVisit(visit.id, {
@@ -321,6 +341,13 @@ export class CrmVisitsComponent implements OnInit, OnDestroy {
 
   private handleActionError(error: unknown): void {
     this.actionId.set('');
-    this.error.set(extractError(error, 'Não foi possível atualizar a visita.'));
+    this.actionError.set(
+      extractError(error, 'Não foi possível atualizar a visita.'),
+    );
+    if (error instanceof HttpErrorResponse && error.status === 409) {
+      this.completeTarget.set(null);
+      this.cancelTarget.set(null);
+      this.load(this.result().pagination.page);
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ActivatedRoute,
   convertToParamMap,
@@ -539,6 +540,29 @@ describe('OpportunityDetailComponent — visits', () => {
   });
 
   describe('visit lifecycle', () => {
+    it('does not expose or invoke mutation actions for a terminal visit', () => {
+      crm.listVisits.and.returnValue(
+        of(
+          visitPage([
+            visitWith({ status: 'CANCELADA', cancellationReason: 'Desistiu' }),
+          ]),
+        ),
+      );
+      build();
+      const terminal = section().history()[0];
+
+      section().openReschedule(terminal);
+      section().openComplete(terminal);
+      section().openCancel(terminal);
+      section().markNoShow(terminal);
+
+      expect(section().rescheduleTarget()).toBeNull();
+      expect(section().completeTarget()).toBeNull();
+      expect(section().cancelTarget()).toBeNull();
+      expect(crm.updateVisit).not.toHaveBeenCalled();
+      expect(text()).toContain('Desistiu');
+      expect(text()).not.toContain('Marcar como realizada');
+    });
     it('reschedules the visit in place, without touching its status', () => {
       build();
       section().openReschedule(section().scheduled()[0]);
@@ -634,6 +658,34 @@ describe('OpportunityDetailComponent — visits', () => {
   });
 
   describe('after an action', () => {
+    it('refreshes a stale visit after a 409 without replacing the opportunity', () => {
+      build();
+      const calls = crm.listVisits.calls.count();
+      const timelineCalls = crm.getTimeline.calls.count();
+      crm.listVisits.and.returnValue(
+        of(visitPage([visitWith({ status: 'REALIZADA' })])),
+      );
+      crm.updateVisit.and.returnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 409,
+              error: { message: 'Visita já finalizada' },
+            }),
+        ),
+      );
+
+      section().openComplete(section().scheduled()[0]);
+      section().completeVisit();
+      fixture.detectChanges();
+
+      expect(crm.listVisits.calls.count()).toBe(calls + 1);
+      expect(crm.getTimeline.calls.count()).toBe(timelineCalls + 1);
+      expect(section().completeTarget()).toBeNull();
+      expect(section().history()[0].status).toBe('REALIZADA');
+      expect(section().actionError()).toContain('Visita já finalizada');
+      expect(text()).toContain('Residencial Aurora');
+    });
     it('reloads the section and lets the backend rebuild the timeline', () => {
       build();
       const listCalls = crm.listVisits.calls.count();
