@@ -31,6 +31,7 @@ import { PersonService } from '../../core/services/person.service';
 import { ProposalService } from '../../core/services/proposal.service';
 import { ReservationService } from '../../core/services/reservation.service';
 import { UnitService } from '../../core/services/unit.service';
+import { UnitTypeService } from '../../core/services/unit-type.service';
 import { UserManagementService } from '../../core/services/user-management.service';
 import { OpportunityDetailComponent } from './opportunity-detail.component';
 import { VISITS_PAGE_SIZE } from './visits-section.component';
@@ -191,6 +192,9 @@ describe('OpportunityDetailComponent — visits', () => {
       'moveOpportunity',
       'removeOpportunity',
       'listOpportunities',
+      'getPropertyInterest',
+      'upsertPropertyInterest',
+      'removePropertyInterest',
     ]);
     crm.getOpportunity.and.returnValue(of(opportunityWith()));
     crm.listPipelines.and.returnValue(of([PIPELINE]));
@@ -202,6 +206,7 @@ describe('OpportunityDetailComponent — visits', () => {
       }),
     );
     crm.getTimeline.and.returnValue(of({ data: [], nextCursor: null }));
+    crm.getPropertyInterest.and.returnValue(of(null));
     crm.listVisits.and.returnValue(of(visitPage([visitWith()])));
     crm.createVisit.and.returnValue(of(visitWith()));
     crm.updateVisit.and.returnValue(of(visitWith()));
@@ -220,6 +225,8 @@ describe('OpportunityDetailComponent — visits', () => {
 
     units = jasmine.createSpyObj<UnitService>('UnitService', ['list']);
     units.list.and.returnValue(of([UNIT_305]));
+    const unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', ['list']);
+    unitTypes.list.and.returnValue(of([]));
 
     const people = jasmine.createSpyObj<PersonService>('PersonService', [
       'list',
@@ -262,6 +269,7 @@ describe('OpportunityDetailComponent — visits', () => {
         { provide: CrmService, useValue: crm },
         { provide: AuthorizationService, useValue: authorization },
         { provide: UnitService, useValue: units },
+        { provide: UnitTypeService, useValue: unitTypes },
         { provide: PersonService, useValue: people },
         { provide: UserManagementService, useValue: users },
         { provide: DevelopmentService, useValue: developments },
@@ -816,6 +824,9 @@ describe('OpportunityDetailComponent — loss reason', () => {
       'moveOpportunity',
       'removeOpportunity',
       'listOpportunities',
+      'getPropertyInterest',
+      'upsertPropertyInterest',
+      'removePropertyInterest',
     ]);
     crm.getOpportunity.and.returnValue(of(opportunityWith()));
     crm.listPipelines.and.returnValue(of([PIPELINE]));
@@ -829,6 +840,7 @@ describe('OpportunityDetailComponent — loss reason', () => {
     crm.getTimeline.and.returnValue(
       of({ data: [timelineEvent()], nextCursor: null }),
     );
+    crm.getPropertyInterest.and.returnValue(of(null));
     crm.listVisits.and.returnValue(of(visitPage([])));
     crm.listOpportunities.and.returnValue(
       of({
@@ -844,6 +856,8 @@ describe('OpportunityDetailComponent — loss reason', () => {
     authorization.hasPermission.and.returnValue(true);
     const units = jasmine.createSpyObj<UnitService>('UnitService', ['list']);
     units.list.and.returnValue(of([UNIT_305]));
+    const unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', ['list']);
+    unitTypes.list.and.returnValue(of([]));
     const people = jasmine.createSpyObj<PersonService>('PersonService', [
       'list',
     ]);
@@ -885,6 +899,7 @@ describe('OpportunityDetailComponent — loss reason', () => {
         { provide: CrmService, useValue: crm },
         { provide: AuthorizationService, useValue: authorization },
         { provide: UnitService, useValue: units },
+        { provide: UnitTypeService, useValue: unitTypes },
         { provide: PersonService, useValue: people },
         { provide: UserManagementService, useValue: users },
         { provide: DevelopmentService, useValue: developments },

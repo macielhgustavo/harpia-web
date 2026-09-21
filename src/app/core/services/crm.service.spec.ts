@@ -11,11 +11,13 @@ describe('CrmService', () => {
     api = jasmine.createSpyObj<ApiService>('ApiService', [
       'get',
       'post',
+      'put',
       'patch',
       'delete',
     ]);
     api.get.and.returnValue(of([]));
     api.post.and.returnValue(of({}));
+    api.put.and.returnValue(of({}));
     api.patch.and.returnValue(of({}));
     api.delete.and.returnValue(of({}));
     TestBed.configureTestingModule({
@@ -137,5 +139,30 @@ describe('CrmService', () => {
       status: 'REALIZADA',
       outcome: 'INTERESSE_ALTO',
     });
+  });
+
+  it('reads, upserts and removes a profile without sending tenant data', () => {
+    const data = {
+      developmentId: 'development-1',
+      unitTypeId: null,
+      minBedrooms: 2,
+      maxBedrooms: null,
+      minArea: 70,
+      maxArea: 90,
+      minPrice: null,
+      maxPrice: '500000.00',
+      availableDownPayment: '80000.00',
+      purpose: 'MORADIA' as const,
+      notes: null,
+    };
+    service.getPropertyInterest('opportunity-1').subscribe();
+    service.upsertPropertyInterest('opportunity-1', data).subscribe();
+    service.removePropertyInterest('opportunity-1').subscribe();
+
+    const path = '/crm/opportunities/opportunity-1/interest';
+    expect(api.get).toHaveBeenCalledWith(path);
+    expect(api.put).toHaveBeenCalledOnceWith(path, data);
+    expect(api.delete).toHaveBeenCalledWith(path);
+    expect('organizationId' in data).toBeFalse();
   });
 });

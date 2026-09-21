@@ -12,6 +12,7 @@ import {
   OpportunityFilters,
   OpportunityHistoryPage,
   OpportunityPage,
+  OpportunityPropertyInterest,
   OpportunityTimelinePage,
   SalesActivity,
   SalesActivityFilters,
@@ -23,6 +24,7 @@ import {
   UpdateOpportunityInput,
   UpdateSalesActivityInput,
   UpdateSalesVisitInput,
+  UpsertOpportunityPropertyInterestInput,
 } from '../models/crm.model';
 import { ApiService } from './api.service';
 
@@ -92,6 +94,32 @@ export class CrmService {
     return this.api.get<OpportunityTimelinePage>(
       `/crm/opportunities/${id}/timeline`,
       this.params({ limit, cursor }),
+    );
+  }
+
+  getPropertyInterest(
+    opportunityId: string,
+  ): Observable<OpportunityPropertyInterest | null> {
+    return this.api.get<OpportunityPropertyInterest | null>(
+      `/crm/opportunities/${opportunityId}/interest`,
+    );
+  }
+
+  upsertPropertyInterest(
+    opportunityId: string,
+    data: UpsertOpportunityPropertyInterestInput,
+  ): Observable<OpportunityPropertyInterest> {
+    return this.api.put<OpportunityPropertyInterest>(
+      `/crm/opportunities/${opportunityId}/interest`,
+      data,
+    );
+  }
+
+  removePropertyInterest(
+    opportunityId: string,
+  ): Observable<OpportunityPropertyInterest> {
+    return this.api.delete<OpportunityPropertyInterest>(
+      `/crm/opportunities/${opportunityId}/interest`,
     );
   }
 

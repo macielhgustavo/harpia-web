@@ -1,0 +1,217 @@
+<section class="rounded-xl border border-border bg-card shadow-card">
+  <header
+    class="flex flex-col gap-3 border-b border-border p-5 sm:flex-row sm:items-center sm:justify-between"
+  >
+    <div>
+      <h2 class="font-semibold text-ink">Preferências do imóvel</h2>
+      <p class="mt-1 text-sm text-muted">
+        O que o cliente procura, separado da unidade selecionada.
+      </p>
+    </div>
+    @if (canWrite && !loading() && !loadError() && !editing()) {
+      <button
+        type="button"
+        (click)="openEditor()"
+        class="self-start rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary"
+      >
+        {{ interest() ? "Editar preferências" : "Adicionar preferências" }}
+      </button>
+    }
+  </header>
+
+  <div class="p-5">
+    @if (loading()) {
+      <p class="text-sm text-muted" role="status">Carregando preferências...</p>
+    } @else if (loadError()) {
+      <div class="rounded-lg border border-red-200 bg-red-50 p-4">
+        <p class="text-sm text-red-800" role="alert">{{ loadError() }}</p>
+        <button
+          type="button"
+          (click)="load()"
+          class="mt-2 text-sm font-semibold text-primary hover:underline"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    } @else {
+      @if (feedback()) {
+        <p class="mb-4 text-sm text-primary" role="status">{{ feedback() }}</p>
+      }
+      @if (actionError()) {
+        <p class="mb-4 text-sm text-red-700" role="alert">{{ actionError() }}</p>
+      }
+
+      @if (editing()) {
+        <form class="space-y-5" (ngSubmit)="save()">
+          <div>
+            <h3 class="text-sm font-semibold text-ink">Imóvel</h3>
+            <div class="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <label class="text-sm text-ink"
+                >Empreendimento
+                <select
+                  name="interestDevelopmentId"
+                  [(ngModel)]="form.developmentId"
+                  (ngModelChange)="onDevelopmentChange()"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                >
+                  <option value="">Qualquer empreendimento</option>
+                  @for (development of developments; track development.id) {
+                    <option [value]="development.id">{{ development.name }}</option>
+                  }
+                </select>
+              </label>
+              <label class="text-sm text-ink"
+                >Tipologia
+                <select
+                  name="interestUnitTypeId"
+                  [(ngModel)]="form.unitTypeId"
+                  [disabled]="!form.developmentId || typesLoading()"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 disabled:opacity-60"
+                >
+                  <option value="">Qualquer tipologia</option>
+                  @for (unitType of unitTypes(); track unitType.id) {
+                    <option [value]="unitType.id">{{ unitType.name }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            @if (typesLoading()) {
+              <p class="mt-2 text-xs text-muted">Carregando tipologias...</p>
+            }
+            @if (typesError()) {
+              <p class="mt-2 text-sm text-red-700" role="alert">
+                {{ typesError() }}
+                <button type="button" (click)="loadTypes()" class="font-semibold underline">
+                  Tentar novamente
+                </button>
+              </p>
+            }
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-ink">Características</h3>
+            <div class="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <label class="text-sm text-ink"
+                >Quartos mín.
+                <input name="interestMinBedrooms" [(ngModel)]="form.minBedrooms" inputmode="numeric" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+              <label class="text-sm text-ink"
+                >Quartos máx.
+                <input name="interestMaxBedrooms" [(ngModel)]="form.maxBedrooms" inputmode="numeric" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+              <label class="text-sm text-ink"
+                >Área mín. (m²)
+                <input name="interestMinArea" [(ngModel)]="form.minArea" inputmode="decimal" placeholder="70" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+              <label class="text-sm text-ink"
+                >Área máx. (m²)
+                <input name="interestMaxArea" [(ngModel)]="form.maxArea" inputmode="decimal" placeholder="90" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-ink">Financeiro</h3>
+            <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label class="text-sm text-ink"
+                >Preço mín. (R$)
+                <input name="interestMinPrice" [(ngModel)]="form.minPrice" inputmode="decimal" placeholder="300000,00" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+              <label class="text-sm text-ink"
+                >Preço máx. (R$)
+                <input name="interestMaxPrice" [(ngModel)]="form.maxPrice" inputmode="decimal" placeholder="500000,00" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+              <label class="text-sm text-ink"
+                >Entrada disponível (R$)
+                <input name="interestDownPayment" [(ngModel)]="form.availableDownPayment" inputmode="decimal" placeholder="80000,00" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+              </label>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label class="text-sm text-ink"
+              >Objetivo da compra
+              <select name="interestPurpose" [(ngModel)]="form.purpose" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5">
+                <option value="">Não informado</option>
+                @for (purpose of purposes; track purpose.value) {
+                  <option [value]="purpose.value">{{ purpose.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="text-sm text-ink"
+              >Observações
+              <textarea name="interestNotes" [(ngModel)]="form.notes" maxlength="2000" rows="2" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"></textarea>
+            </label>
+          </div>
+
+          @if (submitted() && !isValid()) {
+            <p class="text-sm text-red-700" role="alert">
+              Revise os valores e as faixas: o mínimo não pode superar o máximo.
+            </p>
+          }
+          <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <button type="button" (click)="closeEditor()" [disabled]="saving()" class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink">Cancelar</button>
+            <button type="submit" [disabled]="saving() || typesLoading() || !!typesError()" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+              {{ saving() ? "Salvando..." : "Salvar preferências" }}
+            </button>
+          </div>
+        </form>
+      } @else {
+        @if (interest(); as profile) {
+        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          @if (profile.development) {
+            <div><dt class="text-xs uppercase text-muted">Empreendimento desejado</dt><dd class="mt-1 text-sm text-ink">{{ profile.development.name }}</dd></div>
+          }
+          @if (profile.unitType) {
+            <div><dt class="text-xs uppercase text-muted">Tipologia desejada</dt><dd class="mt-1 text-sm text-ink">{{ profile.unitType.name }}</dd></div>
+          }
+          @if (bedroomsLabel(profile); as label) {
+            <div><dt class="text-xs uppercase text-muted">Quartos</dt><dd class="mt-1 text-sm text-ink">{{ label }}</dd></div>
+          }
+          @if (areaLabel(profile); as label) {
+            <div><dt class="text-xs uppercase text-muted">Área</dt><dd class="mt-1 text-sm text-ink">{{ label }}</dd></div>
+          }
+          @if (priceLabel(profile); as label) {
+            <div><dt class="text-xs uppercase text-muted">Faixa de preço</dt><dd class="mt-1 text-sm text-ink">{{ label }}</dd></div>
+          }
+          @if (profile.availableDownPayment) {
+            <div><dt class="text-xs uppercase text-muted">Entrada disponível</dt><dd class="mt-1 text-sm text-ink">{{ formatMoney(profile.availableDownPayment) }}</dd></div>
+          }
+          @if (profile.purpose) {
+            <div><dt class="text-xs uppercase text-muted">Objetivo</dt><dd class="mt-1 text-sm text-ink">{{ purposeLabel(profile.purpose) }}</dd></div>
+          }
+        </dl>
+        @if (profile.notes) {
+          <p class="mt-4 whitespace-pre-wrap border-t border-border pt-3 text-sm text-muted">{{ profile.notes }}</p>
+        }
+        @if (canWrite) {
+          <div class="mt-4 border-t border-border pt-4">
+            @if (confirmRemove()) {
+              <p class="text-sm text-ink">Remover estas preferências? A unidade selecionada não será alterada.</p>
+              <div class="mt-2 flex gap-3">
+                <button type="button" (click)="confirmRemove.set(false)" [disabled]="removing()" class="text-sm font-medium text-muted">Cancelar</button>
+                <button type="button" (click)="remove()" [disabled]="removing()" class="text-sm font-semibold text-red-700 disabled:opacity-60">{{ removing() ? "Removendo..." : "Confirmar remoção" }}</button>
+              </div>
+            } @else {
+              <button type="button" (click)="confirmRemove.set(true)" class="text-sm font-semibold text-red-700">Remover preferências</button>
+            }
+          </div>
+        }
+      } @else {
+        <p class="text-sm font-medium text-ink">Nenhuma preferência imobiliária registrada.</p>
+        <p class="mt-1 text-sm text-muted">
+          Registre o que o cliente procura para facilitar a seleção de unidades.
+        </p>
+        }
+      }
+
+      @if (opportunity.unit; as unit) {
+        <div class="mt-5 rounded-lg border border-border bg-surface-warm p-4">
+          <p class="text-xs font-semibold uppercase text-muted">Unidade selecionada atualmente</p>
+          <p class="mt-1 text-sm font-medium text-ink">Unidade {{ unit.identifier }}</p>
+          <p class="mt-1 text-xs text-muted">A escolha da unidade é independente das preferências acima.</p>
+        </div>
+      }
+    }
+  </div>
+</section>

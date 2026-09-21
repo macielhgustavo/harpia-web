@@ -82,9 +82,61 @@ export interface Opportunity {
   stage: SalesStage;
   assignedUser: { id: string; name: string; email: string } | null;
   development: { id: string; name: string } | null;
-  unit: { id: string; identifier: string; developmentId: string } | null;
+  unit: {
+    id: string;
+    identifier: string;
+    developmentId: string;
+    unitTypeId: string | null;
+  } | null;
   _count: { activities: number; stageHistory: number };
 }
+
+export type PropertyInterestPurpose =
+  | 'MORADIA'
+  | 'INVESTIMENTO'
+  | 'SEGUNDA_MORADIA'
+  | 'OUTRO';
+
+export interface OpportunityPropertyInterest {
+  id: string;
+  organizationId: string;
+  opportunityId: string;
+  developmentId: string | null;
+  unitTypeId: string | null;
+  minBedrooms: number | null;
+  maxBedrooms: number | null;
+  minArea: number | null;
+  maxArea: number | null;
+  minPrice: string | null;
+  maxPrice: string | null;
+  availableDownPayment: string | null;
+  purpose: PropertyInterestPurpose | null;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  development: { id: string; name: string } | null;
+  unitType: {
+    id: string;
+    name: string;
+    developmentId: string;
+    bedrooms: number | null;
+    standardArea: number | null;
+  } | null;
+}
+
+export type UpsertOpportunityPropertyInterestInput = {
+  developmentId: string | null;
+  unitTypeId: string | null;
+  minBedrooms: number | null;
+  maxBedrooms: number | null;
+  minArea: number | null;
+  maxArea: number | null;
+  minPrice: string | null;
+  maxPrice: string | null;
+  availableDownPayment: string | null;
+  purpose: PropertyInterestPurpose | null;
+  notes: string | null;
+};
 
 export interface OpportunityStageHistory {
   id: string;

@@ -49,6 +49,7 @@ import { OpportunityFormModalComponent } from './opportunity-form-modal.componen
 import { VisitsSectionComponent } from './visits-section.component';
 import { ReservationsSectionComponent } from '../reservations/reservations-section.component';
 import { ProposalsSectionComponent } from '../proposals/proposals-section.component';
+import { PropertyInterestSectionComponent } from './property-interest-section.component';
 
 const EMPTY_ACTIVITIES: SalesActivityPage = {
   data: [],
@@ -85,6 +86,7 @@ function mergeTimeline(
     VisitsSectionComponent,
     ReservationsSectionComponent,
     ProposalsSectionComponent,
+    PropertyInterestSectionComponent,
   ],
   templateUrl: './opportunity-detail.component.html',
 })

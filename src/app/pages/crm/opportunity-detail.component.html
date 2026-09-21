@@ -110,7 +110,7 @@
               </dd>
             </div>
             <div>
-              <dt class="text-xs uppercase text-muted">Interesse</dt>
+              <dt class="text-xs uppercase text-muted">Imóvel vinculado</dt>
               <dd class="mt-1 text-sm text-ink">
                 {{ item.development?.name || "Sem empreendimento" }}<br />{{
                   item.unit ? "Unidade " + item.unit.identifier : "Sem unidade"
@@ -221,6 +221,11 @@
           }
         </article>
       </section>
+
+      <app-property-interest-section
+        [opportunity]="item"
+        [developments]="developments()"
+      />
 
       <section class="rounded-xl border border-border bg-card shadow-card">
         <header class="border-b border-border p-5">
