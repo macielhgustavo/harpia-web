@@ -38,7 +38,9 @@
         <p class="mb-4 text-sm text-primary" role="status">{{ feedback() }}</p>
       }
       @if (actionError()) {
-        <p class="mb-4 text-sm text-red-700" role="alert">{{ actionError() }}</p>
+        <p class="mb-4 text-sm text-red-700" role="alert">
+          {{ actionError() }}
+        </p>
       }
 
       @if (editing()) {
@@ -56,7 +58,9 @@
                 >
                   <option value="">Qualquer empreendimento</option>
                   @for (development of developments; track development.id) {
-                    <option [value]="development.id">{{ development.name }}</option>
+                    <option [value]="development.id">
+                      {{ development.name }}
+                    </option>
                   }
                 </select>
               </label>
@@ -81,7 +85,11 @@
             @if (typesError()) {
               <p class="mt-2 text-sm text-red-700" role="alert">
                 {{ typesError() }}
-                <button type="button" (click)="loadTypes()" class="font-semibold underline">
+                <button
+                  type="button"
+                  (click)="loadTypes()"
+                  class="font-semibold underline"
+                >
                   Tentar novamente
                 </button>
               </p>
@@ -93,19 +101,41 @@
             <div class="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
               <label class="text-sm text-ink"
                 >Quartos mín.
-                <input name="interestMinBedrooms" [(ngModel)]="form.minBedrooms" inputmode="numeric" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestMinBedrooms"
+                  [(ngModel)]="form.minBedrooms"
+                  inputmode="numeric"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
               <label class="text-sm text-ink"
                 >Quartos máx.
-                <input name="interestMaxBedrooms" [(ngModel)]="form.maxBedrooms" inputmode="numeric" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestMaxBedrooms"
+                  [(ngModel)]="form.maxBedrooms"
+                  inputmode="numeric"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
               <label class="text-sm text-ink"
                 >Área mín. (m²)
-                <input name="interestMinArea" [(ngModel)]="form.minArea" inputmode="decimal" placeholder="70" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestMinArea"
+                  [(ngModel)]="form.minArea"
+                  inputmode="decimal"
+                  placeholder="70"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
               <label class="text-sm text-ink"
                 >Área máx. (m²)
-                <input name="interestMaxArea" [(ngModel)]="form.maxArea" inputmode="decimal" placeholder="90" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestMaxArea"
+                  [(ngModel)]="form.maxArea"
+                  inputmode="decimal"
+                  placeholder="90"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
             </div>
           </div>
@@ -115,15 +145,33 @@
             <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label class="text-sm text-ink"
                 >Preço mín. (R$)
-                <input name="interestMinPrice" [(ngModel)]="form.minPrice" inputmode="decimal" placeholder="300000,00" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestMinPrice"
+                  [(ngModel)]="form.minPrice"
+                  inputmode="decimal"
+                  placeholder="300000,00"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
               <label class="text-sm text-ink"
                 >Preço máx. (R$)
-                <input name="interestMaxPrice" [(ngModel)]="form.maxPrice" inputmode="decimal" placeholder="500000,00" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestMaxPrice"
+                  [(ngModel)]="form.maxPrice"
+                  inputmode="decimal"
+                  placeholder="500000,00"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
               <label class="text-sm text-ink"
                 >Entrada disponível (R$)
-                <input name="interestDownPayment" [(ngModel)]="form.availableDownPayment" inputmode="decimal" placeholder="80000,00" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5" />
+                <input
+                  name="interestDownPayment"
+                  [(ngModel)]="form.availableDownPayment"
+                  inputmode="decimal"
+                  placeholder="80000,00"
+                  class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+                />
               </label>
             </div>
           </div>
@@ -131,7 +179,11 @@
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <label class="text-sm text-ink"
               >Objetivo da compra
-              <select name="interestPurpose" [(ngModel)]="form.purpose" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5">
+              <select
+                name="interestPurpose"
+                [(ngModel)]="form.purpose"
+                class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+              >
                 <option value="">Não informado</option>
                 @for (purpose of purposes; track purpose.value) {
                   <option [value]="purpose.value">{{ purpose.label }}</option>
@@ -140,7 +192,13 @@
             </label>
             <label class="text-sm text-ink"
               >Observações
-              <textarea name="interestNotes" [(ngModel)]="form.notes" maxlength="2000" rows="2" class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"></textarea>
+              <textarea
+                name="interestNotes"
+                [(ngModel)]="form.notes"
+                maxlength="2000"
+                rows="2"
+                class="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5"
+              ></textarea>
             </label>
           </div>
 
@@ -150,154 +208,490 @@
             </p>
           }
           <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <button type="button" (click)="closeEditor()" [disabled]="saving()" class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink">Cancelar</button>
-            <button type="submit" [disabled]="saving() || typesLoading() || !!typesError()" class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60">
+            <button
+              type="button"
+              (click)="closeEditor()"
+              [disabled]="saving()"
+              class="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-ink"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              [disabled]="saving() || typesLoading() || !!typesError()"
+              class="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            >
               {{ saving() ? "Salvando..." : "Salvar preferências" }}
             </button>
           </div>
         </form>
       } @else {
         @if (interest(); as profile) {
-        <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          @if (profile.development) {
-            <div><dt class="text-xs uppercase text-muted">Empreendimento desejado</dt><dd class="mt-1 text-sm text-ink">{{ profile.development.name }}</dd></div>
-          }
-          @if (profile.unitType) {
-            <div><dt class="text-xs uppercase text-muted">Tipologia desejada</dt><dd class="mt-1 text-sm text-ink">{{ profile.unitType.name }}</dd></div>
-          }
-          @if (bedroomsLabel(profile); as label) {
-            <div><dt class="text-xs uppercase text-muted">Quartos</dt><dd class="mt-1 text-sm text-ink">{{ label }}</dd></div>
-          }
-          @if (areaLabel(profile); as label) {
-            <div><dt class="text-xs uppercase text-muted">Área</dt><dd class="mt-1 text-sm text-ink">{{ label }}</dd></div>
-          }
-          @if (priceLabel(profile); as label) {
-            <div><dt class="text-xs uppercase text-muted">Faixa de preço</dt><dd class="mt-1 text-sm text-ink">{{ label }}</dd></div>
-          }
-          @if (profile.availableDownPayment) {
-            <div><dt class="text-xs uppercase text-muted">Entrada disponível</dt><dd class="mt-1 text-sm text-ink">{{ formatMoney(profile.availableDownPayment) }}</dd></div>
-          }
-          @if (profile.purpose) {
-            <div><dt class="text-xs uppercase text-muted">Objetivo</dt><dd class="mt-1 text-sm text-ink">{{ purposeLabel(profile.purpose) }}</dd></div>
-          }
-        </dl>
-        @if (profile.notes) {
-          <p class="mt-4 whitespace-pre-wrap border-t border-border pt-3 text-sm text-muted">{{ profile.notes }}</p>
-        }
-        <div class="mt-5 border-t border-border pt-4">
-          @if (!matchesOpen()) {
-            <button type="button" (click)="showMatches()" class="rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary hover:bg-surface-warm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
-              Ver unidades compatíveis
-            </button>
-          } @else {
-            <div class="flex flex-wrap items-center justify-between gap-3">
+          <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @if (profile.development) {
               <div>
-                <h3 class="font-semibold text-ink">Unidades compatíveis</h3>
-                <p class="mt-1 text-xs text-muted">Sugestões determinísticas. Confirme preço e disponibilidade antes de propor.</p>
-              </div>
-              @if (matchesPage(); as page) {
-                <span class="text-xs text-muted">{{ page.total }} unidade(s) elegível(is)</span>
-              }
-            </div>
-            @if (matchesLoading() && !matchesPage()) {
-              <p class="mt-4 text-sm text-muted" role="status">Buscando unidades...</p>
-            }
-            @if (matchesError()) {
-              <div class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3">
-                <p role="alert" class="text-sm text-red-800">{{ matchesError() }}</p>
-                <button type="button" (click)="retryMatches()" class="mt-2 text-sm font-semibold text-primary hover:underline">Tentar novamente</button>
+                <dt class="text-xs uppercase text-muted">
+                  Empreendimento desejado
+                </dt>
+                <dd class="mt-1 text-sm text-ink">
+                  {{ profile.development.name }}
+                </dd>
               </div>
             }
-            @if (matchesPage() && !matches().length) {
-              <p class="mt-4 text-sm text-muted">Nenhuma unidade disponível com os filtros obrigatórios e preço em tabela ativa.</p>
+            @if (profile.unitType) {
+              <div>
+                <dt class="text-xs uppercase text-muted">Tipologia desejada</dt>
+                <dd class="mt-1 text-sm text-ink">
+                  {{ profile.unitType.name }}
+                </dd>
+              </div>
             }
-            <ol class="mt-4 grid gap-3 lg:grid-cols-2">
-              @for (match of matches(); track match.unit.id) {
-                <li class="min-w-0 rounded-lg border border-border bg-surface p-4">
-                  <div class="flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <h4 class="font-semibold text-ink">Unidade {{ match.unit.identifier }}</h4>
-                      <p class="text-xs text-muted">{{ match.development.name }} · {{ match.unitType?.name || 'Tipologia não informada' }}</p>
-                    </div>
-                    @if (match.unit.isSelected) {
-                      <span class="rounded-full border border-primary px-2 py-1 text-xs font-semibold text-primary">Unidade selecionada</span>
-                    }
-                  </div>
-                  <p class="mt-3 text-sm font-semibold text-ink">
-                    @if (match.compatibilityScore !== null) {
-                      {{ match.compatibilityScore }}% compatível · {{ compatibilityLevelLabel(match.compatibilityLevel) }}
-                    } @else {
-                      Compatibilidade não avaliada
-                    }
-                  </p>
-                  <p class="mt-3 text-sm font-semibold text-ink">{{ formatMoney(match.price.value) }}</p>
-                  <p class="mt-1 text-xs text-muted">{{ match.features.bedrooms ?? '—' }} quarto(s) · {{ match.features.area ?? '—' }} m² · {{ match.compatibility.matched }}/{{ match.compatibility.evaluated }} critérios avaliados atendidos</p>
-                  <details class="mt-3 border-t border-border pt-3 text-xs text-ink">
-                    <summary class="cursor-pointer font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">Como foi calculado</summary>
-                    <p class="mt-2 text-muted">Score de compatibilidade com as preferências, não probabilidade de compra. Apenas critérios avaliáveis entram no cálculo.</p>
-                    <ul class="mt-2 space-y-2">
-                      @for (factor of match.scoreFactors; track factor.criterion) {
-                        <li>
-                          <span class="font-semibold">{{ scoreFactorLabel(factor.criterion) }}:</span>
-                          @if (factor.contribution !== null) {
-                            {{ formatScoreContribution(factor.contribution) }}/{{ factor.maximumContribution }} pontos
-                          } @else {
-                            Não avaliado
-                          }
-                          <span class="block text-muted">{{ factor.explanation }}</span>
-                        </li>
-                      }
-                    </ul>
-                    @if (match.evaluatedWeight > 0 && match.evaluatedWeight < 100) {
-                      <p class="mt-2 text-muted">Resultado normalizado sobre {{ match.evaluatedWeight }} pontos de peso avaliável.</p>
-                    }
-                  </details>
-                  <ul class="mt-3 space-y-1 border-t border-border pt-3">
-                    @for (criterion of match.criteria; track criterion.code) {
-                      <li class="text-xs text-ink">
-                        <span class="font-semibold">{{ criterion.status === 'MATCH' ? '✓' : criterion.status === 'MISMATCH' ? 'Fora da faixa' : 'Não avaliado' }}:</span>
-                        {{ criterion.message }}
-                      </li>
-                    }
-                  </ul>
-                </li>
-              }
-            </ol>
-            @if (matchesPage(); as page) {
-              @if (page.page < page.totalPages) {
-                <button type="button" (click)="loadMoreMatches()" [disabled]="matchesLoading()" class="mt-4 text-sm font-semibold text-primary hover:underline disabled:opacity-50">
-                  {{ matchesLoading() ? 'Carregando...' : 'Carregar mais unidades' }}
-                </button>
-              }
+            @if (bedroomsLabel(profile); as label) {
+              <div>
+                <dt class="text-xs uppercase text-muted">Quartos</dt>
+                <dd class="mt-1 text-sm text-ink">{{ label }}</dd>
+              </div>
             }
+            @if (areaLabel(profile); as label) {
+              <div>
+                <dt class="text-xs uppercase text-muted">Área</dt>
+                <dd class="mt-1 text-sm text-ink">{{ label }}</dd>
+              </div>
+            }
+            @if (priceLabel(profile); as label) {
+              <div>
+                <dt class="text-xs uppercase text-muted">Faixa de preço</dt>
+                <dd class="mt-1 text-sm text-ink">{{ label }}</dd>
+              </div>
+            }
+            @if (profile.availableDownPayment) {
+              <div>
+                <dt class="text-xs uppercase text-muted">Entrada disponível</dt>
+                <dd class="mt-1 text-sm text-ink">
+                  {{ formatMoney(profile.availableDownPayment) }}
+                </dd>
+              </div>
+            }
+            @if (profile.purpose) {
+              <div>
+                <dt class="text-xs uppercase text-muted">Objetivo</dt>
+                <dd class="mt-1 text-sm text-ink">
+                  {{ purposeLabel(profile.purpose) }}
+                </dd>
+              </div>
+            }
+          </dl>
+          @if (profile.notes) {
+            <p
+              class="mt-4 whitespace-pre-wrap border-t border-border pt-3 text-sm text-muted"
+            >
+              {{ profile.notes }}
+            </p>
           }
-        </div>
-        @if (canWrite) {
-          <div class="mt-4 border-t border-border pt-4">
-            @if (confirmRemove()) {
-              <p class="text-sm text-ink">Remover estas preferências? A unidade selecionada não será alterada.</p>
-              <div class="mt-2 flex gap-3">
-                <button type="button" (click)="confirmRemove.set(false)" [disabled]="removing()" class="text-sm font-medium text-muted">Cancelar</button>
-                <button type="button" (click)="remove()" [disabled]="removing()" class="text-sm font-semibold text-red-700 disabled:opacity-60">{{ removing() ? "Removendo..." : "Confirmar remoção" }}</button>
-              </div>
+          <div class="mt-5 border-t border-border pt-4">
+            @if (!matchesOpen()) {
+              <button
+                type="button"
+                (click)="showMatches()"
+                class="rounded-lg border border-primary px-4 py-2.5 text-sm font-semibold text-primary hover:bg-surface-warm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                Ver unidades compatíveis
+              </button>
             } @else {
-              <button type="button" (click)="confirmRemove.set(true)" class="text-sm font-semibold text-red-700">Remover preferências</button>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 class="font-semibold text-ink">Unidades compatíveis</h3>
+                  <p class="mt-1 text-sm text-muted">
+                    Ordenadas pela compatibilidade com as preferências, não pela
+                    chance de compra. Disponibilidade confirmada ao selecionar.
+                  </p>
+                </div>
+                @if (matchesPage(); as page) {
+                  <span class="text-xs text-muted"
+                    >{{ page.total }} unidade(s) elegível(is)</span
+                  >
+                }
+                <button
+                  type="button"
+                  (click)="refreshMatches()"
+                  [disabled]="matchesLoading()"
+                  class="text-sm font-semibold text-primary underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60"
+                >
+                  Atualizar sugestões
+                </button>
+              </div>
+              @if (matchesLoading() && !matchesPage()) {
+                <p class="mt-4 text-sm text-muted" role="status">
+                  Buscando unidades...
+                </p>
+              }
+              @if (matchesLoading() && matchesPage()) {
+                <p class="mt-3 text-sm text-muted" role="status">
+                  Atualizando unidades...
+                </p>
+              }
+              @if (matchesError()) {
+                <div
+                  class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3"
+                >
+                  <p role="alert" class="text-sm text-red-800">
+                    {{ matchesError() }}
+                  </p>
+                  <button
+                    type="button"
+                    (click)="retryMatches()"
+                    class="mt-2 text-sm font-semibold text-primary hover:underline"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              }
+              @if (matchesPage() && !matches().length) {
+                <div
+                  class="mt-4 rounded-lg border border-border bg-surface-warm p-4 text-sm text-ink"
+                >
+                  <p class="font-semibold">
+                    Nenhuma unidade disponível corresponde aos filtros
+                    principais.
+                  </p>
+                  <p class="mt-1 text-muted">
+                    Revise o empreendimento ou a tipologia nas preferências, se
+                    fizer sentido para o cliente.
+                  </p>
+                </div>
+              }
+              @if (selectionError()) {
+                <p
+                  class="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                  role="alert"
+                >
+                  {{ selectionError() }}
+                </p>
+              }
+              @if (selectionFeedback()) {
+                <div
+                  class="mt-4 rounded-lg border border-primary bg-surface p-3 text-sm text-ink"
+                  role="status"
+                >
+                  <p>{{ selectionFeedback() }}</p>
+                  @if (canWrite) {
+                    <div
+                      class="mt-2 flex flex-wrap gap-4 font-semibold text-primary"
+                    >
+                      <a
+                        href="#crm-reservations"
+                        class="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >Ir para reservas</a
+                      >
+                      <a
+                        href="#crm-proposals"
+                        class="underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >Ir para propostas</a
+                      >
+                    </div>
+                  }
+                </div>
+              }
+              <ol class="mt-4 grid gap-4 xl:grid-cols-2">
+                @for (match of matches(); track match.unit.id) {
+                  <li
+                    class="min-w-0 rounded-xl border bg-card p-4 shadow-sm sm:p-5"
+                    [class.border-primary]="isSelected(match)"
+                    [class.border-border]="!isSelected(match)"
+                  >
+                    <div
+                      class="flex flex-wrap items-start justify-between gap-3"
+                    >
+                      <p
+                        class="rounded-lg bg-surface-warm px-3 py-2 text-base font-bold text-primary"
+                        [attr.aria-label]="
+                          match.compatibilityScore === null
+                            ? 'Compatibilidade não avaliada'
+                            : match.compatibilityScore +
+                              '% compatível, ' +
+                              compatibilityLevelLabel(match.compatibilityLevel)
+                        "
+                      >
+                        @if (match.compatibilityScore !== null) {
+                          {{ match.compatibilityScore }}% compatível
+                          <span class="block text-xs font-medium text-ink">{{
+                            compatibilityLevelLabel(match.compatibilityLevel)
+                          }}</span>
+                        } @else {
+                          Compatibilidade não avaliada
+                        }
+                      </p>
+                      @if (isSelected(match)) {
+                        <span
+                          class="rounded-full border border-primary px-3 py-1 text-xs font-semibold text-primary"
+                          >✓ Unidade selecionada na oportunidade</span
+                        >
+                      }
+                    </div>
+                    <h4 class="mt-4 text-lg font-semibold text-ink">
+                      Unidade {{ match.unit.identifier }}
+                    </h4>
+                    <p class="mt-1 text-sm text-muted">
+                      {{ match.development.name }}
+                      @if (match.unitType?.name) {
+                        · {{ match.unitType?.name }}
+                      }
+                    </p>
+                    <p class="mt-3 text-xl font-bold text-ink">
+                      {{ formatMoney(match.price.value) }}
+                    </p>
+                    <div
+                      class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted"
+                    >
+                      @if (match.features.bedrooms !== null) {
+                        <span>{{ match.features.bedrooms }} quarto(s)</span>
+                      }
+                      @if (match.features.area !== null) {
+                        <span>{{ formatArea(match.features.area) }} m²</span>
+                      }
+                      <span>✓ Disponível</span>
+                    </div>
+                    @if (mainReasons(match).length) {
+                      <ul
+                        class="mt-4 space-y-1.5 text-sm text-ink"
+                        aria-label="Principais razões de compatibilidade"
+                      >
+                        @for (
+                          criterion of mainReasons(match);
+                          track criterion.code
+                        ) {
+                          <li>
+                            <span class="font-semibold">{{
+                              criterion.status === "MATCH" ? "✓" : "⚠"
+                            }}</span>
+                            {{ criterion.message }}
+                          </li>
+                        }
+                      </ul>
+                    } @else {
+                      <p class="mt-4 text-sm text-muted">
+                        Informe preço, área ou quartos desejados para avaliar a
+                        compatibilidade.
+                      </p>
+                    }
+                    <details
+                      class="mt-4 border-t border-border pt-3 text-sm text-ink"
+                    >
+                      <summary
+                        class="cursor-pointer font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                      >
+                        Como foi calculado
+                      </summary>
+                      <p class="mt-2 text-muted">
+                        Compatibilidade com as preferências, não probabilidade
+                        de compra. Apenas critérios avaliáveis entram no
+                        cálculo.
+                      </p>
+                      <p class="mt-2 text-xs text-muted">
+                        {{ match.compatibility.matched }}/{{
+                          match.compatibility.evaluated
+                        }}
+                        critérios avaliados atendidos.
+                      </p>
+                      <ul class="mt-2 space-y-2">
+                        @for (
+                          factor of match.scoreFactors;
+                          track factor.criterion
+                        ) {
+                          <li>
+                            <span class="font-semibold"
+                              >{{ scoreFactorLabel(factor.criterion) }}:</span
+                            >
+                            @if (factor.contribution !== null) {
+                              {{
+                                formatScoreContribution(factor.contribution)
+                              }}/{{ factor.maximumContribution }} pontos
+                            } @else {
+                              Não avaliado
+                            }
+                            <span class="block text-muted">{{
+                              factor.explanation
+                            }}</span>
+                          </li>
+                        }
+                      </ul>
+                      @if (
+                        match.evaluatedWeight > 0 && match.evaluatedWeight < 100
+                      ) {
+                        <p class="mt-2 text-muted">
+                          Resultado normalizado sobre
+                          {{ match.evaluatedWeight }} pontos de peso avaliável.
+                        </p>
+                      }
+                      <ul class="mt-3 space-y-1 border-t border-border pt-3">
+                        @for (
+                          criterion of match.criteria;
+                          track criterion.code
+                        ) {
+                          <li>
+                            <span class="font-semibold"
+                              >{{
+                                criterion.status === "MATCH"
+                                  ? "✓"
+                                  : criterion.status === "MISMATCH"
+                                    ? "Fora da faixa"
+                                    : "Não avaliado"
+                              }}:</span
+                            >
+                            {{ criterion.message }}
+                          </li>
+                        }
+                      </ul>
+                    </details>
+                    <div
+                      class="mt-4 flex flex-col gap-2 border-t border-border pt-4 sm:flex-row sm:items-center"
+                    >
+                      <a
+                        [routerLink]="['/developments', match.development.id]"
+                        [queryParams]="{ unit: match.unit.identifier }"
+                        fragment="unidades"
+                        class="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-warm focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        >Ver unidade</a
+                      >
+                      @if (canWrite && !isSelected(match)) {
+                        <button
+                          type="button"
+                          (click)="requestSelection(match)"
+                          [disabled]="
+                            !!selectingUnitId() ||
+                            staleUnitId() === match.unit.id
+                          "
+                          class="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-60"
+                        >
+                          {{
+                            selectingUnitId() === match.unit.id
+                              ? "Selecionando..."
+                              : "Selecionar unidade"
+                          }}
+                        </button>
+                      }
+                    </div>
+                    @if (pendingSelection()?.unit?.id === match.unit.id) {
+                      <div
+                        class="mt-3 rounded-lg border border-primary bg-surface-warm p-3 text-sm text-ink"
+                        role="group"
+                        aria-label="Confirmar troca de unidade"
+                      >
+                        <p class="font-semibold">
+                          Substituir unidade selecionada?
+                        </p>
+                        <p class="mt-1">
+                          Atual: unidade
+                          {{
+                            opportunity.unit?.identifier || opportunity.unitId
+                          }}. Nova: unidade {{ match.unit.identifier }}.
+                        </p>
+                        <p class="mt-1 text-muted">
+                          Esta ação não cria nem cancela reservas ou propostas.
+                        </p>
+                        <div class="mt-3 flex gap-3">
+                          <button
+                            type="button"
+                            (click)="cancelSelection()"
+                            [disabled]="!!selectingUnitId()"
+                            class="rounded-lg border border-border px-3 py-2 font-semibold"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            (click)="confirmSelection()"
+                            [disabled]="!!selectingUnitId()"
+                            class="rounded-lg bg-primary px-3 py-2 font-semibold text-white disabled:opacity-60"
+                          >
+                            {{
+                              selectingUnitId()
+                                ? "Selecionando..."
+                                : "Confirmar troca"
+                            }}
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </li>
+                }
+              </ol>
+              @if (matchesPage(); as page) {
+                @if (page.page < page.totalPages) {
+                  <button
+                    type="button"
+                    (click)="loadMoreMatches()"
+                    [disabled]="matchesLoading()"
+                    class="mt-4 text-sm font-semibold text-primary hover:underline disabled:opacity-50"
+                  >
+                    {{
+                      matchesLoading()
+                        ? "Carregando..."
+                        : "Carregar mais unidades"
+                    }}
+                  </button>
+                }
+              }
             }
           </div>
-        }
-      } @else {
-        <p class="text-sm font-medium text-ink">Nenhuma preferência imobiliária registrada.</p>
-        <p class="mt-1 text-sm text-muted">
-          Registre o que o cliente procura para facilitar a seleção de unidades.
-        </p>
+          @if (canWrite) {
+            <div class="mt-4 border-t border-border pt-4">
+              @if (confirmRemove()) {
+                <p class="text-sm text-ink">
+                  Remover estas preferências? A unidade selecionada não será
+                  alterada.
+                </p>
+                <div class="mt-2 flex gap-3">
+                  <button
+                    type="button"
+                    (click)="confirmRemove.set(false)"
+                    [disabled]="removing()"
+                    class="text-sm font-medium text-muted"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    (click)="remove()"
+                    [disabled]="removing()"
+                    class="text-sm font-semibold text-red-700 disabled:opacity-60"
+                  >
+                    {{ removing() ? "Removendo..." : "Confirmar remoção" }}
+                  </button>
+                </div>
+              } @else {
+                <button
+                  type="button"
+                  (click)="confirmRemove.set(true)"
+                  class="text-sm font-semibold text-red-700"
+                >
+                  Remover preferências
+                </button>
+              }
+            </div>
+          }
+        } @else {
+          <p class="text-sm font-medium text-ink">
+            Nenhuma preferência imobiliária registrada.
+          </p>
+          <p class="mt-1 text-sm text-muted">
+            Registre as preferências do cliente para encontrar unidades
+            compatíveis.
+          </p>
         }
       }
 
       @if (opportunity.unit; as unit) {
         <div class="mt-5 rounded-lg border border-border bg-surface-warm p-4">
-          <p class="text-xs font-semibold uppercase text-muted">Unidade selecionada atualmente</p>
-          <p class="mt-1 text-sm font-medium text-ink">Unidade {{ unit.identifier }}</p>
-          <p class="mt-1 text-xs text-muted">A escolha da unidade é independente das preferências acima.</p>
+          <p class="text-xs font-semibold uppercase text-muted">
+            Unidade selecionada atualmente
+          </p>
+          <p class="mt-1 text-sm font-medium text-ink">
+            Unidade {{ unit.identifier }}
+          </p>
+          <p class="mt-1 text-xs text-muted">
+            A escolha da unidade é independente das preferências acima.
+          </p>
         </div>
       }
     }

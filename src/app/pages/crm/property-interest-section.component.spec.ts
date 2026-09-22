@@ -1,6 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, of, throwError } from 'rxjs';
-import { Opportunity, OpportunityPropertyInterest, UnitMatch, UnitMatchesPage } from '../../core/models/crm.model';
+import { provideRouter } from '@angular/router';
+import {
+  Opportunity,
+  OpportunityPropertyInterest,
+  UnitMatch,
+  UnitMatchesPage,
+} from '../../core/models/crm.model';
 import { DevelopmentListItem } from '../../core/models/development.model';
 import { UnitTypeListItem } from '../../core/models/unit-type.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
@@ -54,7 +61,12 @@ const PROFILE: OpportunityPropertyInterest = {
   },
 };
 const MATCH = {
-  unit: { id: 'unit-1', identifier: 'A-101', status: 'DISPONIVEL', isSelected: false },
+  unit: {
+    id: 'unit-1',
+    identifier: 'A-101',
+    status: 'DISPONIVEL',
+    isSelected: false,
+  },
   development: { id: DEVELOPMENT.id, name: DEVELOPMENT.name },
   unitType: { id: UNIT_TYPE.id, name: UNIT_TYPE.name },
   features: { bedrooms: 2, area: '78.00' },
@@ -64,15 +76,57 @@ const MATCH = {
   compatibilityLevel: 'EXCELENTE',
   evaluatedWeight: 100,
   scoreFactors: [
-    { criterion: 'PRICE', weight: 50, criterionScore: 100, contribution: '50.00', maximumContribution: 50, status: 'MATCH', explanation: 'Dentro do orçamento' },
-    { criterion: 'AREA', weight: 25, criterionScore: 100, contribution: '25.00', maximumContribution: 25, status: 'MATCH', explanation: 'Área dentro da faixa' },
-    { criterion: 'BEDROOMS', weight: 25, criterionScore: 100, contribution: '25.00', maximumContribution: 25, status: 'MATCH', explanation: 'Quartos dentro da faixa' },
+    {
+      criterion: 'PRICE',
+      weight: 50,
+      criterionScore: 100,
+      contribution: '50.00',
+      maximumContribution: 50,
+      status: 'MATCH',
+      explanation: 'Dentro do orçamento',
+    },
+    {
+      criterion: 'AREA',
+      weight: 25,
+      criterionScore: 100,
+      contribution: '25.00',
+      maximumContribution: 25,
+      status: 'MATCH',
+      explanation: 'Área dentro da faixa',
+    },
+    {
+      criterion: 'BEDROOMS',
+      weight: 25,
+      criterionScore: 100,
+      contribution: '25.00',
+      maximumContribution: 25,
+      status: 'MATCH',
+      explanation: 'Quartos dentro da faixa',
+    },
   ],
-  ranking: { priceWithinRange: true, matchedSoft: 3, mismatchedSoft: 0, priceDeviation: '0.00' },
-  criteria: [{ code: 'PRICE', kind: 'SOFT', status: 'MATCH', message: 'R$ 450.000,00 dentro da faixa', actual: '450000.00' }],
+  ranking: {
+    priceWithinRange: true,
+    matchedSoft: 3,
+    mismatchedSoft: 0,
+    priceDeviation: '0.00',
+  },
+  criteria: [
+    {
+      code: 'PRICE',
+      kind: 'SOFT',
+      status: 'MATCH',
+      message: 'R$ 450.000,00 dentro da faixa',
+      actual: '450000.00',
+    },
+  ],
 } as UnitMatch;
-const matchesPage = (data: UnitMatch[], page: number, total: number): UnitMatchesPage => ({
-  data, reason: null,
+const matchesPage = (
+  data: UnitMatch[],
+  page: number,
+  total: number,
+): UnitMatchesPage => ({
+  data,
+  reason: null,
   pagination: { page, pageSize: 20, total, totalPages: Math.ceil(total / 20) },
 });
 
@@ -88,7 +142,10 @@ describe('PropertyInterestSectionComponent', () => {
   const build = (opportunity: Opportunity = OPPORTUNITY) => {
     fixture = TestBed.createComponent(PropertyInterestSectionComponent);
     fixture.componentRef.setInput('opportunity', opportunity);
-    fixture.componentRef.setInput('developments', [DEVELOPMENT, OTHER_DEVELOPMENT]);
+    fixture.componentRef.setInput('developments', [
+      DEVELOPMENT,
+      OTHER_DEVELOPMENT,
+    ]);
     component = fixture.componentInstance;
     fixture.detectChanges();
   };
@@ -99,12 +156,28 @@ describe('PropertyInterestSectionComponent', () => {
       'upsertPropertyInterest',
       'removePropertyInterest',
       'getUnitMatches',
+      'updateOpportunity',
     ]);
     crm.getPropertyInterest.and.returnValue(of(null));
     crm.upsertPropertyInterest.and.returnValue(of(PROFILE));
     crm.removePropertyInterest.and.returnValue(of(PROFILE));
     crm.getUnitMatches.and.returnValue(of(matchesPage([MATCH], 1, 1)));
-    unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', ['list']);
+    crm.updateOpportunity.and.returnValue(
+      of({
+        ...OPPORTUNITY,
+        developmentId: DEVELOPMENT.id,
+        unitId: MATCH.unit.id,
+        unit: {
+          id: MATCH.unit.id,
+          identifier: MATCH.unit.identifier,
+          developmentId: DEVELOPMENT.id,
+          unitTypeId: UNIT_TYPE.id,
+        },
+      }),
+    );
+    unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', [
+      'list',
+    ]);
     unitTypes.list.and.returnValue(of([UNIT_TYPE]));
     authorization = jasmine.createSpyObj<AuthorizationService>(
       'AuthorizationService',
@@ -114,6 +187,7 @@ describe('PropertyInterestSectionComponent', () => {
     await TestBed.configureTestingModule({
       imports: [PropertyInterestSectionComponent],
       providers: [
+        provideRouter([]),
         { provide: CrmService, useValue: crm },
         { provide: UnitTypeService, useValue: unitTypes },
         { provide: AuthorizationService, useValue: authorization },
@@ -378,7 +452,8 @@ describe('PropertyInterestSectionComponent', () => {
     expect(text()).toContain('Unidade A-101');
     expect(text()).toContain('R$ 450.000,00');
     expect(text()).toContain('3/3 critérios avaliados atendidos');
-    expect(text()).toContain('100% compatível · Excelente');
+    expect(text()).toContain('100% compatível');
+    expect(text()).toContain('Excelente');
     expect(text()).toContain('50,00/50 pontos');
     expect(text()).toContain('Dentro do orçamento');
     expect(text()).toContain('dentro da faixa');
@@ -386,16 +461,30 @@ describe('PropertyInterestSectionComponent', () => {
 
   it('shows a textual unevaluated state without inventing a percentage', () => {
     crm.getPropertyInterest.and.returnValue(of(PROFILE));
-    crm.getUnitMatches.and.returnValue(of(matchesPage([{
-      ...MATCH,
-      compatibilityScore: null,
-      compatibilityLevel: 'NOT_EVALUATED',
-      evaluatedWeight: 0,
-      scoreFactors: MATCH.scoreFactors.map((factor) => ({
-        ...factor, criterionScore: null, contribution: null, maximumContribution: null,
-        status: 'NOT_EVALUATED' as const, explanation: 'Preferência não informada',
-      })),
-    }], 1, 1)));
+    crm.getUnitMatches.and.returnValue(
+      of(
+        matchesPage(
+          [
+            {
+              ...MATCH,
+              compatibilityScore: null,
+              compatibilityLevel: 'NOT_EVALUATED',
+              evaluatedWeight: 0,
+              scoreFactors: MATCH.scoreFactors.map((factor) => ({
+                ...factor,
+                criterionScore: null,
+                contribution: null,
+                maximumContribution: null,
+                status: 'NOT_EVALUATED' as const,
+                explanation: 'Preferência não informada',
+              })),
+            },
+          ],
+          1,
+          1,
+        ),
+      ),
+    );
     build();
     component.showMatches();
     fixture.detectChanges();
@@ -406,20 +495,43 @@ describe('PropertyInterestSectionComponent', () => {
 
   it('explains a partial score and keeps the mismatch visible', () => {
     crm.getPropertyInterest.and.returnValue(of(PROFILE));
-    crm.getUnitMatches.and.returnValue(of(matchesPage([{
-      ...MATCH,
-      compatibilityScore: 90,
-      compatibilityLevel: 'EXCELENTE',
-      scoreFactors: [
-        { ...MATCH.scoreFactors[0], criterionScore: 80, contribution: '40.00', status: 'MISMATCH', explanation: 'R$ 10.000,00 acima do máximo' },
-        ...MATCH.scoreFactors.slice(1),
-      ],
-      criteria: [{ ...MATCH.criteria[0], status: 'MISMATCH', message: 'R$ 10.000,00 acima do máximo' }],
-    }], 1, 1)));
+    crm.getUnitMatches.and.returnValue(
+      of(
+        matchesPage(
+          [
+            {
+              ...MATCH,
+              compatibilityScore: 90,
+              compatibilityLevel: 'EXCELENTE',
+              scoreFactors: [
+                {
+                  ...MATCH.scoreFactors[0],
+                  criterionScore: 80,
+                  contribution: '40.00',
+                  status: 'MISMATCH',
+                  explanation: 'R$ 10.000,00 acima do máximo',
+                },
+                ...MATCH.scoreFactors.slice(1),
+              ],
+              criteria: [
+                {
+                  ...MATCH.criteria[0],
+                  status: 'MISMATCH',
+                  message: 'R$ 10.000,00 acima do máximo',
+                },
+              ],
+            },
+          ],
+          1,
+          1,
+        ),
+      ),
+    );
     build();
     component.showMatches();
     fixture.detectChanges();
-    expect(text()).toContain('90% compatível · Excelente');
+    expect(text()).toContain('90% compatível');
+    expect(text()).toContain('Excelente');
     expect(text()).toContain('40,00/50 pontos');
     expect(text()).toContain('Fora da faixa');
     expect(text()).toContain('R$ 10.000,00 acima do máximo');
@@ -444,7 +556,13 @@ describe('PropertyInterestSectionComponent', () => {
     component.showMatches();
     fixture.detectChanges();
     expect(text()).toContain('Buscando unidades...');
-    pending.next(matchesPage([{ ...MATCH, unit: { ...MATCH.unit, isSelected: true } }], 1, 1));
+    fixture.componentRef.setInput('opportunity', {
+      ...OPPORTUNITY,
+      unitId: MATCH.unit.id,
+      unit: { id: MATCH.unit.id, identifier: MATCH.unit.identifier },
+    });
+    fixture.detectChanges();
+    pending.next(matchesPage([MATCH], 1, 1));
     fixture.detectChanges();
     expect(text()).toContain('Unidade selecionada');
     component.showMatches();
@@ -469,7 +587,12 @@ describe('PropertyInterestSectionComponent', () => {
 
   it('appends without duplication and hides load-more at the final page', () => {
     crm.getPropertyInterest.and.returnValue(of(PROFILE));
-    const second = { ...MATCH, unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' }, compatibilityScore: 80, compatibilityLevel: 'ALTA' as const };
+    const second = {
+      ...MATCH,
+      unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' },
+      compatibilityScore: 80,
+      compatibilityLevel: 'ALTA' as const,
+    };
     crm.getUnitMatches.and.returnValues(
       of(matchesPage([MATCH], 1, 21)),
       of(matchesPage([MATCH, second], 2, 21)),
@@ -478,14 +601,22 @@ describe('PropertyInterestSectionComponent', () => {
     component.showMatches();
     component.loadMoreMatches();
     fixture.detectChanges();
-    expect(component.matches().map((item) => item.unit.id)).toEqual(['unit-1', 'unit-2']);
-    expect(component.matches().map((item) => item.compatibilityScore)).toEqual([100, 80]);
+    expect(component.matches().map((item) => item.unit.id)).toEqual([
+      'unit-1',
+      'unit-2',
+    ]);
+    expect(component.matches().map((item) => item.compatibilityScore)).toEqual([
+      100, 80,
+    ]);
     expect(text()).not.toContain('Carregar mais unidades');
   });
 
   it('preserves first results on next-page error and retries', () => {
     crm.getPropertyInterest.and.returnValue(of(PROFILE));
-    const second = { ...MATCH, unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' } };
+    const second = {
+      ...MATCH,
+      unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' },
+    };
     crm.getUnitMatches.and.returnValues(
       of(matchesPage([MATCH], 1, 21)),
       throwError(() => new Error('falha')),
@@ -497,20 +628,239 @@ describe('PropertyInterestSectionComponent', () => {
     expect(component.matches()).toEqual([MATCH]);
     expect(component.matchesError()).toBeTruthy();
     component.retryMatches();
-    expect(component.matches().map((item) => item.unit.id)).toEqual(['unit-1', 'unit-2']);
+    expect(component.matches().map((item) => item.unit.id)).toEqual([
+      'unit-1',
+      'unit-2',
+    ]);
   });
 
-  it('clears stale recommendations when profile changes or is removed', () => {
+  it('retries page one after a failed stock refresh while preserving visible matches', () => {
     crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValues(
+      of(matchesPage([MATCH], 1, 1)),
+      throwError(() => new Error('falha')),
+      of(matchesPage([], 1, 0)),
+    );
+    build();
+    component.showMatches();
+    component.refreshMatches();
+    expect(component.matches()).toEqual([MATCH]);
+    expect(component.matchesError()).toBeTruthy();
+    component.retryMatches();
+    expect(crm.getUnitMatches.calls.mostRecent().args).toEqual([
+      OPPORTUNITY.id,
+      1,
+    ]);
+    expect(component.matches()).toEqual([]);
+  });
+
+  it('reloads matches from the first page after profile changes and clears them on removal', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    const changed = {
+      ...MATCH,
+      compatibilityScore: 72,
+      compatibilityLevel: 'ALTA' as const,
+    };
+    crm.getUnitMatches.and.returnValues(
+      of(matchesPage([MATCH], 1, 1)),
+      of(matchesPage([changed], 1, 1)),
+    );
     build();
     component.showMatches();
     component.openEditor();
     component.save();
-    expect(component.matchesOpen()).toBeFalse();
-    expect(component.matches()).toEqual([]);
-    component.showMatches();
+    expect(component.matchesOpen()).toBeTrue();
+    expect(component.matches()).toEqual([changed]);
+    expect(crm.getUnitMatches).toHaveBeenCalledTimes(2);
+    expect(crm.getUnitMatches.calls.mostRecent().args).toEqual([
+      OPPORTUNITY.id,
+      1,
+    ]);
     component.remove();
     expect(component.matchesOpen()).toBeFalse();
     expect(component.matches()).toEqual([]);
+  });
+
+  it('prioritizes at most three actual soft reasons without changing server order or score', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    const lower = {
+      ...MATCH,
+      unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' },
+      compatibilityScore: 42,
+      compatibilityLevel: 'BAIXA' as const,
+      criteria: [
+        {
+          code: 'AVAILABILITY',
+          kind: 'HARD',
+          status: 'MATCH',
+          message: 'Disponível',
+          actual: 'DISPONIVEL',
+        },
+        {
+          code: 'PRICE',
+          kind: 'SOFT',
+          status: 'MISMATCH',
+          message: 'Acima do orçamento',
+          actual: '550000.00',
+        },
+        {
+          code: 'AREA',
+          kind: 'SOFT',
+          status: 'MISMATCH',
+          message: 'Área abaixo do desejado',
+          actual: '60',
+        },
+        {
+          code: 'BEDROOMS',
+          kind: 'SOFT',
+          status: 'MATCH',
+          message: 'Quartos compatíveis',
+          actual: 2,
+        },
+        {
+          code: 'PURPOSE',
+          kind: 'INFORMATIONAL',
+          status: 'NOT_EVALUATED',
+          message: 'Objetivo sem avaliação',
+          actual: null,
+        },
+      ] as UnitMatch['criteria'],
+    };
+    crm.getUnitMatches.and.returnValue(of(matchesPage([MATCH, lower], 1, 2)));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(component.matches().map((match) => match.unit.id)).toEqual([
+      'unit-1',
+      'unit-2',
+    ]);
+    expect(component.mainReasons(lower).map((reason) => reason.code)).toEqual([
+      'PRICE',
+      'AREA',
+      'BEDROOMS',
+    ]);
+    expect(text()).toContain('42% compatível');
+    expect(text()).toContain('Acima do orçamento');
+    expect(text()).toContain('Área abaixo do desejado');
+  });
+
+  it('keeps the calculation inside expandable details and preserves backend factors', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    const details = fixture.nativeElement.querySelector(
+      'details',
+    ) as HTMLDetailsElement;
+    expect(details.open).toBeFalse();
+    details.open = true;
+    fixture.detectChanges();
+    expect(details.textContent).toContain('50,00/50 pontos');
+    expect(details.textContent).toContain('Dentro do orçamento');
+  });
+
+  it('selects an unselected unit through PATCH without changing preferences or reserving', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    const selected = jasmine.createSpy('selected');
+    component.unitSelected.subscribe(selected);
+    component.showMatches();
+    component.requestSelection(MATCH);
+    expect(crm.updateOpportunity).toHaveBeenCalledOnceWith(OPPORTUNITY.id, {
+      developmentId: DEVELOPMENT.id,
+      unitId: MATCH.unit.id,
+    });
+    expect(crm.upsertPropertyInterest).not.toHaveBeenCalled();
+    expect(selected).toHaveBeenCalled();
+    expect(component.selectionFeedback()).toContain('selecionada');
+  });
+
+  it('asks before replacing an existing unit and allows cancellation', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build({
+      ...OPPORTUNITY,
+      unitId: 'old-unit',
+      unit: { id: 'old-unit', identifier: '305' } as Opportunity['unit'],
+    });
+    component.showMatches();
+    component.requestSelection(MATCH);
+    fixture.detectChanges();
+    expect(text()).toContain('Substituir unidade selecionada?');
+    expect(text()).toContain('Atual: unidade 305');
+    expect(crm.updateOpportunity).not.toHaveBeenCalled();
+    component.cancelSelection();
+    expect(component.pendingSelection()).toBeNull();
+    component.requestSelection(MATCH);
+    component.confirmSelection();
+    expect(crm.updateOpportunity).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps matches and the current unit intact on a selection error', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.updateOpportunity.and.returnValue(throwError(() => new Error('falha')));
+    build();
+    component.showMatches();
+    component.requestSelection(MATCH);
+    expect(component.matches()).toEqual([MATCH]);
+    expect(component.selectionError()).toBeTruthy();
+    expect(component.opportunity.unitId).toBeNull();
+  });
+
+  it('refreshes stale stock after a 409 without selecting it', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValues(
+      of(matchesPage([MATCH], 1, 1)),
+      of(matchesPage([], 1, 0)),
+    );
+    crm.updateOpportunity.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 409 })),
+    );
+    build();
+    component.showMatches();
+    component.requestSelection(MATCH);
+    expect(crm.getUnitMatches).toHaveBeenCalledTimes(2);
+    expect(component.matches()).toEqual([]);
+    expect(component.selectionError()).toContain('não está mais disponível');
+    expect(component.opportunity.unitId).toBeNull();
+  });
+
+  it('links to the existing development unit list with a unit search', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    const link = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        'a',
+      ) as NodeListOf<HTMLAnchorElement>,
+    ).find((item) => item.textContent?.includes('Ver unidade'));
+    expect(link?.getAttribute('href')).toContain(
+      '/developments/development-1?unit=A-101#unidades',
+    );
+  });
+
+  it('keeps read-only matching but hides selection and next commercial actions', () => {
+    authorization.hasPermission.and.returnValue(false);
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('Ver unidade');
+    expect(text()).not.toContain('Selecionar unidade');
+    component.requestSelection(MATCH);
+    expect(crm.updateOpportunity).not.toHaveBeenCalled();
+  });
+
+  it('uses a responsive one-column/two-column card layout and exact decimal BRL text', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(
+      (fixture.nativeElement.querySelector('ol') as HTMLElement).className,
+    ).toContain('xl:grid-cols-2');
+    expect(component.formatMoney('1234567890123456.78')).toContain(
+      '1.234.567.890.123.456,78',
+    );
   });
 });

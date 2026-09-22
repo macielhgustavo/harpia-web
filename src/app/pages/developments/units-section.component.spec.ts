@@ -8,6 +8,7 @@ import { AuthorizationService } from '../../core/services/authorization.service'
 import { DocumentService } from '../../core/services/document.service';
 import { UnitService } from '../../core/services/unit.service';
 import { UnitsSectionComponent } from './units-section.component';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 
 const UNIT_TYPES: UnitType[] = [
   {
@@ -128,6 +129,7 @@ describe('UnitsSectionComponent', () => {
     await TestBed.configureTestingModule({
       imports: [UnitsSectionComponent],
       providers: [
+        provideRouter([]),
         { provide: UnitService, useClass: UnitServiceMock },
         { provide: AuthorizationService, useClass: AuthorizationServiceMock },
         { provide: DocumentService, useClass: DocumentServiceMock },
@@ -149,6 +151,18 @@ describe('UnitsSectionComponent', () => {
     component.unitTypes = UNIT_TYPES;
     fixture.detectChanges();
   }
+
+  it('opens the existing unit list filtered by the matching link query', () => {
+    spyOn(
+      TestBed.inject(ActivatedRoute).snapshot.queryParamMap,
+      'get',
+    ).and.returnValue('Apto 101');
+    render();
+    expect(component.search()).toBe('Apto 101');
+    expect(component.filteredUnits().map((unit) => unit.id)).toEqual([
+      'unit-1',
+    ]);
+  });
 
   it('carrega a lista real, indicadores e labels dos enums', () => {
     render();

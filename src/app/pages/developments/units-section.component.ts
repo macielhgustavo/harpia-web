@@ -13,6 +13,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   AlertTriangle,
@@ -62,6 +63,7 @@ import { UnitFormModalComponent } from './unit-form-modal.component';
 })
 export class UnitsSectionComponent implements OnInit {
   private readonly unitService = inject(UnitService);
+  private readonly route = inject(ActivatedRoute);
   private readonly authorization = inject(AuthorizationService);
   private readonly destroyRef = inject(DestroyRef);
   private loadSequence = 0;
@@ -176,6 +178,8 @@ export class UnitsSectionComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    const unitQuery = this.route.snapshot.queryParamMap?.get('unit');
+    if (unitQuery) this.search.set(unitQuery);
     this.reload();
   }
 

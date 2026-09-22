@@ -225,6 +225,7 @@
       <app-property-interest-section
         [opportunity]="item"
         [developments]="developments()"
+        (unitSelected)="onUnitSelected($event)"
       />
 
       <section class="rounded-xl border border-border bg-card shadow-card">
@@ -304,21 +305,25 @@
         (changed)="onVisitChanged($event)"
       />
 
-      <app-reservations-section
-        [developmentId]="item.developmentId || ''"
-        [opportunityId]="item.id"
-        [personId]="item.personId"
-        [unitId]="item.unitId || ''"
-        (changed)="onReservationChanged($event)"
-      />
+      <div id="crm-reservations">
+        <app-reservations-section
+          [developmentId]="item.developmentId || ''"
+          [opportunityId]="item.id"
+          [personId]="item.personId"
+          [unitId]="item.unitId || ''"
+          (changed)="onReservationChanged($event)"
+        />
+      </div>
 
-      <app-proposals-section
-        [developmentId]="item.developmentId || ''"
-        [opportunityId]="item.id"
-        [personId]="item.personId"
-        [unitId]="item.unitId || ''"
-        (changed)="onProposalChanged($event)"
-      />
+      <div id="crm-proposals">
+        <app-proposals-section
+          [developmentId]="item.developmentId || ''"
+          [opportunityId]="item.id"
+          [personId]="item.personId"
+          [unitId]="item.unitId || ''"
+          (changed)="onProposalChanged($event)"
+        />
+      </div>
 
       <section class="rounded-xl border border-border bg-card shadow-card">
         <header

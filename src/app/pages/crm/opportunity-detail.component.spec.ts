@@ -177,6 +177,20 @@ describe('OpportunityDetailComponent — visits', () => {
     fixture.detectChanges();
   };
 
+  it('reflects a selected match immediately and keeps reservation/proposal creation manual', () => {
+    build(opportunityWith({ unitId: null, unit: null }));
+    const updated = opportunityWith();
+    spyOn(component, 'refreshCommercialData');
+    component.onUnitSelected(updated);
+    fixture.detectChanges();
+    expect(component.opportunity()?.unitId).toBe(UNIT_305.id);
+    expect(component.refreshCommercialData).toHaveBeenCalled();
+    expect(
+      fixture.nativeElement.querySelector('#crm-reservations'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('#crm-proposals')).toBeTruthy();
+  });
+
   beforeEach(async () => {
     crm = jasmine.createSpyObj<CrmService>('CrmService', [
       'getOpportunity',
@@ -225,7 +239,9 @@ describe('OpportunityDetailComponent — visits', () => {
 
     units = jasmine.createSpyObj<UnitService>('UnitService', ['list']);
     units.list.and.returnValue(of([UNIT_305]));
-    const unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', ['list']);
+    const unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', [
+      'list',
+    ]);
     unitTypes.list.and.returnValue(of([]));
 
     const people = jasmine.createSpyObj<PersonService>('PersonService', [
@@ -856,7 +872,9 @@ describe('OpportunityDetailComponent — loss reason', () => {
     authorization.hasPermission.and.returnValue(true);
     const units = jasmine.createSpyObj<UnitService>('UnitService', ['list']);
     units.list.and.returnValue(of([UNIT_305]));
-    const unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', ['list']);
+    const unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', [
+      'list',
+    ]);
     unitTypes.list.and.returnValue(of([]));
     const people = jasmine.createSpyObj<PersonService>('PersonService', [
       'list',

@@ -1,12 +1,24 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import {
   Opportunity,
   OpportunityPropertyInterest,
   UnitMatch,
+  UnitMatchCriterion,
   UnitMatchScoreFactor,
   UnitMatchesPage,
   PropertyInterestPurpose,
@@ -39,7 +51,7 @@ const BEDROOM_PATTERN = /^\d{1,3}$/;
 @Component({
   selector: 'app-property-interest-section',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './property-interest-section.component.html',
 })
 export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
@@ -49,9 +61,11 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private typeLoadSequence = 0;
   private matchingSequence = 0;
+  private failedMatchesPage = 1;
 
   @Input({ required: true }) opportunity!: Opportunity;
   @Input() developments: DevelopmentListItem[] = [];
+  @Output() readonly unitSelected = new EventEmitter<Opportunity>();
 
   readonly canWrite = this.authorization.hasPermission(
     APP_PERMISSIONS.CRM_WRITE,
@@ -74,6 +88,11 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   readonly matchesPage = signal<UnitMatchesPage['pagination'] | null>(null);
   readonly matchesLoading = signal(false);
   readonly matchesError = signal('');
+  readonly selectingUnitId = signal<string | null>(null);
+  readonly pendingSelection = signal<UnitMatch | null>(null);
+  readonly selectionError = signal('');
+  readonly selectionFeedback = signal('');
+  readonly staleUnitId = signal<string | null>(null);
   form: InterestForm = this.emptyForm();
 
   readonly purposes: { value: PropertyInterestPurpose; label: string }[] = [
@@ -100,8 +119,10 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (interest) => {
+          const wasOpen = this.matchesOpen();
           this.interest.set(interest);
           this.resetMatches();
+          if (wasOpen) this.showMatches();
           this.loading.set(false);
         },
         error: (error: unknown) => {
@@ -195,8 +216,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
     return (
       bedrooms.every(
         (value) =>
-          !value ||
-          (BEDROOM_PATTERN.test(value) && Number(value) <= 100),
+          !value || (BEDROOM_PATTERN.test(value) && Number(value) <= 100),
       ) &&
       areas.every((value) => !value || DECIMAL_PATTERN.test(value)) &&
       money.every((value) => !value || DECIMAL_PATTERN.test(value)) &&
@@ -223,9 +243,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
       maxArea: this.numberOrNull(this.form.maxArea),
       minPrice: this.moneyOrNull(this.form.minPrice),
       maxPrice: this.moneyOrNull(this.form.maxPrice),
-      availableDownPayment: this.moneyOrNull(
-        this.form.availableDownPayment,
-      ),
+      availableDownPayment: this.moneyOrNull(this.form.availableDownPayment),
       purpose: this.form.purpose || null,
       notes: this.form.notes.trim() || null,
     };
@@ -234,8 +252,10 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (interest) => {
+          const wasOpen = this.matchesOpen();
           this.interest.set(interest);
           this.resetMatches();
+          if (wasOpen) this.showMatches();
           this.saving.set(false);
           this.editing.set(false);
           this.feedback.set('Preferências salvas.');
@@ -309,7 +329,97 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   }
 
   retryMatches(): void {
-    this.loadMatches((this.matchesPage()?.page ?? 0) + 1);
+    this.loadMatches(this.failedMatchesPage);
+  }
+
+  refreshMatches(): void {
+    if (!this.interest() || this.matchesLoading()) return;
+    this.loadMatches(1);
+  }
+
+  mainReasons(match: UnitMatch): UnitMatchCriterion[] {
+    return match.criteria
+      .filter(
+        (criterion) =>
+          criterion.kind === 'SOFT' && criterion.status !== 'NOT_EVALUATED',
+      )
+      .sort(
+        (a, b) =>
+          ['PRICE', 'AREA', 'BEDROOMS'].indexOf(a.code) -
+          ['PRICE', 'AREA', 'BEDROOMS'].indexOf(b.code),
+      )
+      .slice(0, 3);
+  }
+
+  isSelected(match: UnitMatch): boolean {
+    return this.opportunity.unitId === match.unit.id;
+  }
+
+  requestSelection(match: UnitMatch): void {
+    if (
+      !this.canWrite ||
+      this.selectingUnitId() ||
+      this.isSelected(match) ||
+      this.staleUnitId() === match.unit.id
+    )
+      return;
+    this.selectionError.set('');
+    this.selectionFeedback.set('');
+    if (this.opportunity.unitId) {
+      this.pendingSelection.set(match);
+      return;
+    }
+    this.selectUnit(match);
+  }
+
+  cancelSelection(): void {
+    if (!this.selectingUnitId()) this.pendingSelection.set(null);
+  }
+
+  confirmSelection(): void {
+    const match = this.pendingSelection();
+    if (match) this.selectUnit(match);
+  }
+
+  private selectUnit(match: UnitMatch): void {
+    if (this.selectingUnitId()) return;
+    this.selectingUnitId.set(match.unit.id);
+    this.selectionError.set('');
+    this.crm
+      .updateOpportunity(this.opportunity.id, {
+        developmentId: match.development.id,
+        unitId: match.unit.id,
+      })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updated) => {
+          this.selectingUnitId.set(null);
+          this.pendingSelection.set(null);
+          this.staleUnitId.set(null);
+          this.selectionFeedback.set(
+            `Unidade ${match.unit.identifier} selecionada. Você pode reservar ou criar uma proposta nas seções abaixo.`,
+          );
+          this.unitSelected.emit(updated);
+        },
+        error: (error: unknown) => {
+          this.selectingUnitId.set(null);
+          this.pendingSelection.set(null);
+          if (error instanceof HttpErrorResponse && error.status === 409) {
+            this.staleUnitId.set(match.unit.id);
+            this.selectionError.set(
+              'Esta unidade não está mais disponível. Atualizamos as sugestões; escolha outra unidade.',
+            );
+            this.refreshMatches();
+          } else {
+            this.selectionError.set(
+              extractError(
+                error,
+                'Não foi possível selecionar a unidade. Tente novamente.',
+              ),
+            );
+          }
+        },
+      });
   }
 
   private loadMatches(page: number): void {
@@ -317,21 +427,34 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
     const sequence = ++this.matchingSequence;
     this.matchesLoading.set(true);
     this.matchesError.set('');
-    this.crm.getUnitMatches(this.opportunity.id, page)
+    this.crm
+      .getUnitMatches(this.opportunity.id, page)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
           if (sequence !== this.matchingSequence) return;
-          const byId = new Map((page === 1 ? [] : this.matches()).map((item) => [item.unit.id, item]));
+          const byId = new Map(
+            (page === 1 ? [] : this.matches()).map((item) => [
+              item.unit.id,
+              item,
+            ]),
+          );
           for (const item of result.data) byId.set(item.unit.id, item);
           this.matches.set([...byId.values()]);
           this.matchesPage.set(result.pagination);
           this.matchesLoading.set(false);
+          if (page === 1) this.staleUnitId.set(null);
         },
         error: (error: unknown) => {
           if (sequence !== this.matchingSequence) return;
           this.matchesLoading.set(false);
-          this.matchesError.set(extractError(error, 'Não foi possível carregar unidades compatíveis.'));
+          this.failedMatchesPage = page;
+          this.matchesError.set(
+            extractError(
+              error,
+              'Não foi possível carregar unidades compatíveis.',
+            ),
+          );
         },
       });
   }
@@ -343,6 +466,11 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
     this.matchesPage.set(null);
     this.matchesLoading.set(false);
     this.matchesError.set('');
+    this.failedMatchesPage = 1;
+    this.pendingSelection.set(null);
+    this.selectionError.set('');
+    this.selectionFeedback.set('');
+    this.staleUnitId.set(null);
   }
 
   bedroomsLabel(interest: OpportunityPropertyInterest): string | null {
@@ -355,12 +483,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   }
 
   areaLabel(interest: OpportunityPropertyInterest): string | null {
-    return this.rangeLabel(
-      interest.minArea,
-      interest.maxArea,
-      'm²',
-      'm²',
-    );
+    return this.rangeLabel(interest.minArea, interest.maxArea, 'm²', 'm²');
   }
 
   priceLabel(interest: OpportunityPropertyInterest): string | null {
@@ -373,10 +496,16 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   }
 
   formatMoney(value: string): string {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(Number(value));
+    const [whole, fraction = ''] = value.replace(',', '.').split('.');
+    if (!/^\d+$/.test(whole) || !/^\d{0,2}$/.test(fraction)) return value;
+    return `R$ ${new Intl.NumberFormat('pt-BR').format(BigInt(whole))},${fraction.padEnd(2, '0')}`;
+  }
+
+  formatArea(value: string): string {
+    return value
+      .replace(/\.00$/, '')
+      .replace(/(\.\d)0$/, '$1')
+      .replace('.', ',');
   }
 
   private rangeLabel(
@@ -395,7 +524,11 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   }
 
   private inOrder(min: string, max: string): boolean {
-    return !min || !max || Number(min.replace(',', '.')) <= Number(max.replace(',', '.'));
+    return (
+      !min ||
+      !max ||
+      Number(min.replace(',', '.')) <= Number(max.replace(',', '.'))
+    );
   }
 
   private moneyInOrder(min: string, max: string): boolean {

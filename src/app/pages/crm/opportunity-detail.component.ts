@@ -332,6 +332,11 @@ export class OpportunityDetailComponent implements OnInit, OnDestroy {
     this.refreshCommercialData('Oportunidade atualizada com sucesso.');
   }
 
+  onUnitSelected(updated: Opportunity): void {
+    this.opportunity.set(updated);
+    this.refreshCommercialData();
+  }
+
   onReservationChanged(message: string): void {
     this.refreshCommercialData(message);
     const developmentId = this.opportunity()?.developmentId;
