@@ -149,6 +149,16 @@ export interface UnitMatchCriterion {
   difference?: string;
 }
 
+export interface UnitMatchScoreFactor {
+  criterion: 'PRICE' | 'AREA' | 'BEDROOMS';
+  weight: number;
+  criterionScore: number | null;
+  contribution: string | null;
+  maximumContribution: number | null;
+  status: 'MATCH' | 'MISMATCH' | 'NOT_EVALUATED';
+  explanation: string;
+}
+
 export interface UnitMatch {
   unit: { id: string; identifier: string; status: 'DISPONIVEL'; isSelected: boolean };
   development: { id: string; name: string };
@@ -156,6 +166,10 @@ export interface UnitMatch {
   features: { bedrooms: number | null; area: string | null };
   price: { value: string; priceTable: { id: string; name: string } };
   compatibility: { matched: number; evaluated: number; mismatched: number; notEvaluated: number };
+  compatibilityScore: number | null;
+  compatibilityLevel: 'EXCELENTE' | 'ALTA' | 'MODERADA' | 'BAIXA' | 'NOT_EVALUATED';
+  evaluatedWeight: number;
+  scoreFactors: UnitMatchScoreFactor[];
   ranking: { priceWithinRange: boolean | null; matchedSoft: number; mismatchedSoft: number; priceDeviation: string };
   criteria: UnitMatchCriterion[];
 }

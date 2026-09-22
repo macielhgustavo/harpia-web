@@ -60,6 +60,14 @@ const MATCH = {
   features: { bedrooms: 2, area: '78.00' },
   price: { value: '450000.00', priceTable: { id: 'table-1', name: 'Vigente' } },
   compatibility: { matched: 3, evaluated: 3, mismatched: 0, notEvaluated: 0 },
+  compatibilityScore: 100,
+  compatibilityLevel: 'EXCELENTE',
+  evaluatedWeight: 100,
+  scoreFactors: [
+    { criterion: 'PRICE', weight: 50, criterionScore: 100, contribution: '50.00', maximumContribution: 50, status: 'MATCH', explanation: 'Dentro do orçamento' },
+    { criterion: 'AREA', weight: 25, criterionScore: 100, contribution: '25.00', maximumContribution: 25, status: 'MATCH', explanation: 'Área dentro da faixa' },
+    { criterion: 'BEDROOMS', weight: 25, criterionScore: 100, contribution: '25.00', maximumContribution: 25, status: 'MATCH', explanation: 'Quartos dentro da faixa' },
+  ],
   ranking: { priceWithinRange: true, matchedSoft: 3, mismatchedSoft: 0, priceDeviation: '0.00' },
   criteria: [{ code: 'PRICE', kind: 'SOFT', status: 'MATCH', message: 'R$ 450.000,00 dentro da faixa', actual: '450000.00' }],
 } as UnitMatch;
@@ -370,7 +378,51 @@ describe('PropertyInterestSectionComponent', () => {
     expect(text()).toContain('Unidade A-101');
     expect(text()).toContain('R$ 450.000,00');
     expect(text()).toContain('3/3 critérios avaliados atendidos');
+    expect(text()).toContain('100% compatível · Excelente');
+    expect(text()).toContain('50,00/50 pontos');
+    expect(text()).toContain('Dentro do orçamento');
     expect(text()).toContain('dentro da faixa');
+  });
+
+  it('shows a textual unevaluated state without inventing a percentage', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValue(of(matchesPage([{
+      ...MATCH,
+      compatibilityScore: null,
+      compatibilityLevel: 'NOT_EVALUATED',
+      evaluatedWeight: 0,
+      scoreFactors: MATCH.scoreFactors.map((factor) => ({
+        ...factor, criterionScore: null, contribution: null, maximumContribution: null,
+        status: 'NOT_EVALUATED' as const, explanation: 'Preferência não informada',
+      })),
+    }], 1, 1)));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('Compatibilidade não avaliada');
+    expect(text()).toContain('Não avaliado');
+    expect(text()).not.toContain('% compatível');
+  });
+
+  it('explains a partial score and keeps the mismatch visible', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValue(of(matchesPage([{
+      ...MATCH,
+      compatibilityScore: 90,
+      compatibilityLevel: 'EXCELENTE',
+      scoreFactors: [
+        { ...MATCH.scoreFactors[0], criterionScore: 80, contribution: '40.00', status: 'MISMATCH', explanation: 'R$ 10.000,00 acima do máximo' },
+        ...MATCH.scoreFactors.slice(1),
+      ],
+      criteria: [{ ...MATCH.criteria[0], status: 'MISMATCH', message: 'R$ 10.000,00 acima do máximo' }],
+    }], 1, 1)));
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('90% compatível · Excelente');
+    expect(text()).toContain('40,00/50 pontos');
+    expect(text()).toContain('Fora da faixa');
+    expect(text()).toContain('R$ 10.000,00 acima do máximo');
   });
 
   it('does not offer matching before a profile exists', () => {
@@ -417,7 +469,7 @@ describe('PropertyInterestSectionComponent', () => {
 
   it('appends without duplication and hides load-more at the final page', () => {
     crm.getPropertyInterest.and.returnValue(of(PROFILE));
-    const second = { ...MATCH, unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' } };
+    const second = { ...MATCH, unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' }, compatibilityScore: 80, compatibilityLevel: 'ALTA' as const };
     crm.getUnitMatches.and.returnValues(
       of(matchesPage([MATCH], 1, 21)),
       of(matchesPage([MATCH, second], 2, 21)),
@@ -427,6 +479,7 @@ describe('PropertyInterestSectionComponent', () => {
     component.loadMoreMatches();
     fixture.detectChanges();
     expect(component.matches().map((item) => item.unit.id)).toEqual(['unit-1', 'unit-2']);
+    expect(component.matches().map((item) => item.compatibilityScore)).toEqual([100, 80]);
     expect(text()).not.toContain('Carregar mais unidades');
   });
 

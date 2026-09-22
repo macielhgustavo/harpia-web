@@ -7,6 +7,7 @@ import {
   Opportunity,
   OpportunityPropertyInterest,
   UnitMatch,
+  UnitMatchScoreFactor,
   UnitMatchesPage,
   PropertyInterestPurpose,
   UpsertOpportunityPropertyInterestInput,
@@ -275,6 +276,24 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
 
   purposeLabel(value: PropertyInterestPurpose | null): string {
     return this.purposes.find((item) => item.value === value)?.label ?? '—';
+  }
+
+  compatibilityLevelLabel(level: UnitMatch['compatibilityLevel']): string {
+    return {
+      EXCELENTE: 'Excelente',
+      ALTA: 'Alta',
+      MODERADA: 'Moderada',
+      BAIXA: 'Baixa',
+      NOT_EVALUATED: 'Não avaliada',
+    }[level];
+  }
+
+  scoreFactorLabel(criterion: UnitMatchScoreFactor['criterion']): string {
+    return { PRICE: 'Preço', AREA: 'Área', BEDROOMS: 'Quartos' }[criterion];
+  }
+
+  formatScoreContribution(value: string): string {
+    return value.replace('.', ',');
   }
 
   showMatches(): void {
