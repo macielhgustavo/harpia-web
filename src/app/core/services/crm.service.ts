@@ -13,6 +13,7 @@ import {
   OpportunityHistoryPage,
   OpportunityPage,
   OpportunityPropertyInterest,
+  UnitMatchesPage,
   OpportunityTimelinePage,
   SalesActivity,
   SalesActivityFilters,
@@ -102,6 +103,17 @@ export class CrmService {
   ): Observable<OpportunityPropertyInterest | null> {
     return this.api.get<OpportunityPropertyInterest | null>(
       `/crm/opportunities/${opportunityId}/interest`,
+    );
+  }
+
+  getUnitMatches(
+    opportunityId: string,
+    page = 1,
+    pageSize = 20,
+  ): Observable<UnitMatchesPage> {
+    return this.api.get<UnitMatchesPage>(
+      `/crm/opportunities/${opportunityId}/unit-matches`,
+      this.params({ page, pageSize }),
     );
   }
 

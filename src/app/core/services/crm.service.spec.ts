@@ -165,4 +165,13 @@ describe('CrmService', () => {
     expect(api.delete).toHaveBeenCalledWith(path);
     expect('organizationId' in data).toBeFalse();
   });
+
+  it('requests a page of unit matches without tenant parameters', () => {
+    service.getUnitMatches('opportunity-1', 2, 20).subscribe();
+    const [path, params] = api.get.calls.mostRecent().args;
+    expect(path).toBe('/crm/opportunities/opportunity-1/unit-matches');
+    expect(params?.get('page')).toBe('2');
+    expect(params?.get('pageSize')).toBe('20');
+    expect(params?.has('organizationId')).toBeFalse();
+  });
 });

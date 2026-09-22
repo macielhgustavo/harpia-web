@@ -6,6 +6,8 @@ import { APP_PERMISSIONS } from '../../core/config/rbac.config';
 import {
   Opportunity,
   OpportunityPropertyInterest,
+  UnitMatch,
+  UnitMatchesPage,
   PropertyInterestPurpose,
   UpsertOpportunityPropertyInterestInput,
 } from '../../core/models/crm.model';
@@ -45,6 +47,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   private readonly authorization = inject(AuthorizationService);
   private readonly destroy$ = new Subject<void>();
   private typeLoadSequence = 0;
+  private matchingSequence = 0;
 
   @Input({ required: true }) opportunity!: Opportunity;
   @Input() developments: DevelopmentListItem[] = [];
@@ -65,6 +68,11 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
   readonly unitTypes = signal<UnitTypeListItem[]>([]);
   readonly typesLoading = signal(false);
   readonly typesError = signal('');
+  readonly matchesOpen = signal(false);
+  readonly matches = signal<UnitMatch[]>([]);
+  readonly matchesPage = signal<UnitMatchesPage['pagination'] | null>(null);
+  readonly matchesLoading = signal(false);
+  readonly matchesError = signal('');
   form: InterestForm = this.emptyForm();
 
   readonly purposes: { value: PropertyInterestPurpose; label: string }[] = [
@@ -92,6 +100,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (interest) => {
           this.interest.set(interest);
+          this.resetMatches();
           this.loading.set(false);
         },
         error: (error: unknown) => {
@@ -225,6 +234,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (interest) => {
           this.interest.set(interest);
+          this.resetMatches();
           this.saving.set(false);
           this.editing.set(false);
           this.feedback.set('Preferências salvas.');
@@ -248,6 +258,7 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.interest.set(null);
+          this.resetMatches();
           this.removing.set(false);
           this.confirmRemove.set(false);
           this.editing.set(false);
@@ -264,6 +275,55 @@ export class PropertyInterestSectionComponent implements OnInit, OnDestroy {
 
   purposeLabel(value: PropertyInterestPurpose | null): string {
     return this.purposes.find((item) => item.value === value)?.label ?? '—';
+  }
+
+  showMatches(): void {
+    if (!this.interest()) return;
+    this.matchesOpen.set(true);
+    this.loadMatches(1);
+  }
+
+  loadMoreMatches(): void {
+    const current = this.matchesPage();
+    if (!current || current.page >= current.totalPages) return;
+    this.loadMatches(current.page + 1);
+  }
+
+  retryMatches(): void {
+    this.loadMatches((this.matchesPage()?.page ?? 0) + 1);
+  }
+
+  private loadMatches(page: number): void {
+    if (this.matchesLoading()) return;
+    const sequence = ++this.matchingSequence;
+    this.matchesLoading.set(true);
+    this.matchesError.set('');
+    this.crm.getUnitMatches(this.opportunity.id, page)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          if (sequence !== this.matchingSequence) return;
+          const byId = new Map((page === 1 ? [] : this.matches()).map((item) => [item.unit.id, item]));
+          for (const item of result.data) byId.set(item.unit.id, item);
+          this.matches.set([...byId.values()]);
+          this.matchesPage.set(result.pagination);
+          this.matchesLoading.set(false);
+        },
+        error: (error: unknown) => {
+          if (sequence !== this.matchingSequence) return;
+          this.matchesLoading.set(false);
+          this.matchesError.set(extractError(error, 'Não foi possível carregar unidades compatíveis.'));
+        },
+      });
+  }
+
+  private resetMatches(): void {
+    this.matchingSequence += 1;
+    this.matchesOpen.set(false);
+    this.matches.set([]);
+    this.matchesPage.set(null);
+    this.matchesLoading.set(false);
+    this.matchesError.set('');
   }
 
   bedroomsLabel(interest: OpportunityPropertyInterest): string | null {

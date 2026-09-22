@@ -138,6 +138,34 @@ export type UpsertOpportunityPropertyInterestInput = {
   notes: string | null;
 };
 
+export interface UnitMatchCriterion {
+  code: 'AVAILABILITY' | 'DEVELOPMENT' | 'UNIT_TYPE' | 'BEDROOMS' | 'AREA' | 'PRICE' | 'DOWN_PAYMENT' | 'PURPOSE';
+  kind: 'HARD' | 'SOFT' | 'INFORMATIONAL';
+  status: 'MATCH' | 'MISMATCH' | 'NOT_EVALUATED';
+  message: string;
+  actual: string | number | null;
+  minimum?: string | number | null;
+  maximum?: string | number | null;
+  difference?: string;
+}
+
+export interface UnitMatch {
+  unit: { id: string; identifier: string; status: 'DISPONIVEL'; isSelected: boolean };
+  development: { id: string; name: string };
+  unitType: { id: string; name: string | null } | null;
+  features: { bedrooms: number | null; area: string | null };
+  price: { value: string; priceTable: { id: string; name: string } };
+  compatibility: { matched: number; evaluated: number; mismatched: number; notEvaluated: number };
+  ranking: { priceWithinRange: boolean | null; matchedSoft: number; mismatchedSoft: number; priceDeviation: string };
+  criteria: UnitMatchCriterion[];
+}
+
+export interface UnitMatchesPage {
+  data: UnitMatch[];
+  reason: 'PROFILE_REQUIRED' | null;
+  pagination: { page: number; pageSize: number; total: number; totalPages: number };
+}
+
 export interface OpportunityStageHistory {
   id: string;
   opportunityId: string;

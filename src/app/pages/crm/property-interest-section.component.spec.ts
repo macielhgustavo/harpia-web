@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
-import { Opportunity, OpportunityPropertyInterest } from '../../core/models/crm.model';
+import { Opportunity, OpportunityPropertyInterest, UnitMatch, UnitMatchesPage } from '../../core/models/crm.model';
 import { DevelopmentListItem } from '../../core/models/development.model';
 import { UnitTypeListItem } from '../../core/models/unit-type.model';
 import { AuthorizationService } from '../../core/services/authorization.service';
@@ -53,6 +53,20 @@ const PROFILE: OpportunityPropertyInterest = {
     standardArea: 78,
   },
 };
+const MATCH = {
+  unit: { id: 'unit-1', identifier: 'A-101', status: 'DISPONIVEL', isSelected: false },
+  development: { id: DEVELOPMENT.id, name: DEVELOPMENT.name },
+  unitType: { id: UNIT_TYPE.id, name: UNIT_TYPE.name },
+  features: { bedrooms: 2, area: '78.00' },
+  price: { value: '450000.00', priceTable: { id: 'table-1', name: 'Vigente' } },
+  compatibility: { matched: 3, evaluated: 3, mismatched: 0, notEvaluated: 0 },
+  ranking: { priceWithinRange: true, matchedSoft: 3, mismatchedSoft: 0, priceDeviation: '0.00' },
+  criteria: [{ code: 'PRICE', kind: 'SOFT', status: 'MATCH', message: 'R$ 450.000,00 dentro da faixa', actual: '450000.00' }],
+} as UnitMatch;
+const matchesPage = (data: UnitMatch[], page: number, total: number): UnitMatchesPage => ({
+  data, reason: null,
+  pagination: { page, pageSize: 20, total, totalPages: Math.ceil(total / 20) },
+});
 
 describe('PropertyInterestSectionComponent', () => {
   let fixture: ComponentFixture<PropertyInterestSectionComponent>;
@@ -76,10 +90,12 @@ describe('PropertyInterestSectionComponent', () => {
       'getPropertyInterest',
       'upsertPropertyInterest',
       'removePropertyInterest',
+      'getUnitMatches',
     ]);
     crm.getPropertyInterest.and.returnValue(of(null));
     crm.upsertPropertyInterest.and.returnValue(of(PROFILE));
     crm.removePropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValue(of(matchesPage([MATCH], 1, 1)));
     unitTypes = jasmine.createSpyObj<UnitTypeService>('UnitTypeService', ['list']);
     unitTypes.list.and.returnValue(of([UNIT_TYPE]));
     authorization = jasmine.createSpyObj<AuthorizationService>(
@@ -341,5 +357,107 @@ describe('PropertyInterestSectionComponent', () => {
     component.remove();
     expect(component.interest()).toBe(PROFILE);
     expect(component.actionError()).toBeTruthy();
+  });
+
+  it('shows explainable matches only on request, including read-only users', () => {
+    authorization.hasPermission.and.returnValue(false);
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    expect(crm.getUnitMatches).not.toHaveBeenCalled();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(crm.getUnitMatches).toHaveBeenCalledOnceWith(OPPORTUNITY.id, 1);
+    expect(text()).toContain('Unidade A-101');
+    expect(text()).toContain('R$ 450.000,00');
+    expect(text()).toContain('3/3 critérios avaliados atendidos');
+    expect(text()).toContain('dentro da faixa');
+  });
+
+  it('does not offer matching before a profile exists', () => {
+    build();
+    fixture.detectChanges();
+    expect(text()).not.toContain('Ver unidades compatíveis');
+    component.showMatches();
+    expect(crm.getUnitMatches).not.toHaveBeenCalled();
+  });
+
+  it('shows loading, selected-unit indication, and empty state', () => {
+    const pending = new Subject<UnitMatchesPage>();
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValues(
+      pending.asObservable(),
+      of(matchesPage([], 1, 0)),
+    );
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('Buscando unidades...');
+    pending.next(matchesPage([{ ...MATCH, unit: { ...MATCH.unit, isSelected: true } }], 1, 1));
+    fixture.detectChanges();
+    expect(text()).toContain('Unidade selecionada');
+    component.showMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('Nenhuma unidade disponível');
+  });
+
+  it('retries an initial matching load failure', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    crm.getUnitMatches.and.returnValues(
+      throwError(() => new Error('falha')),
+      of(matchesPage([MATCH], 1, 1)),
+    );
+    build();
+    component.showMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('Tentar novamente');
+    component.retryMatches();
+    fixture.detectChanges();
+    expect(text()).toContain('Unidade A-101');
+  });
+
+  it('appends without duplication and hides load-more at the final page', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    const second = { ...MATCH, unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' } };
+    crm.getUnitMatches.and.returnValues(
+      of(matchesPage([MATCH], 1, 21)),
+      of(matchesPage([MATCH, second], 2, 21)),
+    );
+    build();
+    component.showMatches();
+    component.loadMoreMatches();
+    fixture.detectChanges();
+    expect(component.matches().map((item) => item.unit.id)).toEqual(['unit-1', 'unit-2']);
+    expect(text()).not.toContain('Carregar mais unidades');
+  });
+
+  it('preserves first results on next-page error and retries', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    const second = { ...MATCH, unit: { ...MATCH.unit, id: 'unit-2', identifier: 'A-102' } };
+    crm.getUnitMatches.and.returnValues(
+      of(matchesPage([MATCH], 1, 21)),
+      throwError(() => new Error('falha')),
+      of(matchesPage([second], 2, 21)),
+    );
+    build();
+    component.showMatches();
+    component.loadMoreMatches();
+    expect(component.matches()).toEqual([MATCH]);
+    expect(component.matchesError()).toBeTruthy();
+    component.retryMatches();
+    expect(component.matches().map((item) => item.unit.id)).toEqual(['unit-1', 'unit-2']);
+  });
+
+  it('clears stale recommendations when profile changes or is removed', () => {
+    crm.getPropertyInterest.and.returnValue(of(PROFILE));
+    build();
+    component.showMatches();
+    component.openEditor();
+    component.save();
+    expect(component.matchesOpen()).toBeFalse();
+    expect(component.matches()).toEqual([]);
+    component.showMatches();
+    component.remove();
+    expect(component.matchesOpen()).toBeFalse();
+    expect(component.matches()).toEqual([]);
   });
 });
