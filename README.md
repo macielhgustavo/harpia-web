@@ -1,27 +1,72 @@
-# HarpiaWeb
+# Harpia Web
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.21.
+An Angular client for a real-estate operations API: CRM, inventory, reservations, sales, and financial workflows.
 
-## Development server
+This frontend is one half of the Harpia project. The [NestJS API](https://github.com/macielhgustavo/harpia-api) owns authentication, tenant isolation, permissions, and persistence.
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+## Why this exists
 
-## Code scaffolding
+Real-estate workflows cross people, opportunities, units, documents, and payments. The client brings that context into task-oriented screens instead of isolated database forms.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## What it does
 
-## Build
+- Presents CRM pipelines, opportunity details, activities, and visits.
+- Connects unit inventory and commercial workflows to related records.
+- Includes authentication, route guards, role-aware UI, and HTTP interceptors.
+- Exercises components and services with Angular/Jasmine tests.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+UI permission checks improve usability; they are not the authorization boundary.
 
-## Running unit tests
+## Architecture
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Angular routes and standalone components call typed services through HTTP interceptors. The API applies authorization and organization scoping before using Prisma/PostgreSQL.
 
-## Running end-to-end tests
+| Layer | Location |
+| --- | --- |
+| Pages and workflows | `src/app/pages/` |
+| Shared client services | `src/app/core/` |
+| Environment/API endpoint | `src/environments/` |
+| Backend | [harpia-api](https://github.com/macielhgustavo/harpia-api) |
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## Tech stack
 
-## Further help
+Angular 18, TypeScript, RxJS, Signals, Tailwind CSS, lucide-angular, Jasmine and Karma.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Getting started
+
+```bash
+git clone https://github.com/macielhgustavo/harpia-web.git
+cd harpia-web
+npm ci
+npm start
+```
+
+Open http://localhost:4200. Configure `src/environments/environment.ts` to use your local API. Its checked-in default points to the hosted API; avoid testing writes against that deployment.
+
+Follow the API repository's setup for PostgreSQL and migrations.
+
+## Tests and build
+
+```bash
+npm test -- --watch=false --browsers=ChromeHeadless
+npm run build
+```
+
+Tests require Chrome. A client build does not validate API/database workflows.
+
+## Technical decisions
+
+- Standalone components keep routing and feature boundaries explicit.
+- HTTP services centralize backend access.
+- Angular guards are a navigation mechanism; enforcement remains server-side.
+- Backend and frontend are separate repositories and need compatible contracts.
+
+## Limitations
+
+The repository has no frontend CI workflow yet. A standalone read-only demo and verified screenshots are still needed. This is a development project; no claims of commercial adoption or production scale are made.
+
+## Roadmap
+
+- Add reproducible local API configuration and frontend CI.
+- Maintain a small end-to-end commercial acceptance journey.
+- Publish a demo backed by synthetic data.
