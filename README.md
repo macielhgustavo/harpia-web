@@ -63,10 +63,10 @@ Tests require Chrome. A client build does not validate API/database workflows.
 
 ## Limitations
 
-The repository has no frontend CI workflow yet. A standalone read-only demo and verified screenshots are still needed. This is a development project; no claims of commercial adoption or production scale are made.
+GitHub Actions gates the build and headless unit tests. A standalone read-only demo and verified screenshots are still needed. This is a development project; no claims of commercial adoption or production scale are made.
 
 ## Roadmap
 
-- Add reproducible local API configuration and frontend CI.
+- Add reproducible local API configuration.
 - Maintain a small end-to-end commercial acceptance journey.
 - Publish a demo backed by synthetic data.
